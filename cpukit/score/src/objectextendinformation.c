@@ -141,9 +141,10 @@ void _Objects_Extend_information(
     /*
      *  Allocate the tables and break it up.
      */
-    block_size = block_count *
-           (sizeof(void *) + sizeof(uint32_t) + sizeof(Objects_Name *)) +
-          ((maximum + minimum_index) * sizeof(Objects_Control *));
+    block_size = (block_count * (sizeof(void *) + sizeof(uint32_t)) + 
+           CPU_ALIGNMENT - 1) & ~(CPU_ALIGNMENT - 1);
+    block_size += block_count * sizeof(Objects_Name *) +
+           ((maximum + minimum_index) * sizeof(Objects_Control *));
     object_blocks = (void**) _Workspace_Allocate( block_size );
 
     if ( !object_blocks ) {
@@ -158,6 +159,9 @@ void _Objects_Extend_information(
         object_blocks, block_count * sizeof(void*) );
     local_table = (Objects_Control **) _Addresses_Add_offset(
         inactive_per_block, block_count * sizeof(uint32_t) );
+
+    local_table = (Objects_Control **)
+        ((((uintptr_t)local_table) + CPU_ALIGNMENT - 1) & ~(CPU_ALIGNMENT - 1));
 
     /*
      *  Take the block count down. Saves all the (block_count - 1)
