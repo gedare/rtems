@@ -5,7 +5,7 @@
 ACLOCAL_AMFLAGS = -I ../aclocal
 
 SUBDIRS = hwpq hwpqsplitheap hwpqunitedlist \
-					iheap rbtree splay
+					iheap splay #rbtree
 
 if MPTESTS
 endif
