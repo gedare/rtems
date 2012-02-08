@@ -145,6 +145,295 @@ extern "C" {
 
 #define STACK_BIAS (2047)
 
+/* Additions to support MAGIC Simics commands */
+#ifdef ASM
+#define MAGIC(n) \
+  sethi n, %g0
+
+#endif /* ASM */
+
+#ifndef ASM
+
+#define __MAGIC_CASSERT(p) do {                                 \
+         typedef int __check_magic_argument[(p) ? 1 : -1];       \
+} while (0)
+
+#define MAGIC(n) do {                                   \
+    __MAGIC_CASSERT((n) > 0 && (n) < (1U << 22));   \
+         __asm__ __volatile__ ("sethi " #n ", %g0");     \
+} while (0)
+
+#define MAGIC_FLUSH(n) do { \
+    __MAGIC_CASSERT((n) > 0 && (n) < (1U << 22));   \
+        __asm__ __volatile__ ("flushw"); \
+         __asm__ __volatile__ ("sethi " #n ", %g0");     \
+} while (0)
+
+
+#endif /* !ASM */
+#define MAGIC_BREAKPOINT MAGIC(0x40000)
+
+
+/*
+ * The following constants are used as the 4 lowest order bits of the 
+ * second register (rs2) passed to the impdep2 instruction in order
+ * to specify the type of HWDS instruction to execute:
+ *
+ *  1   First
+ *  2   Enqueue
+ *  3   Extract
+ *  4   SetRange
+ *
+ * The upper 12 bits specify the queue id.
+ */
+
+#define HWDS_FIRST( _queue, _kv ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "sll  %1, 20, %%l0\n\t" \
+        "or   %%l0, 1, %%l0\n\t" \
+        "impdep2  %%g0, %%l0, %0" \
+        : "=r" (_kv) \
+        : "r" (_queue) : "l0" ); \
+  } while (0)
+
+#define HWDS_ENQUEUE( _queue, _pri, _ptr ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "sll  %0, 20, %%l0\n\t" \
+        "sllx %1, 32, %%l1\n\t" \
+        "or   %%l1, %2, %%l1\n\t" \
+        "or   %%l0, 2, %%l0\n\t" \
+        "impdep2  %%l1, %%l0, %%g0" \
+        : \
+        : "r" (_queue), "r" (_pri), "r" (_ptr) \
+        : "l0", "l1" ); \
+  } while (0)
+
+#define HWDS_EXTRACT( _queue, _kv ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "sll  %1, 20, %%l0\n\t" \
+        "or   %%l0, 3, %%l0\n\t" \
+        "impdep2  %0, %%l0, %%g0" \
+        : \
+        : "r" (_kv), "r" (_queue) \
+        : "l0" \
+    ); \
+  } while (0)
+
+// TODO: Create an interface / wrapper for this.
+#define HWDS_SETRANGE( _queue, _base_addr, _bounds ) \
+  do { \
+    __asm__ __volatile__ ( \
+      "sll  %0, 20, %%l0\n\t" \
+      "sll  %2, 4, %%l1\n\t" \
+      "or   %%l0, %%l1, %%l0\n\t" \
+      "or   %%l0, 4, %%l0\n\t" \
+      "impdep2  %1, %%l0, %%g0" \
+      : \
+      : "r" (_queue), "r" (_base_addr), "r" (_bounds)\
+      : "l0" \
+        ); \
+  } while (0)
+
+// get the HWDS context (last queue, operation)
+#define HWDS_GET_CONTEXT( _ptr ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "or   %%g0, 5, %%l0\n\t" \
+        "impdep2  %%g0, %%l0, %0" \
+        : "=r" (_ptr) \
+        : : "l0" \
+        ); \
+  } while (0)
+
+// get the tail of the queue.
+#define HWDS_EXTRACT_LAST( _queue, _kv ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "sll  %1, 20, %%l0\n\t" \
+        "or   %%l0, 6, %%l0\n\t" \
+        "impdep2  %%g0, %%l0, %0" \
+        : "=r" (_kv) \
+        : "r" (_queue) : "l0" ); \
+  } while (0)  
+
+// spill from tail
+#define HWDS_SPILL( _queue, _ptr ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "sll  %1, 20, %%l0\n\t" \
+        "or   %%l0, 7, %%l0\n\t" \
+        "impdep2  %%g0, %%l0, %0" \
+        : "=r" (_ptr) \
+        : "r" (_queue) : "l0" ); \
+  } while (0)  
+
+// fill from spill region
+#define HWDS_FILL( _queue, _pri, _ptr, _result ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "sll  %1, 20, %%l0\n\t" \
+        "sllx %2, 32, %%l1\n\t" \
+        "or   %%l0, 8, %%l0\n\t" \
+        "or   %%l1, %3, %%l1\n\t" \
+        "impdep2  %%l1, %%l0, %0" \
+        : "=r" (_result) \
+        : "r" (_queue), "r" (_pri), "r" (_ptr) \
+        : "l0", "l1" ); \
+  } while (0)  
+
+// get the priority value of the tail
+#define HWDS_LAST_PRI( _queue, _val ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "sll  %1, 20, %%l0\n\t" \
+        "or   %%l0, 9, %%l0\n\t" \
+        "impdep2  %%g0, %%l0, %0" \
+        : "=r" (_val) \
+        : "r" (_queue) : "l0" ); \
+  } while (0)
+
+#define HWDS_GET_PAYLOAD( _ptr ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "or   %%g0, 10, %%l0\n\t" \
+        "impdep2  %%g0, %%l0, %0" \
+        : "=r" (_ptr) \
+        : : "l0" \
+        ); \
+  } while (0)
+
+// this is a hack to check for an underfill condition
+// it is called after a software extraction
+#define HWDS_CHECK_UNDERFLOW( _queue ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "sll  %0, 20, %%l0\n\t" \
+        "or   %%l0, 11, %%l0\n\t" \
+        "impdep2  %%g0, %%l0, %%g0" \
+        : : "r" (_queue) : "l0" ); \
+  } while (0)
+
+// query the hardware for size constraints
+#define HWDS_GET_SIZE_LIMIT( _queue, _size ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "sll  %1, 20, %%l0\n\t" \
+        "or   %%l0, 12, %%l0\n\t" \
+        "impdep2  %%g0, %%l0, %0" \
+        : "=r" (_size)  : "r" (_queue) : "l0" ); \
+  } while (0)
+
+#define HWDS_SET_CURRENT_ID( _newid ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "sll  %0, 20, %%l0\n\t" \
+        "or   %%l0, 13, %%l0\n\t" \
+        "impdep2  %%g0, %%l0, %%g0" \
+        : : "r" (_newid) : "l0" ); \
+  } while (0)
+
+#define HWDS_GET_CURRENT_ID( _currid ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "or   %%g0, 14, %%l0\n\t" \
+        "impdep2  %%g0, %%l0, %0" \
+        : "=r" (_currid) : : "l0" ); \
+  } while (0)
+
+// these macros support generic HWDS operations and can save on 
+// loop-based operations by avoiding the setup for the queue id and operation.
+#define HWDS_REGOP( _value, _queueOp ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "impdep2  %0, %1, %%g0" \
+        : \
+        : "r" (_value), "r" (_queueOp) \
+        : \
+        ); \
+  } while (0)
+
+
+// TODO: Implement HWDS_FIND
+#define HWDS_FIND( _queue, _ptr, _result ) \
+  do { \
+    __asm__ __volatile__ ( \
+      "nop" \
+      : \
+      : \
+      : \
+        ); \
+  } while (0)
+
+// TODO: Implement HWDS_NEXT
+#define HWDS_NEXT( _queue, _ptr, _result ) \
+  do { \
+    __asm__ __volatile__ ( \
+      "nop" \
+      : \
+      : \
+      : \
+        ); \
+  } while (0)
+
+/**************************** DEPRECATED *********************************/
+// probably could do some type checking.
+#define HWDS1_FIRST( _ptr ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "impdep2  %%g0, 0, %0\n\t" : "=r" (_ptr) : "0" (_ptr) \
+    ); \
+  } while (0)
+
+#define HWDS1_ENQUEUE( _pri, _ptr ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "impdep2  %0, 2, %%g0\n\t" \
+        "impdep2  %1, 3, %%g0\n\t" \
+        : "=r" (_pri), "=r" (_ptr) \
+        : "0" (_pri), "1" (_ptr) \
+    ); \
+  } while (0)
+
+// unsupported
+#define HWDS1_ENQUEUE_FIRST( _pri, _ptr ) HWDS1_ENQUEUE (_pri, _ptr)
+
+#define HWDS1_EXTRACT( _ptr ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "impdep2  %0, 1, %%g0\n\t" : "=r" (_ptr) : "0" (_ptr) \
+    ); \
+  } while (0) 
+
+#define HWDS2_FIRST( _ptr ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "impdep2  %%g0, (1<<11)|0, %0\n\t" : "=r" (_ptr) : "0" (_ptr) \
+    ); \
+  } while (0)
+
+#define HWDS2_ENQUEUE( _pri, _ptr ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "impdep2  %0, (1<<11)|2, %%g0\n\t" \
+        "impdep2  %1, (1<<11)|3, %%g0\n\t" \
+        : "=r" (_pri), "=r" (_ptr) \
+        : "0" (_pri), "1" (_ptr) \
+    ); \
+  } while (0)
+
+// unsupported
+#define HWDS2_ENQUEUE_FIRST( _pri, _ptr ) HWDS2_ENQUEUE (_pri, _ptr)
+
+#define HWDS2_EXTRACT( _ptr ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "impdep2  %0, (1<<11)|1, %%g0\n\t" : "=r" (_ptr) : "0" (_ptr) \
+    ); \
+  } while (0) 
+
 #ifdef ASM
 
 /* 
@@ -278,8 +567,8 @@ extern "C" {
  */
 #define sparc64_write_tick_cmpr( _tick_cmpr ) \
   do { \
-    __asm__ volatile( "wr %%g0, %0, %%tick_cmpr" :  "=r" (_tick_cmpr)  \
-                                             :  "0" (_tick_cmpr) ); \
+    __asm__ volatile( "wr %%g0, %0, %%tick_cmpr" : "=r" (_tick_cmpr) \
+        : "0" (_tick_cmpr) ); \
   } while ( 0 )
 
 /* 
@@ -287,10 +576,16 @@ extern "C" {
  *
  * sun4u and sun4v: softint_clr asr = 21, with mnemonic clear_softint
  */
-#define sparc64_clear_interrupt_bits( _bit_mask ) \
+#define sparc64_clear_interrupt_bits_reg( _bit_mask ) \
   do { \
-  __asm__ volatile( "wr %%g0, %0, %%clear_softint" : "=r" (_bit_mask) \
-                                               : "0" (_bit_mask)); \
+  __asm__ volatile( "wr %%g0, %0, %%clear_softint" \
+      : "=r" (_bit_mask) \
+      :"0" (_bit_mask) ); \
+  } while ( 0 )
+
+#define sparc64_clear_interrupt_bits_const( _bit_mask ) \
+  do { \
+  __asm__ volatile( "wr %%g0, %0, %%clear_softint" : : "n" (_bit_mask) ); \
   } while ( 0 )
 
 /************* DEPRECATED ****************/

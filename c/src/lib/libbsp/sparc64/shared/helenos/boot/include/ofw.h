@@ -96,6 +96,8 @@ extern phandle ofw_get_child_node(const phandle node);
 extern phandle ofw_get_peer_node(const phandle node);
 extern phandle ofw_find_device(const char *name);
 
+extern void* ofw_alloc_mem(const size_t size);
+
 extern int ofw_package_to_path(const phandle device, char *buf, const int buflen);
 
 extern int ofw(ofw_args_t *arg);
@@ -104,10 +106,14 @@ extern unsigned int ofw_get_address_cells(const phandle device);
 extern unsigned int ofw_get_size_cells(const phandle device);
 extern void *ofw_translate(const void *virt);
 extern int ofw_translate_failed(ofw_arg_t flag);
-extern void *ofw_claim_virt(const void *virt, const unsigned int len);
+
+extern void ofw_claim_virt(const void *, const size_t);
+extern void *ofw_claim_virt_any(const size_t, const size_t);
+
 extern void *ofw_claim_phys(const void *virt, const unsigned int len);
 extern void *ofw_claim_phys_any(const unsigned int len, const unsigned int alignment);
 extern int ofw_map(const void *phys, const void *virt, const unsigned int size, const int mode);
+extern void ofw_alloc(const char *, void **, void **, const size_t, void *, const unsigned int alignment);
 extern int ofw_memmap(memmap_t *map);
 extern void ofw_setup_screens(void);
 extern void ofw_quiesce(void);

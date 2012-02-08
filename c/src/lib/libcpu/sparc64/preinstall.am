@@ -22,4 +22,16 @@ PREINSTALL_DIRS += $(PROJECT_INCLUDE)/libcpu/$(dirstamp)
 $(PROJECT_INCLUDE)/libcpu/cache.h: ../shared/include/cache.h $(PROJECT_INCLUDE)/libcpu/$(dirstamp)
 	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/libcpu/cache.h
 PREINSTALL_FILES += $(PROJECT_INCLUDE)/libcpu/cache.h
+
+$(PROJECT_INCLUDE)/libcpu/spillpq.h: shared/interrupts/spillpq.h $(PROJECT_INCLUDE)/libcpu/$(dirstamp)
+	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/libcpu/spillpq.h
+PREINSTALL_FILES += $(PROJECT_INCLUDE)/libcpu/spillpq.h
+
+$(PROJECT_INCLUDE)/libcpu/splitheappq.h: shared/interrupts/splitheappq.h $(PROJECT_INCLUDE)/libcpu/$(dirstamp)
+	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/libcpu/splitheappq.h
+PREINSTALL_FILES += $(PROJECT_INCLUDE)/libcpu/splitheappq.h
+
+$(PROJECT_INCLUDE)/libcpu/unitedlistpq.h: shared/interrupts/unitedlistpq.h $(PROJECT_INCLUDE)/libcpu/$(dirstamp)
+	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/libcpu/unitedlistpq.h
+PREINSTALL_FILES += $(PROJECT_INCLUDE)/libcpu/unitedlistpq.h
 endif

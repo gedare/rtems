@@ -15,6 +15,30 @@
 extern void ofw_write(const char *,const int );
 extern void ofw_read(void *,int );
 
+extern uint64_t* real_trap_table;
+
+static void call_ofw_write(const char * buf, const int len) {
+   uint64_t curr_tba = 0;
+  uintptr_t orig_tba = real_trap_table;
+  uint64_t curr_pil = 0;
+  uint64_t mask_pil = 0xf;
+
+  /* first mask the pil so we don't miss timer ticks */
+  sparc64_get_pil(curr_pil);
+  sparc64_set_pil(mask_pil);
+
+  /* now set the trap table (tba) to the firmware */
+  sparc64_get_tba(curr_tba);
+  sparc64_set_tba(orig_tba);
+
+  /* enter firmware */
+	ofw_write(buf, len);
+
+  /* reset tba and pil */
+  sparc64_set_tba(curr_tba);
+  sparc64_set_pil(curr_pil);
+}
+
 int sun4v_console_device_first_open(int major, int minor, void *arg)
 {
   return 0;
@@ -22,7 +46,7 @@ int sun4v_console_device_first_open(int major, int minor, void *arg)
 
 static ssize_t sun4v_console_poll_write(int minor, const char *buf, size_t n)
 {
-  ofw_write(buf, n);
+  call_ofw_write(buf, n);
   return 0;
 }
 
@@ -98,7 +122,7 @@ unsigned long  Console_Configuration_Count = NUM_CONSOLE_PORTS;
 
 static void bsp_out_char (char c)
 {
-  ofw_write(&c, 1);
+  call_ofw_write(&c, 1);
 }
 
 BSP_output_char_function_type BSP_output_char = bsp_out_char;

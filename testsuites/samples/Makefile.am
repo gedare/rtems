@@ -4,7 +4,7 @@
 
 ACLOCAL_AMFLAGS = -I ../aclocal
 
-SUBDIRS = hello capture ticker base_sp unlimited minimum fileio
+SUBDIRS = hello capture ticker base_sp unlimited minimum fileio gzfile
 
 if MPTESTS
 ## base_mp is a sample multiprocessing test

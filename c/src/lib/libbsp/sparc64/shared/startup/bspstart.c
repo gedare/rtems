@@ -26,6 +26,7 @@ extern void sparc64_install_isr_entries(void);
  *  This routine does the bulk of the system initialization.
  */
 
+#include <boot/ofw.h>
 void bsp_start( void )
 {
 /*	bootstrap(); */

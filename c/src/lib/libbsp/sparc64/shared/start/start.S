@@ -109,14 +109,14 @@ setstack:
 	set SYM(StackStart), %sp
 	add %sp, -STACK_BIAS, %sp
 
-  /* BSP-specific pre-bootcard initializations */
-  call SYM(_BSP_init)
-  nop
-
-	setx ofw_cif, %l0, %l1
+  setx ofw_cif, %l0, %l1
  
 	call ofw_init		! initialize OpenFirmware
 	stx %o4, [%l1]
+
+  /* BSP-specific pre-bootcard initializations */
+  call SYM(_BSP_init)
+  nop
 
   call bootstrap
   nop
@@ -149,6 +149,7 @@ halted:	nop
 
 .section BOOTSTRAP
   .align CPU_ALIGNMENT
+  .global param_space
   param_space:
   	.space 8
 

@@ -53,6 +53,8 @@
 #define BLUE(i)   ((i) & ((1 << 3) - 1))
 #define CLIP(i)   ((i) <= 255 ? (i) : 255)
 
+#define ALIGN_DOWN(s, a)  ((s) & ~((a) - 1))
+#define ALIGN_UP(s, a)  (((s) + ((a) - 1)) & ~((a) - 1))
 uintptr_t ofw_cif;
 
 phandle ofw_chosen;
@@ -246,17 +248,40 @@ void *ofw_translate(const void *virt)
 	return (void *) ((result[2] << shift) | result[3]);
 }
 
-void *ofw_claim_virt(const void *virt, const unsigned int len)
+static void *ofw_claim_virt_internal(const void *virt, const size_t len,
+    const size_t alignment)
 {
-	ofw_arg_t retaddr;
-
-	if (ofw_call("call-method", 5, 2, &retaddr, "claim", ofw_mmu, 0, len,
-	    virt) != 0) {
-		printk("Error: MMU method claim() failed, halting.\n");
+	ofw_arg_t addr;
+	if (ofw_call("call-method", 5, 2, &addr, "claim", ofw_mmu,
+	    alignment, len, (ofw_arg_t) virt) != 0) {
+		printk("Error: mmu method claim failed, halting.\n");
 		halt();
 	}
+	
+	return (void *) addr;
+}
 
-	return (void *) retaddr;
+void ofw_claim_virt(const void *virt, const size_t len)
+{
+	void *addr = ofw_claim_virt_internal(virt, len, 0);
+	if (addr != virt) {
+		printk("Error: Unable to claim virtual memory %p (size %u), halting.\n",
+		    virt, len);
+		halt();
+	}
+}
+
+void *ofw_claim_virt_any(const size_t len, const size_t alignment)
+{
+	void *addr = ofw_claim_virt_internal(NULL, len, alignment);
+	
+	if (addr == NULL) {
+		printk("Error: Unable to claim %u bytes in virtual memory, halting.\n",
+		    len);
+		halt();
+	}
+	
+	return addr;
 }
 
 static void *ofw_claim_phys_internal(const void *phys, const unsigned int len, const unsigned int alignment)
@@ -373,6 +398,28 @@ int ofw_memmap(memmap_t *map)
 	return true;
 }
 
+/** Allocate physical and virtual memory area and map it
+ *
+ * The allocated memory is always page-aligned.
+ *
+ * @param name    Description of the memory area.
+ * @param base    Virtual memory area address.
+ * @param base_pa Physical memory area address.
+ * @param size    Requested size in bytes.
+ * @param min_pa  Minimal allowed physical address.
+ *
+ */
+void ofw_alloc(const char *name, void **base, void **base_pa, const size_t size,
+    void *min_pa, const unsigned int alignment)
+{
+	do {
+		*base_pa = ofw_claim_phys_any(size, alignment);
+	} while (*base_pa <= min_pa);
+	
+	*base = ofw_claim_virt_any(size, alignment);
+	ofw_map(*base_pa, *base, ALIGN_UP(size, alignment), -1);
+}
+
 static void ofw_setup_screen(phandle handle)
 {
 	/* Check for device type */
@@ -410,6 +457,16 @@ static void ofw_setup_screen(phandle handle)
 			    255 - i, CLIP(BLUE(i) * 37), GREEN(i) * 85, CLIP(RED(i) * 37));
 		}
 	}
+}
+
+void* ofw_alloc_mem(const size_t size) {
+	ofw_arg_t addr;
+  if ( ofw_call("alloc-mem", 1, 1, &addr, size) != 0 ) {
+		printk("Error: Unable to allocate memory (size %u), halting.\n", size);
+		halt();
+	}
+
+  return (void*)addr;
 }
 
 static void ofw_setup_screens_internal(phandle current)

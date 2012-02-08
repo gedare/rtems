@@ -13,11 +13,10 @@
  */
 
 #include <rtems.h>
-#include <rtems/asm.h>
-#include <rtems/score/sparc64.h>
-#include <rtems/bspIo.h>
+
+#include "hwpq_exceptions.h"
 
 void sparc64_install_isr_entries( void )
 {
-  return;
+  sparc64_hwpq_initialize();
 }

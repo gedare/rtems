@@ -34,7 +34,7 @@ rtems_isr_entry set_vector(                   /* returns old vector */
   rtems_isr_entry previous_isr;
   uint32_t      real_trap;
   uint32_t      source;
-  int bit_mask;
+  register bit_mask;
 
   if ( type )
     rtems_interrupt_catch( handler, vector, &previous_isr );
@@ -51,7 +51,7 @@ rtems_isr_entry set_vector(                   /* returns old vector */
     source = real_trap - 0x40;
     bit_mask = 1<<source;
 
-    sparc64_clear_interrupt_bits(bit_mask);
+    sparc64_clear_interrupt_bits_reg(bit_mask);
   }
 
 

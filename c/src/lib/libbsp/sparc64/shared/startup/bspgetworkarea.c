@@ -19,10 +19,13 @@
   #include <rtems/bspIo.h>
 #endif
 
+#include <boot/ofw.h>
+
 /*
  *  These are provided by the linkcmds for ALL of the BSPs which use this file.
  */
 extern char WorkAreaBase[];
+extern char WorkAreaSize[];
 extern char HeapSize[];
 extern char HeapBase[];
 
@@ -60,9 +63,11 @@ void bsp_get_work_area(
 
   *work_area_start = WorkAreaBase;
   *work_area_size  = (uintptr_t) HeapSize;
-  *heap_start      = (void*) HeapBase;
+  *heap_start      = BSP_BOOTCARD_HEAP_USES_WORK_AREA;
   *heap_size       = (uintptr_t) HeapSize;
-
+  memset(*work_area_start, 0, *work_area_size);
+//  memset(*heap_start, 0, *heap_size);
+#define BSP_GET_WORK_AREA_DEBUG
   /*
    *  The following may be helpful in debugging what goes wrong when
    *  you are allocating the Work Area in a new BSP.

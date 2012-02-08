@@ -13,10 +13,9 @@
  * Declare some sizes.
  */
 RamBase = DEFINED(RamBase) ? RamBase : 0x0;
-RamSize = DEFINED(RamSize) ? RamSize : 12M;
-HeapSize = DEFINED(HeapSize) ? HeapSize : 2M;
-
-RAM_END = RamBase + RamSize;
+RamSize = DEFINED(RamSize) ? RamSize : 4M;
+HeapSize = DEFINED(HeapSize) ? HeapSize : 128M;
+WorkAreaSize = DEFINED(WorkAreaSize) ? WorkAreaSize : 2M;
 
 /* Default linker script, for normal executables */
 OUTPUT_FORMAT("elf64-sparc")
@@ -24,7 +23,8 @@ ENTRY(start)
 
 MEMORY
 {
-  ram : ORIGIN = 0x0, LENGTH = 12M
+  bootmem : ORIGIN = 0x0, LENGTH = 4M
+  highmem : ORIGIN = 0x40400000, LENGTH = 128M
 }
 
 SECTIONS
@@ -149,7 +149,7 @@ SECTIONS
      . = ALIGN (16);
     _endtext = . ;
     _etext = . ;
-  } > ram
+  } > bootmem
   
   .data	  : AT (ADDR (.text) + SIZEOF (.text))
   {
@@ -165,16 +165,16 @@ SECTIONS
     edata = . ;
     _edata = . ;
      PROVIDE (__data_end = .) ;
-  } > ram
+  } > bootmem
  
   /* XXX
    __data_load_start = LOADADDR(.data);
    __data_load_end = __data_load_start + SIZEOF(.data);
   */
    . = ALIGN (16);
-  .dynamic	  : { *(.dynamic) 	} >ram
-  .jcr        : { *(.jcr)     } > ram
-  .shbss      : { *(.shbss)  } > ram
+  .dynamic	  : { *(.dynamic) 	} > bootmem
+  .jcr        : { *(.jcr)     } > bootmem
+  .shbss      : { *(.shbss)  } > bootmem
   .bss        :
   {
     FILL(0x00000000);
@@ -188,13 +188,13 @@ SECTIONS
     end = .;
     _end = .;
     __end = .;
-  
-    . = ALIGN (16); /* arbitrary alignment */
+ } > bootmem
+
+ .heapspace :
+ {
+   . = ALIGN(16);
     PROVIDE (WorkAreaBase = .);
-    . += HeapSize;
-    PROVIDE (HeapBase = .);
-    . += HeapSize;
-  } > ram
+ } > highmem
 }
 
 

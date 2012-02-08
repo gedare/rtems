@@ -30,8 +30,8 @@
 
 uint64_t sparc64_cycles_per_tick;
 
-/* TICK_CMPR and STICK_CMPR trigger soft interrupt 14 */
-#define CLOCK_VECTOR SPARC_SYNCHRONOUS_TRAP(0x4E)
+/* TICK_CMPR and STICK_CMPR trigger soft interrupt 14 (disrupting) */
+#define CLOCK_VECTOR SPARC_ASYNCHRONOUS_TRAP(0x4E)
 
 static unsigned int get_Frequency(void)
 {
@@ -49,17 +49,21 @@ static unsigned int get_Frequency(void)
 void Clock_driver_support_at_tick(void)
 {
   uint64_t tick_reg;
-  int bit_mask;
-  uint64_t pil_reg;
+  register bit_mask = SPARC_SOFTINT_TM_MASK | SPARC_SOFTINT_SM_MASK | (1<<14);
+  uint64_t pil_reg = 0;
 
-  bit_mask = SPARC_SOFTINT_TM_MASK | SPARC_SOFTINT_SM_MASK | (1<<14);
-  sparc64_clear_interrupt_bits(bit_mask);
-
+  sparc64_clear_interrupt_bits_reg(bit_mask);
+  /* the old, slightly broken way. pil does not get reset
+   * if Thread_Dispatch is called. if there is a pending interrupt
+   * then this approach may ignore it and do the context switch. */
+#if 0
   sparc64_get_pil(pil_reg);
   if(pil_reg == 0xe) { /* 0xe is the tick compare interrupt (softint(14)) */
     pil_reg--;
     sparc64_set_pil(pil_reg); /* enable the next timer interrupt */
   }
+#endif
+
   /* Note: sun4v uses stick_cmpr for clock driver for M5 simulator, which 
    * does not currently have tick_cmpr implemented */
   /* TODO: this could be more efficiently implemented as a single assembly 
@@ -78,6 +82,9 @@ void Clock_driver_support_at_tick(void)
 #elif defined (SUN4V)
   sparc64_write_stick_cmpr(tick_reg);
 #endif
+  /* FIXME: writing 0 to PIL might be wrong here, depending on whether the
+   * tick ISR interrupted something that has the PIL masked. */
+//  sparc64_set_pil(pil_reg);
 }
 
 #define Clock_driver_support_install_isr(_new, _old) \
@@ -88,10 +95,8 @@ void Clock_driver_support_at_tick(void)
 void Clock_driver_support_initialize_hardware(void)
 {
   uint64_t tick_reg; 	
-  int bit_mask;
-
-  bit_mask = SPARC_SOFTINT_TM_MASK | SPARC_SOFTINT_SM_MASK | (1<<14);
-  sparc64_clear_interrupt_bits(bit_mask);
+  register bit_mask = SPARC_SOFTINT_TM_MASK | SPARC_SOFTINT_SM_MASK | (1<<14);
+  sparc64_clear_interrupt_bits_reg(bit_mask);
 
   sparc64_cycles_per_tick = rtems_configuration_get_microseconds_per_tick()*(get_Frequency()/1000000);
 

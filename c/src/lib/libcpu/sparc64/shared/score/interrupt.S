@@ -371,6 +371,10 @@ PUBLIC(_ISR_Dispatch)
       setx     SYM(_CPU_ISR_Dispatch_disable), %o5, %o2
       stuw     %o1, [%o2]
 
+      ! Fix PIL here so that interrupts that may have arrived can be serviced
+      ldx   [%sp + STACK_BIAS + ISF_PIL_OFFSET], %o3
+      wrpr  %g0, %o3, %pil
+      
 
       !  **** ENABLE TRAPS ****
       wrpr  %g0, SPARC_PSTATE_PRIV_MASK | SPARC_PSTATE_PEF_MASK | \
@@ -548,10 +552,10 @@ dispatchAgain:
 
   andcc   %g2, SPARC_SYNCHRONOUS_TRAP_BIT_MASK, %g0
   ! Is this a synchronous trap?
-  be  not_synch             ! No, then skip trapping instruction
+  be  not_synch             ! No, then re-execute trapping instruction
   mov  0, %g4
-  retry        ! re-execute trapping instruction
-  not_synch:
   done        ! skip trapping instruction
+  not_synch:
+  retry        ! re-execute trapping instruction
 
 /* end of file */

@@ -294,7 +294,7 @@ void bootstrap(void)
 	
 	if (bootinfo.memmap.total == 0) {
 		printk("Error: no memory detected, halting.\n");
-		halt();
+//		halt();
 	}
 	
 	/*

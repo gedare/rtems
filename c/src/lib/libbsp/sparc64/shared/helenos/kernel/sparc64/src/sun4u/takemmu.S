@@ -280,7 +280,7 @@ _take_mmu:
 	SET_TLB_DATA(g1, g2, TTE_L)		! use non-global mapping
 	stxa %g1, [%g0] ASI_ITLB_DATA_IN_REG		
 	flush %g5
-
+#if 0
   ! GAB: add more mappings for dmmu in 4 MB chunks
   SET_TLB_TAG(0x404000, g1, MEM_CONTEXT_KERNEL)
   stxa %g1, [VA_DMMU_TAG_ACCESS] %asi
@@ -308,7 +308,7 @@ _take_mmu:
   SET_TLB_DATA(g1, g2, TTE_L | TTE_W)
   stxa %g1, [%g0] ASI_DTLB_DATA_IN_REG
   membar #Sync
-
+#endif
 
 /*
 	! enter nucleus - using context 0
@@ -340,7 +340,7 @@ _take_mmu:
 	stx %l6, [%l4 + %lo(physmem_base)]
 
 	/*
-	 * Precompute kernel 8K TLB data template.
+	 * Precompute kernel 4M TLB data template.
 	 * %l5 contains starting physical address
 	 * bits [(PHYSMEM_ADDR_SIZE - 1):13]
 	 */
@@ -377,8 +377,45 @@ _take_mmu:
 #endif
 
 #if defined (RTEMS)
+
+  setx sparc64_identity_map_dtlb, %l0, %o1
+  setx param_space, %l0, %o2
+  call SYM(_CPU_ISR_install_raw_handler)
+  mov 0x68, %o0
+
+
   ret
   restore
+
+.global sparc64_identity_map_dtlb
+sparc64_identity_map_dtlb:
+  sethi %hi(sparc64_4M_tlb_data_template), %g7
+  wr %g0, ASI_DMMU, %asi
+  ldxa [VA_DMMU_TAG_ACCESS] %asi, %g4
+  set TLB_TAG_ACCESS_CONTEXT_MASK, %g2
+  andcc %g4, %g2, %g3       ! get Context
+  bnz %xcc, nonzero_context ! Context is non-zero
+  andncc %g4, %g2, %g3                    ! get page address
+  bz  %xcc, data_access_page_zero         ! spin (should fault) if page 0
+  nop
+  clr %g4
+  ldx [%g7 + %lo(sparc64_4M_tlb_data_template)], %g2
+  add %g3, %g2, %g2
+  stxa %g2, [%g0] ASI_DTLB_DATA_IN_REG
+  retry
+
+data_access_page_zero:
+  ba data_access_page_zero
+  nop
+nonzero_context:
+  ba nonzero_context
+  nop
+
+past_ram_end: 
+  ba past_ram_end
+  nop
+
+
 #endif
 
 	/* Not reached. */
@@ -470,6 +507,11 @@ temporary_boot_stack:
 .global physmem_base		! copy of the physical memory base address
 physmem_base:
 	.quad 0
+
+.global sparc64_4M_tlb_data_template
+sparc64_4M_tlb_data_template:
+  .quad ((1 << TTE_V_SHIFT) | (PAGESIZE_4M << TTE_SIZE_SHIFT) | TTE_CP | \
+      TTE_P | TTE_W)
 
 /*
  * The fast_data_access_mmu_miss_data_hi label and the end_of_identity and

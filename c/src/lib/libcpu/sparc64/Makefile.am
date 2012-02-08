@@ -17,6 +17,9 @@ if shared
 include_libcpudir = $(includedir)/libcpu
 
 include_libcpu_HEADERS = ../shared/include/cache.h
+include_libcpu_HEADERS += shared/interrupts/spillpq.h
+include_libcpu_HEADERS += shared/interrupts/splitheappq.h
+include_libcpu_HEADERS += shared/interrupts/unitedlistpq.h
 
 noinst_PROGRAMS += shared/shared-score.rel
 shared_shared_score_rel_SOURCES = shared/score/cpu.c shared/score/interrupt.S
@@ -31,6 +34,15 @@ shared_sparc64_syscall_rel_LDFLAGS = $(RTEMS_RELLDFLAGS)
 
 noinst_PROGRAMS += shared/interrupts.rel
 shared_interrupts_rel_SOURCES = shared/interrupts/installisrentries.c
+shared_interrupts_rel_SOURCES += shared/interrupts/hwpq_exceptions.c
+shared_interrupts_rel_SOURCES += shared/interrupts/hwpq_exceptions.h
+shared_interrupts_rel_SOURCES += shared/interrupts/freelist.c
+shared_interrupts_rel_SOURCES += shared/interrupts/freelist.h
+shared_interrupts_rel_SOURCES += shared/interrupts/spillpq.c
+shared_interrupts_rel_SOURCES += shared/interrupts/spillpq.h
+shared_interrupts_rel_SOURCES += shared/interrupts/gabdebug.h
+shared_interrupts_rel_SOURCES += shared/interrupts/unitedlistpq.c
+shared_interrupts_rel_SOURCES += shared/interrupts/splitheappq.c
 shared_interrupts_rel_CPPFLAGS = $(AM_CPPFLAGS) -I$(srcdir)/shared/interrupts
 shared_interrupts_rel_LDFLAGS = $(RTEMS_RELLDFLAGS)
 
