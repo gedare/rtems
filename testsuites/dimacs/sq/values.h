@@ -1,1 +1,2 @@
-/home/gedare/work/research/gab_papers/dissertation/code/mlb-dimacs/sq-rtems/values.h
+#define MAXLONG                 2147483648
+#define atoll (long long) atof

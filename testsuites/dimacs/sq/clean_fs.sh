@@ -1,1 +1,4 @@
-/home/gedare/work/research/gab_papers/dissertation/code/mlb-dimacs/sq-rtems/clean_fs.sh
+#!/bin/bash
+
+rm FileSystemImage FileSystemImage.c FileSystemImage.h
+

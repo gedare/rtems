@@ -1,1 +1,8 @@
-/home/gedare/work/research/gab_papers/dissertation/code/mlb-dimacs/sq-rtems/generate_fs.sh
+#!/bin/bash
+
+# generate filesystem
+cd files
+tar -cvf ../FileSystemImage --exclude CVS --exclude .cvsignore --exclude .svn .
+cd ..
+rtems-bin2c FileSystemImage FileSystemImage
+
