@@ -18,7 +18,6 @@
 #include "tmacros.h"
 
 /* fs includes */
-#include "FileSystemImage.h"
 #include <rtems/untar.h>
 
 /* functions */
