@@ -3,7 +3,6 @@
 ##
 
 
-
 rtems_tests_PROGRAMS = stlheap
 stlheap_SOURCES = ../shared/init.c ../shared/pqbench.h \
 									../shared/workload.c ../shared/workload.h \
@@ -17,7 +16,6 @@ stlheap_SOURCES = ../shared/init.c ../shared/pqbench.h \
 include $(RTEMS_ROOT)/make/custom/@RTEMS_BSP@.cfg
 include $(top_srcdir)/../automake/compile.am
 include $(top_srcdir)/../automake/leaf.am
-
 
 
 AM_CPPFLAGS += -I$(top_srcdir)/../support/include

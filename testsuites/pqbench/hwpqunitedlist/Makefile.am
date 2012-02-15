@@ -3,7 +3,6 @@
 ##
 
 
-
 rtems_tests_PROGRAMS = hwpqunitedlist
 hwpqunitedlist_SOURCES = ../shared/init.c ../shared/pqbench.h \
  									../shared/workload.c ../shared/workload.h \
@@ -16,7 +15,6 @@ hwpqunitedlist_SOURCES = ../shared/init.c ../shared/pqbench.h \
 include $(RTEMS_ROOT)/make/custom/@RTEMS_BSP@.cfg
 include $(top_srcdir)/../automake/compile.am
 include $(top_srcdir)/../automake/leaf.am
-
 
 
 LINK_OBJS = $(hwpqunitedlist_OBJECTS) $(hwpqunitedlist_LDADD)

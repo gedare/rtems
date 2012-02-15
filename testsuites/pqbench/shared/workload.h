@@ -1,1 +1,11 @@
-/home/gedare/work/research/gab_papers/dissertation/code/pqbench/pqbench/shared/workload.h
+
+#ifndef _WORKLOAD_H_
+#define _WORKLOAD_H_
+
+void initialize( void );
+
+void warmup( void );
+
+void work( void );
+
+#endif

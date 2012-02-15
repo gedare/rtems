@@ -3,7 +3,6 @@
 ##
 
 
-
 rtems_tests_PROGRAMS = rbtree
 rbtree_SOURCES = ../shared/init.c ../shared/pqbench.h \
  									../shared/workload.c ../shared/workload.h \
@@ -17,7 +16,6 @@ rbtree_SOURCES = ../shared/init.c ../shared/pqbench.h \
 include $(RTEMS_ROOT)/make/custom/@RTEMS_BSP@.cfg
 include $(top_srcdir)/../automake/compile.am
 include $(top_srcdir)/../automake/leaf.am
-
 
 
 LINK_OBJS = $(rbtree_OBJECTS) $(rbtree_LDADD)
