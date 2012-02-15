@@ -1,1 +1,22 @@
-/home/gedare/work/research/gab_papers/dissertation/code/pqbench/mpqbench/Makefile.am
+##
+## $Id$
+##
+
+ACLOCAL_AMFLAGS = -I ../aclocal
+
+SUBDIRS = miheap msplay \
+					mhwpqsplitheap mhwpqunitedlist
+#					mrbtree
+
+if MPTESTS
+endif
+
+if CXXTESTS
+#SUBDIRS += mstlheap
+endif
+
+if NETTESTS
+endif
+
+include $(top_srcdir)/../automake/subdirs.am
+include $(top_srcdir)/../automake/local.am
