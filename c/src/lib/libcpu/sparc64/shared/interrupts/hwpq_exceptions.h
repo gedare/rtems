@@ -11,6 +11,8 @@ extern "C" {
 
 void sparc64_hwpq_initialize(void);
 
+void sparc64_hwpq_exception_handler(uint64_t vector, CPU_Interrupt_frame *istate);
+
 // formerly sparc64_interrupt_1
 void sparc64_hwpq_spill_fill(uint64_t vector, CPU_Interrupt_frame *istate);
 
