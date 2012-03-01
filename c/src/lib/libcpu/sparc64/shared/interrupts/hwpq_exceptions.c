@@ -80,6 +80,8 @@ void sparc64_hwpq_exception_handler(
   trap_idx = ((trap_context)&(~0))>>20; // what is trying to be used?
   trap_operation = (trap_context)&~(~0 << (3 + 1)); // what is the op?
 
+  /* handle the context switch first */
+  /* TODO: defer / deny context switch?? */
   if ( trap_idx != queue_idx ) {
 
     if ( trap_operation == 3 ) {

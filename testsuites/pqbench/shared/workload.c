@@ -123,8 +123,10 @@ void work( void ) {
 #if defined(GAB_PRINT)
   printf("Work: %d\n", PQ_WORK_OPS);
 #endif
+  MAGIC(1);
   for ( i = 0; i < PQ_WORK_OPS; i++ ) {
     execute( );
+    MAGIC(1);
   }
 #if defined(GAB_CHECK)
   drain_and_check();

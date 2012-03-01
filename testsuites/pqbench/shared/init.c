@@ -24,7 +24,7 @@ rtems_task Init(
   asm volatile("break_start_opal:");
 
   /* reach PQ steady state */
-  warmup();MAGIC(1);
+  warmup();
 
   /* workload */
   work();

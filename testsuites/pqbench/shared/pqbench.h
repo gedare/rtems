@@ -7,7 +7,7 @@ extern "C" {
 
 //#define GAB_PRINT
 //#define GAB_DEBUG
-#define GAB_CHECK
+//#define GAB_CHECK
 
 //#define USE_NEW_FREELIST
 
