@@ -2,7 +2,7 @@
 #include "../shared/pqbench.h"
 
 /* PQ implementation */
-#include "../../hwpqlib/hwpqlib.h"
+#include <libcpu/hwpqlib.h> /* bad */
 
 /* test interface */
 void pq_initialize( int size ) {

@@ -7,8 +7,7 @@ rtems_tests_PROGRAMS = hwpq
 hwpq_SOURCES = ../shared/init.c ../shared/pqbench.h \
  									../shared/workload.c ../shared/workload.h \
 									../shared/params.h ../shared/params.i \
-									pqbench.c system.h \
-									../../hwpqlib/hwpqlib.c ../../hwpqlib/hwpqlib.h
+									pqbench.c system.h
 
 #dist_rtems_tests_DATA = hwpq.scn
 #dist_rtems_tests_DATA += hwpq.doc

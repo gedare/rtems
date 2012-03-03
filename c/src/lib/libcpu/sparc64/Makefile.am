@@ -34,6 +34,8 @@ shared_sparc64_syscall_rel_LDFLAGS = $(RTEMS_RELLDFLAGS)
 
 noinst_PROGRAMS += shared/interrupts.rel
 shared_interrupts_rel_SOURCES = shared/interrupts/installisrentries.c
+shared_interrupts_rel_SOURCES += shared/interrupts/hwpqlib.c
+shared_interrupts_rel_SOURCES += shared/interrupts/hwpqlib.h
 shared_interrupts_rel_SOURCES += shared/interrupts/hwpq_exceptions.c
 shared_interrupts_rel_SOURCES += shared/interrupts/hwpq_exceptions.h
 shared_interrupts_rel_SOURCES += shared/interrupts/freelist.c
