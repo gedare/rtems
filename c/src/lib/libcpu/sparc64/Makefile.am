@@ -20,6 +20,7 @@ include_libcpu_HEADERS = ../shared/include/cache.h
 include_libcpu_HEADERS += shared/interrupts/spillpq.h
 include_libcpu_HEADERS += shared/interrupts/splitheappq.h
 include_libcpu_HEADERS += shared/interrupts/unitedlistpq.h
+include_libcpu_HEADERS += shared/interrupts/hwpqlib.h
 
 noinst_PROGRAMS += shared/shared-score.rel
 shared_shared_score_rel_SOURCES = shared/score/cpu.c shared/score/interrupt.S

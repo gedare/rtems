@@ -2,9 +2,9 @@
  *  Some helper functions for setting up the HWPQ exception handling.
  *  Optional interposition functions for PQ operations.
  */
-#include <libcpu/spillpq.h>     /* bad */
-#include <libcpu/unitedlistpq.h> /* bad */
-#include <libcpu/splitheappq.h> /* bad */
+#include "spillpq.h"
+#include "unitedlistpq.h"
+#include "splitheappq.h"
 
 // The kinds of hwpq spill structures that are supported.
 typedef enum {
