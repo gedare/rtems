@@ -32,7 +32,7 @@ void sparc64_print_all_queues()
 }
 
 static inline 
-int sparc64_unitedlistpq_initialize( int qid, size_t max_pq_size )
+uint64_t sparc64_unitedlistpq_initialize( int qid, size_t max_pq_size )
 {
   int i;
   uint64_t reg = 0;
@@ -50,7 +50,11 @@ int sparc64_unitedlistpq_initialize( int qid, size_t max_pq_size )
 // to have lower priority than the lowest priority node in the hwpq; this is
 // simple when there is not concurrent access to a pq in the hwpq.
 static inline 
-int sparc64_unitedlistpq_spill_node(int queue_idx, Chain_Control *spill_pq, Chain_Node *iter)
+int sparc64_unitedlistpq_spill_node(
+    int queue_idx,
+    Chain_Control *spill_pq,
+    Chain_Node *iter
+)
 {
   uint64_t kv;
   uint32_t key, val;
@@ -116,7 +120,7 @@ int sparc64_unitedlistpq_fill_node(int queue_idx, Chain_Control *spill_pq)
 }
 
 static inline 
-int sparc64_unitedlistpq_handle_spill( int queue_idx )
+uint64_t sparc64_unitedlistpq_handle_spill( int queue_idx, uint64_t ignored )
 {
   int i = 0;
   Chain_Control *spill_pq;
@@ -139,7 +143,7 @@ int sparc64_unitedlistpq_handle_spill( int queue_idx )
  * and fills them into the hw pq.
  */
 static inline 
-int sparc64_unitedlistpq_handle_fill(int queue_idx)
+uint64_t sparc64_unitedlistpq_handle_fill(int queue_idx, uint64_t ignored)
 {
  Chain_Control *spill_pq;
  int            i = 0;
@@ -156,7 +160,7 @@ int sparc64_unitedlistpq_handle_fill(int queue_idx)
 }
 
 static inline 
-int sparc64_unitedlistpq_handle_extract(int queue_idx)
+uint64_t sparc64_unitedlistpq_handle_extract(int queue_idx, uint64_t ignored)
 {
   uint64_t kv;
   uint32_t key;
@@ -194,7 +198,7 @@ int sparc64_unitedlistpq_handle_extract(int queue_idx)
 }
 
 static inline 
-int sparc64_unitedlistpq_drain( int qid )
+uint64_t sparc64_unitedlistpq_drain( int qid, uint64_t ignored )
 {
   Chain_Node *tmp;
   Chain_Control *spill_pq;
@@ -207,7 +211,7 @@ int sparc64_unitedlistpq_drain( int qid )
 }
 
 static inline 
-int sparc64_unitedlistpq_context_switch( int qid )
+uint64_t sparc64_unitedlistpq_context_switch( int qid, uint64_t ignored )
 {
   Chain_Control *spill_pq;
   Chain_Node *iter;

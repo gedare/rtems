@@ -17,10 +17,11 @@ extern "C" {
 
 #include <rtems/bspIo.h>
 
-typedef int (*SpillPQ_Function)(int argument);
+typedef uint64_t (*SpillPQ_Function)(int qid, uint64_t arg);
 
+/* TODO: make all spill pq operations available */
 typedef struct {
-  int (*initialize)(int, size_t);
+  SpillPQ_Function  initialize;
   SpillPQ_Function  spill;
   SpillPQ_Function  fill;
   SpillPQ_Function  extract;

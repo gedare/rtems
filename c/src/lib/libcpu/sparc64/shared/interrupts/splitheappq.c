@@ -189,7 +189,7 @@ int sparc64_splitheappq_fill_node(int qid)
 }
 
 static inline 
-int sparc64_splitheappq_handle_spill( int qid )
+uint64_t sparc64_splitheappq_handle_spill( int qid, uint64_t ignored )
 {
   int i = 0;
 
@@ -207,7 +207,7 @@ int sparc64_splitheappq_handle_spill( int qid )
  * and fills them into the hw pq.
  */
 static inline 
-int sparc64_splitheappq_handle_fill(int qid)
+uint64_t sparc64_splitheappq_handle_fill(int qid, uint64_t ignored )
 {
  int            i = 0;
 
@@ -221,7 +221,7 @@ int sparc64_splitheappq_handle_fill(int qid)
 }
 
 static inline 
-int sparc64_splitheappq_handle_extract(int qid)
+uint64_t sparc64_splitheappq_handle_extract(int qid, uint64_t ignored )
 {
   uint64_t kv;
   uint32_t key;
@@ -253,14 +253,14 @@ int sparc64_splitheappq_handle_extract(int qid)
 }
 
 static inline 
-int sparc64_splitheappq_drain( int qid )
+uint64_t sparc64_splitheappq_drain( int qid, uint64_t ignored )
 {
   heap_current_size[qid] = 0;
   return 0;
 }
 
 static inline 
-int sparc64_splitheappq_context_switch( int qid )
+uint64_t sparc64_splitheappq_context_switch( int qid, uint64_t ignored )
 {
   int i = 0;
 
