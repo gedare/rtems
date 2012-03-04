@@ -43,6 +43,31 @@ uint64_t sparc64_unitedlistpq_initialize( int qid, size_t max_pq_size )
   return 0;
 }
 
+uint64_t sparc64_unitedlistpq_insert(int queue_idx, uint64_t kv)
+{
+
+}
+
+uint64_t sparc64_unitedlistpq_first(int queue_idx, uint64_t kv)
+{
+  Chain_Node *first;
+  Chain_Control *spill_pq;
+  pq_node *p;
+  spill_pq = &queues[queue_idx];
+  first = _Chain_First(spill_pq);
+  if ( _Chain_Is_tail(spill_pq, first) ) {
+    return (uint64_t)-1;
+  }
+  p = (pq_node*)first;
+
+  return pq_node_to_kv(p);
+}
+
+uint64_t sparc64_unitedlistpq_pop(int queue_idx, uint64_t kv)
+{
+
+}
+
 uint64_t sparc64_unitedlistpq_handle_extract(int queue_idx, uint64_t kv)
 {
   uint32_t key;
@@ -232,9 +257,9 @@ uint64_t sparc64_unitedlistpq_context_switch( int qid, uint64_t ignored )
 sparc64_spillpq_operations sparc64_unitedlistpq_ops = {
   sparc64_unitedlistpq_initialize,
   sparc64_spillpq_null_handler,
+  sparc64_unitedlistpq_first,
+  sparc64_spillpq_null_handler,
   sparc64_unitedlistpq_handle_extract,
-  sparc64_spillpq_null_handler,
-  sparc64_spillpq_null_handler,
   sparc64_unitedlistpq_handle_spill,
   sparc64_unitedlistpq_handle_fill,
   sparc64_unitedlistpq_drain,
