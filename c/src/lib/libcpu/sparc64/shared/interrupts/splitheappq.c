@@ -137,7 +137,6 @@ uint64_t heap_pop_min( int qid ) {
   return kv;
 }
 
-static inline 
 int sparc64_splitheappq_initialize( int qid, size_t max_pq_size )
 {
   int i;
@@ -148,6 +147,35 @@ int sparc64_splitheappq_initialize( int qid, size_t max_pq_size )
   _Chain_Initialize_empty(&queues[qid]);
   HWDS_GET_SIZE_LIMIT(qid,reg);
   spillpq_queue_max_size[qid] = reg;
+
+  return 0;
+}
+
+uint64_t sparc64_splitheappq_handle_extract(int qid, uint64_t kv )
+{
+  uint32_t key;
+  uint32_t val;
+  int i;
+
+  key = kv_key(kv);
+  val = kv_value(kv);
+
+  DPRINTK("software extract: queue: %d\tnode: %x\tprio: %d\n",
+      qid,val,key);
+
+  // linear search, ugh
+  for ( i = 0; i < heap_current_size[qid]; i++ ) {
+    if ( the_heap[qid][i]->key == key ) {
+      heap_remove(qid,i);
+      i--;
+      break;
+    }
+  }
+
+  if ( i == heap_current_size[qid]) {
+    DPRINTK("Failed software extract: %d\t%X\n", key, val);
+    return -1;
+  }
 
   return 0;
 }
@@ -187,7 +215,6 @@ int sparc64_splitheappq_fill_node(int qid)
   return 0;
 }
 
-static inline 
 uint64_t sparc64_splitheappq_handle_spill( int qid, uint64_t count )
 {
   int i = 0;
@@ -205,7 +232,6 @@ uint64_t sparc64_splitheappq_handle_spill( int qid, uint64_t count )
  * Current algorithm pulls nodes from the head of the sorted sw pq
  * and fills them into the hw pq.
  */
-static inline 
 uint64_t sparc64_splitheappq_handle_fill(int qid, uint64_t count )
 {
   int i = 0;
@@ -218,44 +244,12 @@ uint64_t sparc64_splitheappq_handle_fill(int qid, uint64_t count )
   return 0;
 }
 
-static inline 
-uint64_t sparc64_splitheappq_handle_extract(int qid, uint64_t kv )
-{
-  uint32_t key;
-  uint32_t val;
-  int i;
-
-  key = kv_key(kv);
-  val = kv_value(kv);
-
-  DPRINTK("software extract: queue: %d\tnode: %x\tprio: %d\n",
-      qid,val,key);
-
-  // linear search, ugh
-  for ( i = 0; i < heap_current_size[qid]; i++ ) {
-    if ( the_heap[qid][i]->key == key ) {
-      heap_remove(qid,i);
-      i--;
-      break;
-    }
-  }
-
-  if ( i == heap_current_size[qid]) {
-    DPRINTK("Failed software extract: %d\t%X\n", key, val);
-    return -1;
-  }
-
-  return 0;
-}
-
-static inline 
 uint64_t sparc64_splitheappq_drain( int qid, uint64_t ignored )
 {
   heap_current_size[qid] = 0;
   return 0;
 }
 
-static inline 
 uint64_t sparc64_splitheappq_context_switch( int qid, uint64_t ignored )
 {
   int i = 0;
@@ -269,11 +263,11 @@ uint64_t sparc64_splitheappq_context_switch( int qid, uint64_t ignored )
 }
 
 sparc64_spillpq_operations sparc64_splitheappq_ops = {
+  sparc64_splitheappq_initialize,
   sparc64_spillpq_null_handler,
   sparc64_splitheappq_handle_extract,
   sparc64_spillpq_null_handler,
   sparc64_spillpq_null_handler,
-  sparc64_splitheappq_initialize,
   sparc64_splitheappq_handle_spill,
   sparc64_splitheappq_handle_fill,
   sparc64_splitheappq_drain,

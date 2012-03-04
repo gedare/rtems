@@ -30,7 +30,6 @@ void sparc64_print_all_queues()
   }
 }
 
-static inline 
 uint64_t sparc64_unitedlistpq_initialize( int qid, size_t max_pq_size )
 {
   int i;
@@ -41,6 +40,41 @@ uint64_t sparc64_unitedlistpq_initialize( int qid, size_t max_pq_size )
   HWDS_GET_SIZE_LIMIT(qid,reg);
   spillpq_queue_max_size[qid] = reg;
   DPRINTK("%d\tSize: %ld\n", qid, reg);
+  return 0;
+}
+
+uint64_t sparc64_unitedlistpq_handle_extract(int queue_idx, uint64_t kv)
+{
+  uint32_t key;
+  uint32_t val;
+  Chain_Node *iter;
+  Chain_Control *spill_pq;
+
+  key = kv_key(kv);
+  val = kv_value(kv);
+
+  DPRINTK("%d\tsoftware extract:\t%X\tprio: %d\n",queue_idx, key, val);
+
+  // linear search, ugh
+  spill_pq = &queues[queue_idx];
+  iter = _Chain_First(spill_pq);
+  while(!_Chain_Is_tail(spill_pq,iter)) {
+    pq_node *p = (pq_node*)iter;
+    if (p->val == val) {
+      if (_Chain_Is_first(iter))
+        _Chain_Get_first_unprotected(spill_pq);
+      else
+        _Chain_Extract_unprotected(iter);
+      freelist_put_node(&free_nodes[queue_idx], iter);
+      break;
+    }
+    iter = _Chain_Next(iter);
+  }
+
+  if (_Chain_Is_tail(spill_pq,iter)) {
+    DPRINTK("%d\tFailed software extract: %d\t%X\n",queue_idx, key,val);
+    return -1;
+  }
   return 0;
 }
 
@@ -118,7 +152,6 @@ int sparc64_unitedlistpq_fill_node(int queue_idx, Chain_Control *spill_pq)
   return 0;
 }
 
-static inline 
 uint64_t sparc64_unitedlistpq_handle_spill( int queue_idx, uint64_t count )
 {
   int i = 0;
@@ -141,7 +174,6 @@ uint64_t sparc64_unitedlistpq_handle_spill( int queue_idx, uint64_t count )
  * Current algorithm pulls nodes from the head of the sorted sw pq
  * and fills them into the hw pq.
  */
-static inline 
 uint64_t sparc64_unitedlistpq_handle_fill(int queue_idx, uint64_t count)
 {
  Chain_Control *spill_pq;
@@ -157,43 +189,6 @@ uint64_t sparc64_unitedlistpq_handle_fill(int queue_idx, uint64_t count)
   return 0;
 }
 
-static inline 
-uint64_t sparc64_unitedlistpq_handle_extract(int queue_idx, uint64_t kv)
-{
-  uint32_t key;
-  uint32_t val;
-  Chain_Node *iter;
-  Chain_Control *spill_pq;
-
-  key = kv_key(kv);
-  val = kv_value(kv);
-
-  DPRINTK("%d\tsoftware extract:\t%X\tprio: %d\n",queue_idx, key, val);
-
-  // linear search, ugh
-  spill_pq = &queues[queue_idx];
-  iter = _Chain_First(spill_pq);
-  while(!_Chain_Is_tail(spill_pq,iter)) {
-    pq_node *p = (pq_node*)iter;
-    if (p->val == val) {
-      if (_Chain_Is_first(iter))
-        _Chain_Get_first_unprotected(spill_pq);
-      else
-        _Chain_Extract_unprotected(iter);
-      freelist_put_node(&free_nodes[queue_idx], iter);
-      break;
-    }
-    iter = _Chain_Next(iter);
-  }
-
-  if (_Chain_Is_tail(spill_pq,iter)) {
-    DPRINTK("%d\tFailed software extract: %d\t%X\n",queue_idx, key,val);
-    return -1;
-  }
-  return 0;
-}
-
-static inline 
 uint64_t sparc64_unitedlistpq_drain( int qid, uint64_t ignored )
 {
   Chain_Node *tmp;
@@ -206,7 +201,6 @@ uint64_t sparc64_unitedlistpq_drain( int qid, uint64_t ignored )
   return 0;
 }
 
-static inline 
 uint64_t sparc64_unitedlistpq_context_switch( int qid, uint64_t ignored )
 {
   Chain_Control *spill_pq;
@@ -236,11 +230,11 @@ uint64_t sparc64_unitedlistpq_context_switch( int qid, uint64_t ignored )
   return 0;
 }
 sparc64_spillpq_operations sparc64_unitedlistpq_ops = {
+  sparc64_unitedlistpq_initialize,
   sparc64_spillpq_null_handler,
   sparc64_unitedlistpq_handle_extract,
   sparc64_spillpq_null_handler,
   sparc64_spillpq_null_handler,
-  sparc64_unitedlistpq_initialize,
   sparc64_unitedlistpq_handle_spill,
   sparc64_unitedlistpq_handle_fill,
   sparc64_unitedlistpq_drain,
