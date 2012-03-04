@@ -33,3 +33,8 @@ int sparc64_spillpq_context_switch( int queue_id)
   return spillpq_ops->context_switch(queue_id,0);
 }
 
+uint64_t sparc64_spillpq_null_handler(int qid, uint64_t arg)
+{
+  printk("%d\tNull handler called\n", qid);
+  while(1);
+}
