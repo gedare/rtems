@@ -238,6 +238,7 @@ uint64_t sparc64_unitedlistpq_context_switch( int qid, uint64_t ignored )
 sparc64_spillpq_operations sparc64_unitedlistpq_ops = {
   sparc64_unitedlistpq_handle_extract,
   sparc64_spillpq_null_handler,
+  sparc64_spillpq_null_handler,
   sparc64_unitedlistpq_initialize,
   sparc64_unitedlistpq_handle_spill,
   sparc64_unitedlistpq_handle_fill,

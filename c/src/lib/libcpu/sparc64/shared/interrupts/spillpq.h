@@ -23,6 +23,7 @@ typedef uint64_t (*SpillPQ_Function)(int qid, uint64_t arg);
 typedef struct {
   SpillPQ_Function  first;
   SpillPQ_Function  extract;
+  SpillPQ_Function  pop;
   SpillPQ_Function  initialize;
   SpillPQ_Function  spill;
   SpillPQ_Function  fill;
