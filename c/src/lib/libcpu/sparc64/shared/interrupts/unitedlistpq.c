@@ -2,9 +2,8 @@
 #include "freelist.h"
 #include "gabdebug.h"
 
-static Chain_Control queues[10];
-static size_t queue_max_size[10];
-static Freelist_Control free_nodes[10];
+static Chain_Control queues[NUM_QUEUES];
+static Freelist_Control free_nodes[NUM_QUEUES];
 
 typedef struct {
   Chain_Node Node;
@@ -18,7 +17,7 @@ void sparc64_print_all_queues()
   Chain_Node *iter;
   Chain_Control *spill_pq;
   int i,k;
-  for ( k = 0; k < 10; k++ ) {
+  for ( k = 0; k < NUM_QUEUES; k++ ) {
     spill_pq = &queues[k];
     iter = _Chain_First(spill_pq);
     i = 0;
@@ -40,7 +39,7 @@ uint64_t sparc64_unitedlistpq_initialize( int qid, size_t max_pq_size )
 
   _Chain_Initialize_empty(&queues[qid]);
   HWDS_GET_SIZE_LIMIT(qid,reg);
-  queue_max_size[qid] = reg;
+  spillpq_queue_max_size[qid] = reg;
   DPRINTK("%d\tSize: %ld\n", qid, reg);
   return 0;
 }
@@ -120,7 +119,7 @@ int sparc64_unitedlistpq_fill_node(int queue_idx, Chain_Control *spill_pq)
 }
 
 static inline 
-uint64_t sparc64_unitedlistpq_handle_spill( int queue_idx, uint64_t ignored )
+uint64_t sparc64_unitedlistpq_handle_spill( int queue_idx, uint64_t count )
 {
   int i = 0;
   Chain_Control *spill_pq;
@@ -131,7 +130,7 @@ uint64_t sparc64_unitedlistpq_handle_spill( int queue_idx, uint64_t ignored )
 
   iter = _Chain_Last(spill_pq);
   // pop elements off tail of hwpq, merge into software pq
-  while ( i < queue_max_size[queue_idx]/2 ) { // FIXME: how much to spill?
+  while ( i < count ) {
     i++;
     iter = sparc64_unitedlistpq_spill_node(queue_idx, spill_pq, iter);
   }
@@ -143,7 +142,7 @@ uint64_t sparc64_unitedlistpq_handle_spill( int queue_idx, uint64_t ignored )
  * and fills them into the hw pq.
  */
 static inline 
-uint64_t sparc64_unitedlistpq_handle_fill(int queue_idx, uint64_t ignored)
+uint64_t sparc64_unitedlistpq_handle_fill(int queue_idx, uint64_t count)
 {
  Chain_Control *spill_pq;
  int            i = 0;
@@ -151,8 +150,7 @@ uint64_t sparc64_unitedlistpq_handle_fill(int queue_idx, uint64_t ignored)
  spill_pq = &queues[queue_idx];
  DPRINTK("fill: queue: %d\n", queue_idx);
 
-  // FIXME: figure out what threshold to use (right now just half the queue)
-  while (!_Chain_Is_empty(spill_pq) && i < queue_max_size[queue_idx]/2) {
+  while (!_Chain_Is_empty(spill_pq) && i < count) {
     i++;
     sparc64_unitedlistpq_fill_node(queue_idx, spill_pq); /* FIXME */
   }
@@ -160,15 +158,13 @@ uint64_t sparc64_unitedlistpq_handle_fill(int queue_idx, uint64_t ignored)
 }
 
 static inline 
-uint64_t sparc64_unitedlistpq_handle_extract(int queue_idx, uint64_t ignored)
+uint64_t sparc64_unitedlistpq_handle_extract(int queue_idx, uint64_t kv)
 {
-  uint64_t kv;
   uint32_t key;
   uint32_t val;
   Chain_Node *iter;
   Chain_Control *spill_pq;
 
-  HWDS_GET_PAYLOAD(kv);
   key = kv_key(kv);
   val = kv_value(kv);
 

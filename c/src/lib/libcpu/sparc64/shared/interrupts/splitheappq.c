@@ -2,9 +2,8 @@
 #include "freelist.h"
 #include "gabdebug.h"
 
-static Chain_Control queues[10];
-static size_t queue_size[10];
-static Freelist_Control free_nodes[10];
+static Chain_Control queues[NUM_QUEUES];
+static Freelist_Control free_nodes[NUM_QUEUES];
 
 /* split pq: the heap */
 typedef struct {
@@ -14,8 +13,8 @@ typedef struct {
   uint32_t heap_index;
 } pq_node;
 
-static pq_node **the_heap[10]; // FIXME: need multiple heaps
-static int heap_current_size[10];
+static pq_node **the_heap[NUM_QUEUES];
+static int heap_current_size[NUM_QUEUES];
 
 /* heap implementation ... */
 #define HEAP_PARENT(i) (i>>1)
@@ -148,7 +147,7 @@ int sparc64_splitheappq_initialize( int qid, size_t max_pq_size )
 
   _Chain_Initialize_empty(&queues[qid]);
   HWDS_GET_SIZE_LIMIT(qid,reg);
-  queue_size[qid] = reg;
+  spillpq_queue_max_size[qid] = reg;
 
   return 0;
 }
@@ -189,12 +188,12 @@ int sparc64_splitheappq_fill_node(int qid)
 }
 
 static inline 
-uint64_t sparc64_splitheappq_handle_spill( int qid, uint64_t ignored )
+uint64_t sparc64_splitheappq_handle_spill( int qid, uint64_t count )
 {
   int i = 0;
 
   // pop elements off tail of hwpq, merge into software pq
-  while ( i < queue_size[qid]/2 ) { // FIXME
+  while ( i < count ) {
     i++;
     sparc64_splitheappq_spill_node(qid);
   }
@@ -207,12 +206,11 @@ uint64_t sparc64_splitheappq_handle_spill( int qid, uint64_t ignored )
  * and fills them into the hw pq.
  */
 static inline 
-uint64_t sparc64_splitheappq_handle_fill(int qid, uint64_t ignored )
+uint64_t sparc64_splitheappq_handle_fill(int qid, uint64_t count )
 {
- int            i = 0;
+  int i = 0;
 
-  // FIXME: figure out what threshold to use (right now just half the queue)
-  while (heap_current_size[qid] > 0 && i < queue_size[qid]/2) {
+  while (heap_current_size[qid] > 0 && i < count) {
     i++;
     sparc64_splitheappq_fill_node(qid);
   }
@@ -221,14 +219,12 @@ uint64_t sparc64_splitheappq_handle_fill(int qid, uint64_t ignored )
 }
 
 static inline 
-uint64_t sparc64_splitheappq_handle_extract(int qid, uint64_t ignored )
+uint64_t sparc64_splitheappq_handle_extract(int qid, uint64_t kv )
 {
-  uint64_t kv;
   uint32_t key;
   uint32_t val;
   int i;
 
-  HWDS_GET_PAYLOAD(kv);
   key = kv_key(kv);
   val = kv_value(kv);
 
