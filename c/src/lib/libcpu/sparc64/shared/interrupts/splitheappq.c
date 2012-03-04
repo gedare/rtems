@@ -269,6 +269,7 @@ uint64_t sparc64_splitheappq_context_switch( int qid, uint64_t ignored )
 }
 
 sparc64_spillpq_operations sparc64_splitheappq_ops = {
+  sparc64_spillpq_null_handler,
   sparc64_splitheappq_handle_extract,
   sparc64_spillpq_null_handler,
   sparc64_spillpq_null_handler,

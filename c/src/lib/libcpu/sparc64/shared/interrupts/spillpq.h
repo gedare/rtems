@@ -21,6 +21,7 @@ typedef uint64_t (*SpillPQ_Function)(int qid, uint64_t arg);
 
 /* TODO: make all spill pq operations available */
 typedef struct {
+  SpillPQ_Function  insert;
   SpillPQ_Function  first;
   SpillPQ_Function  extract;
   SpillPQ_Function  pop;
@@ -35,10 +36,13 @@ extern sparc64_spillpq_operations *spillpq_ops;
 #define NUM_QUEUES (10)
 extern size_t spillpq_queue_max_size[NUM_QUEUES];
 
+extern int sparc64_spillpq_handle_extract(int queue_idx, uint64_t kv);
+extern int sparc64_spillpq_insert(int queue_idx, uint64_t kv);
+extern uint64_t sparc64_spillpq_first(int queue_idx);
+extern uint64_t sparc64_spillpq_pop(int queue_idx);
 extern int sparc64_spillpq_initialize( int queue_idx, size_t max_pq_size );
 extern int sparc64_spillpq_handle_spill(int queue_idx, int count);
 extern int sparc64_spillpq_handle_fill(int queue_idx, int count);
-extern int sparc64_spillpq_handle_extract(int queue_idx, uint64_t kv);
 extern int sparc64_spillpq_drain( int queue_id );
 extern int sparc64_spillpq_context_switch( int queue_id );
 
