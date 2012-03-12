@@ -305,9 +305,8 @@ extern "C" {
         ); \
   } while (0)
 
-// this is a hack to check for an underfill condition
-// it is called after a software extraction
-#define HWDS_CHECK_UNDERFLOW( _queue ) \
+// FIXME: pass an amount to adjust by? Currently just decrements by 1
+#define HWDS_ADJUST_SPILL_COUNT( _queue ) \
   do { \
     __asm__ __volatile__ ( \
         "sll  %0, 20, %%l0\n\t" \

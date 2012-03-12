@@ -20,7 +20,7 @@ void sparc64_hwpq_initialize()
    );
 
   _CPU_ISR_install_vector(
-    SPARC_ASYNCHRONOUS_TRAP(0x43),
+    SPARC_SYNCHRONOUS_TRAP(0x43), /* Failover--emulate */
     sparc64_hwpq_exception_handler,
     &old
    );
@@ -82,7 +82,8 @@ void sparc64_hwpq_exception_handler(
     case 3: { // soft_extract
       uint64_t kv;
       HWDS_GET_PAYLOAD(kv);
-      sparc64_spillpq_handle_extract(queue_idx, kv);
+      if (!sparc64_spillpq_handle_extract(queue_idx, kv))
+        HWDS_ADJUST_SPILL_COUNT(queue_idx); // adjust spill count.
       break;
     }
     case 4: // context_switch
