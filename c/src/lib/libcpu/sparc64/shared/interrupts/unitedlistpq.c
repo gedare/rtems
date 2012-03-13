@@ -67,7 +67,7 @@ uint64_t sparc64_unitedlistpq_pop(int queue_idx, uint64_t kv)
 
 }
 
-uint64_t sparc64_unitedlistpq_handle_extract(int queue_idx, uint64_t kv)
+uint64_t sparc64_unitedlistpq_extract(int queue_idx, uint64_t kv)
 {
   uint32_t key;
   uint32_t val;
@@ -258,7 +258,7 @@ sparc64_spillpq_operations sparc64_unitedlistpq_ops = {
   sparc64_spillpq_null_handler,
   sparc64_unitedlistpq_first,
   sparc64_spillpq_null_handler,
-  sparc64_unitedlistpq_handle_extract,
+  sparc64_unitedlistpq_extract,
   sparc64_unitedlistpq_handle_spill,
   sparc64_unitedlistpq_handle_fill,
   sparc64_unitedlistpq_drain,

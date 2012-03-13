@@ -9,7 +9,6 @@ int sparc64_spillpq_hwpq_context_initialize( int hwpq_id )
   uint64_t reg;
   HWDS_GET_SIZE_LIMIT(hwpq_id, reg);
   hwpq_context.max_size = reg;
-  hwpq_context.current_size = 0;
 }
 
 int sparc64_spillpq_initialize( int queue_idx, size_t max_pq_size )
@@ -56,7 +55,7 @@ int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_context)
   switch (trap_operation) {
   
     case 3:
-      rv = sparc64_spillpq_handle_extract(queue_idx, kv);
+      rv = spillpq_ops->extract(queue_idx, kv);
       if (!rv)
         HWDS_ADJUST_SPILL_COUNT(queue_idx); // adjust spill count.
       break;
@@ -65,12 +64,6 @@ int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_context)
       printk("Unknown operation to emulate: %d\n", trap_operation);
       break;
   }
-  return rv;
-}
-int sparc64_spillpq_handle_extract(int queue_idx, uint64_t kv)
-{
-  int rv;
-  rv = spillpq_ops->extract(queue_idx, kv);
   return rv;
 }
 

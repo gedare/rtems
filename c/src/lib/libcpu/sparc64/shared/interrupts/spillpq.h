@@ -42,7 +42,6 @@ extern size_t spillpq_queue_max_size[NUM_QUEUES]; /* FIXME: swpq_context */
 // HWPQ context
 typedef struct {
   int max_size;
-  int current_size;
   int current_qid;
 } hwpq_context_t;
 
@@ -56,7 +55,6 @@ extern uint64_t sparc64_spillpq_pop(int queue_idx);
 extern int sparc64_spillpq_handle_spill(int queue_idx); /* FIXME: count */
 extern int sparc64_spillpq_handle_fill(int queue_idx);
 extern int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_ctx);
-extern int sparc64_spillpq_handle_extract(int queue_idx, uint64_t kv);
 extern int sparc64_spillpq_drain( int queue_id );
 extern int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_ctx );
 

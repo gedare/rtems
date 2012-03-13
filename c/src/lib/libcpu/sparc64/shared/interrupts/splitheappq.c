@@ -175,7 +175,7 @@ uint64_t sparc64_splitheappq_pop(int queue_idx, uint64_t kv)
 
 }
 
-uint64_t sparc64_splitheappq_handle_extract(int qid, uint64_t kv )
+uint64_t sparc64_splitheappq_extract(int qid, uint64_t kv )
 {
   uint32_t key;
   uint32_t val;
@@ -289,7 +289,7 @@ sparc64_spillpq_operations sparc64_splitheappq_ops = {
   sparc64_spillpq_null_handler,
   sparc64_splitheappq_first,
   sparc64_spillpq_null_handler,
-  sparc64_splitheappq_handle_extract,
+  sparc64_splitheappq_extract,
   sparc64_splitheappq_handle_spill,
   sparc64_splitheappq_handle_fill,
   sparc64_splitheappq_drain,
