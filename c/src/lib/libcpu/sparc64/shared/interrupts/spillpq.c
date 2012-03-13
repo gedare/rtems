@@ -54,7 +54,7 @@ int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_context)
       break;
 
     default:
-      printk("Uknown operation to emulate: %d\n", trap_operation);
+      printk("Unknown operation to emulate: %d\n", trap_operation);
       break;
   }
   return rv;
