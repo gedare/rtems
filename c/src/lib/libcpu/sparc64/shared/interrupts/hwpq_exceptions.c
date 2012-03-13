@@ -47,8 +47,6 @@ void sparc64_hwpq_exception_handler(
   uint64_t context;
   uint32_t queue_idx;
   uint32_t trap_context;
-  uint32_t trap_operation;
-  uint32_t trap_idx;
   int softint_bit = (vector - 0x40);
   int mask = (1<<softint_bit);
 
@@ -63,29 +61,21 @@ void sparc64_hwpq_exception_handler(
   HWDS_GET_CURRENT_ID(queue_idx); // what is loaded in hw?
 
   trap_context = (uint32_t)context;
-  trap_idx = ((trap_context)&(~0))>>20; // what is trying to be used?
-//  trap_operation = (trap_context)&~(~0 << (3 + 1)); // what is the op?
 
   /* handle the context switch first */
 
   switch (softint_bit) {
-    case 1: // need_spill
+    case 1:
       sparc64_spillpq_handle_spill(queue_idx);
       break;
-    case 2: // need_fill
+    case 2:
       sparc64_spillpq_handle_fill(queue_idx);
       break;
-    case 3: { // soft_extract: FIXME: emulate other operations?
-      uint64_t kv;
-      HWDS_GET_PAYLOAD(kv);
-      if (!sparc64_spillpq_handle_extract(queue_idx, kv))
-        HWDS_ADJUST_SPILL_COUNT(queue_idx); // adjust spill count.
+    case 3:
+      sparc64_spillpq_handle_failover(queue_idx, trap_context);
       break;
-    }
-    case 4: // context_switch
-      sparc64_spillpq_context_switch(queue_idx);
-      HWDS_SET_CURRENT_ID(trap_idx);
-      //sparc64_spillpq_handle_fill(trap_idx);
+    case 4:
+      sparc64_spillpq_context_switch(queue_idx, trap_context);
       break;
 
     default:

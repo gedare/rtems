@@ -53,11 +53,12 @@ extern int sparc64_spillpq_initialize( int queue_idx, size_t max_pq_size );
 extern int sparc64_spillpq_insert(int queue_idx, uint64_t kv);
 extern uint64_t sparc64_spillpq_first(int queue_idx);
 extern uint64_t sparc64_spillpq_pop(int queue_idx);
-extern int sparc64_spillpq_handle_extract(int queue_idx, uint64_t kv);
 extern int sparc64_spillpq_handle_spill(int queue_idx); /* FIXME: count */
 extern int sparc64_spillpq_handle_fill(int queue_idx);
+extern int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_ctx);
+extern int sparc64_spillpq_handle_extract(int queue_idx, uint64_t kv);
 extern int sparc64_spillpq_drain( int queue_id );
-extern int sparc64_spillpq_context_switch( int queue_id );
+extern int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_ctx );
 
 extern uint64_t sparc64_spillpq_null_handler(int qid, uint64_t arg);
 

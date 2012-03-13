@@ -34,6 +34,31 @@ uint64_t sparc64_spillpq_pop(int queue_idx)
   return spillpq_ops->pop(queue_idx, 0);
 }
 
+int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_context)
+{
+  uint32_t trap_operation;
+  uint32_t trap_idx;
+  uint64_t kv;
+  int rv = 0;
+  trap_idx = ((trap_context)&(~0))>>20; // what is trying to be used?
+  trap_operation = (trap_context)&~(~0 << (3 + 1)); // what is the op?
+  
+  HWDS_GET_PAYLOAD(kv);
+
+  switch (trap_operation) {
+  
+    case 3:
+      rv = sparc64_spillpq_handle_extract(queue_idx, kv);
+      if (!rv)
+        HWDS_ADJUST_SPILL_COUNT(queue_idx); // adjust spill count.
+      break;
+
+    default:
+      printk("Uknown operation to emulate: %d\n", trap_operation);
+      break;
+  }
+  return rv;
+}
 int sparc64_spillpq_handle_extract(int queue_idx, uint64_t kv)
 {
   return spillpq_ops->extract(queue_idx, kv);
@@ -56,9 +81,19 @@ int sparc64_spillpq_drain( int queue_id )
   return spillpq_ops->drain(queue_id,0);
 }
 
-int sparc64_spillpq_context_switch( int queue_id)
+int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_context)
 {
-  return spillpq_ops->context_switch(queue_id,0);
+  uint32_t trap_operation;
+  uint32_t trap_idx;
+  int rv;
+  
+  trap_idx = ((trap_context)&(~0))>>20;
+  trap_operation = (trap_context)&~(~0 << (3 + 1));
+  
+  // FIXME: choose whether or not to context switch.
+  rv = spillpq_ops->context_switch(from_idx, 0);
+  HWDS_SET_CURRENT_ID(trap_idx);
+  return rv;
 }
 
 uint64_t sparc64_spillpq_null_handler(int qid, uint64_t arg)
