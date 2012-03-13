@@ -7,6 +7,7 @@ void sparc64_hwpq_initialize()
 {
   proc_ptr old;
 
+  /* FIXME: make these all synchronous and failover? */
   _CPU_ISR_install_vector(
     SPARC_ASYNCHRONOUS_TRAP(0x41),
     sparc64_hwpq_exception_handler,

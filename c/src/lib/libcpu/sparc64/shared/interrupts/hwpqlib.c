@@ -13,7 +13,7 @@ static inline void splitheap_initialize( int id, int size ) {
   sparc64_spillpq_initialize(id, size);
 }
 
-void hwpqlib_initialize( hwpqlib_spillpq_t type, int hwpq_id, int size ) {
+void hwpqlib_pq_initialize( hwpqlib_spillpq_t type, int hwpq_id, int size ) {
   switch(type) {
     case HWPQLIB_SPILLPQ_UNITEDLIST:
       unitedlist_initialize(hwpq_id, size);

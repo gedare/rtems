@@ -6,7 +6,7 @@
 
 /* test interface */
 void pq_initialize( int size ) {
-  hwpqlib_initialize( HWPQLIB_SPILLPQ_UNITEDLIST, 4, size ); // FIXME: PQ number
+  hwpqlib_pq_initialize( HWPQLIB_SPILLPQ_UNITEDLIST, 4, size ); // FIXME: PQ number
 }
 
 void pq_insert( uint64_t p ) {

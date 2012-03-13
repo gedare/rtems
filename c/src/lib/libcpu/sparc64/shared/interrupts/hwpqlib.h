@@ -13,8 +13,11 @@ typedef enum {
   HWPQLIB_SPILLPQ_NONE
 } hwpqlib_spillpq_t;
 
-// Initialize exception handler callouts
-void hwpqlib_initialize( hwpqlib_spillpq_t type, int pq_id, int size );
+// initialize the hwpqlib
+void hwpqlib_initialize( int hwpq_id );
+
+// Initialize spillpq callouts
+void hwpqlib_pq_initialize( hwpqlib_spillpq_t type, int pq_id, int size );
 
 // Interposition functions for PQ operations
 void hwpqlib_insert( int pq_id, int key, int value );
