@@ -306,13 +306,13 @@ extern "C" {
   } while (0)
 
 // FIXME: pass an amount to adjust by? Currently just decrements by 1
-#define HWDS_ADJUST_SPILL_COUNT( _queue ) \
+#define HWDS_ADJUST_SPILL_COUNT( _queue, _amt ) \
   do { \
     __asm__ __volatile__ ( \
         "sll  %0, 20, %%l0\n\t" \
         "or   %%l0, 11, %%l0\n\t" \
-        "impdep2  %%g0, %%l0, %%g0" \
-        : : "r" (_queue) : "l0" ); \
+        "impdep2  %1, %%l0, %%g0" \
+        : : "r" (_queue), "r" (_amt) : "l0" ); \
   } while (0)
 
 // query the hardware for size constraints
