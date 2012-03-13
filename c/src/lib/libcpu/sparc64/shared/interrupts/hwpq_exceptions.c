@@ -30,6 +30,8 @@ void sparc64_hwpq_initialize()
     sparc64_hwpq_exception_handler,
     &old
    );
+
+  sparc64_spillpq_hwpq_context_initialize(0); /* there's only one hwpq...*/
 }
 
 void sparc64_hwpq_drain_queue( int qid ) {

@@ -35,8 +35,9 @@ typedef struct {
 } sparc64_spillpq_operations;
 
 extern sparc64_spillpq_operations *spillpq_ops;
+
 #define NUM_QUEUES (10)
-extern size_t spillpq_queue_max_size[NUM_QUEUES];
+extern size_t spillpq_queue_max_size[NUM_QUEUES]; /* FIXME: swpq_context */
 
 // HWPQ context
 typedef struct {
@@ -46,6 +47,7 @@ typedef struct {
 } hwpq_context_t;
 
 extern hwpq_context_t hwpq_context;
+extern int sparc64_spillpq_hwpq_context_initialize( int hwpq_id );
 
 extern int sparc64_spillpq_initialize( int queue_idx, size_t max_pq_size );
 extern int sparc64_spillpq_insert(int queue_idx, uint64_t kv);

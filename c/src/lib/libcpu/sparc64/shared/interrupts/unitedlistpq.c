@@ -37,8 +37,7 @@ uint64_t sparc64_unitedlistpq_initialize( int qid, size_t max_pq_size )
   freelist_initialize(&free_nodes[qid], sizeof(pq_node), max_pq_size);
 
   _Chain_Initialize_empty(&queues[qid]);
-  HWDS_GET_SIZE_LIMIT(qid,reg);
-  spillpq_queue_max_size[qid] = reg;
+  spillpq_queue_max_size[qid] = max_pq_size;
   DPRINTK("%d\tSize: %ld\n", qid, reg);
   return 0;
 }
