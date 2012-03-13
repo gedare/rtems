@@ -57,7 +57,7 @@ int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_context)
     case 3:
       rv = spillpq_ops->extract(queue_idx, kv);
       if (!rv)
-        HWDS_ADJUST_SPILL_COUNT(queue_idx); // adjust spill count.
+        HWDS_ADJUST_SPILL_COUNT(queue_idx, (int32_t)-1); // adjust spill count.
       break;
 
     default:
@@ -102,6 +102,7 @@ int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_context)
   // FIXME: choose whether or not to context switch.
   rv = spillpq_ops->context_switch(from_idx, 0);
   HWDS_SET_CURRENT_ID(trap_idx);
+  hwpq_context.current_qid = trap_idx;
   return rv;
 }
 

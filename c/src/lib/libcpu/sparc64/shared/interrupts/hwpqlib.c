@@ -1,6 +1,8 @@
 
 #include <hwpqlib.h>
 
+// TODO: extra hwpq state can be tracked here.
+
 static inline void unitedlist_initialize( int id, int size ) {
   spillpq_ops = &sparc64_unitedlistpq_ops;
   sparc64_spillpq_initialize(id, size);
