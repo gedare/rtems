@@ -14,24 +14,32 @@ int sparc64_spillpq_hwpq_context_initialize( int hwpq_id )
 
 int sparc64_spillpq_initialize( int queue_idx, size_t max_pq_size )
 {
-  return spillpq_ops->initialize(queue_idx, max_pq_size);
+  int rv;
+  rv = spillpq_ops->initialize(queue_idx, max_pq_size);
+  return rv;
 }
 
 int sparc64_spillpq_insert(int queue_idx, uint64_t kv)
 {
   // FIXME: update spill count
-  return spillpq_ops->insert(queue_idx, kv);
+  int rv;
+  rv = spillpq_ops->insert(queue_idx, kv);
+  return rv;
 }
 
 uint64_t sparc64_spillpq_first(int queue_idx)
 {
-  return spillpq_ops->first(queue_idx, 0);
+  uint64_t rv;
+  rv = spillpq_ops->first(queue_idx, 0);
+  return rv;
 }
 
 uint64_t sparc64_spillpq_pop(int queue_idx)
 {
   // fixme: update spill count
-  return spillpq_ops->pop(queue_idx, 0);
+  uint64_t rv;
+  rv = spillpq_ops->pop(queue_idx, 0);
+  return rv;
 }
 
 int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_context)
@@ -61,24 +69,32 @@ int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_context)
 }
 int sparc64_spillpq_handle_extract(int queue_idx, uint64_t kv)
 {
-  return spillpq_ops->extract(queue_idx, kv);
+  int rv;
+  rv = spillpq_ops->extract(queue_idx, kv);
+  return rv;
 }
 
 int sparc64_spillpq_handle_spill(int queue_idx)
 {
   /* FIXME: make count arg more flexible */
-  return spillpq_ops->spill(queue_idx, hwpq_context.max_size/2);
+  int rv;
+  rv = spillpq_ops->spill(queue_idx, hwpq_context.max_size/2);
+  return rv;
 }
 
 int sparc64_spillpq_handle_fill(int queue_idx)
 {
   /* FIXME: make count arg more flexible */
-  return spillpq_ops->fill(queue_idx, hwpq_context.max_size/2);
+  int rv;
+  rv = spillpq_ops->fill(queue_idx, hwpq_context.max_size/2);
+  return rv;
 }
 
 int sparc64_spillpq_drain( int queue_id )
 {
-  return spillpq_ops->drain(queue_id,0);
+  int rv;
+  rv = spillpq_ops->drain(queue_id,0);
+  return rv;
 }
 
 int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_context)
