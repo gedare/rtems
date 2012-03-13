@@ -1,6 +1,14 @@
 
 #include <hwpqlib.h>
 
+hwpqlib_hwpq_context_t hwpq_context = {
+  .max_size = 0,
+  .current_size = 0,
+  .current_qid = 0
+};
+
+// TODO: swpq context?
+
 static inline void unitedlist_initialize( int id, int size ) {
   spillpq_ops = &sparc64_unitedlistpq_ops;
   sparc64_spillpq_initialize(id, size);

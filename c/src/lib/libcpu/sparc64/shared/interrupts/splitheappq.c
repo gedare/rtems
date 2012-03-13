@@ -282,8 +282,6 @@ uint64_t sparc64_splitheappq_context_switch( int qid, uint64_t ignored )
   // pop elements off tail of hwpq, merge into software pq
   while ( sparc64_splitheappq_spill_node(qid) ); // FIXME: pass heap pointer
 
-  // no need to refill, will happen later.
-
   return 0;
 }
 

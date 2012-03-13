@@ -209,7 +209,7 @@ uint64_t sparc64_unitedlistpq_handle_fill(int queue_idx, uint64_t count)
 
   while (!_Chain_Is_empty(spill_pq) && i < count) {
     i++;
-    sparc64_unitedlistpq_fill_node(queue_idx, spill_pq); /* FIXME */
+    sparc64_unitedlistpq_fill_node(queue_idx, spill_pq);
   }
   return 0;
 }
@@ -238,7 +238,7 @@ uint64_t sparc64_unitedlistpq_context_switch( int qid, uint64_t ignored )
   while ( (iter = sparc64_unitedlistpq_spill_node(qid, spill_pq, iter)) );
   
   // pull back one node (head/first) to satisfy 'read first' requests.
-  sparc64_unitedlistpq_fill_node(qid, spill_pq);
+//  sparc64_unitedlistpq_fill_node(qid, spill_pq);
 
 #if defined(GAB_DEBUG)
   iter = _Chain_First(spill_pq);

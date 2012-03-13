@@ -2,6 +2,7 @@
 
 sparc64_spillpq_operations *spillpq_ops = NULL; 
 size_t spillpq_queue_max_size[NUM_QUEUES];
+hwpq_context_t hwpq_context;
 
 int sparc64_spillpq_initialize( int queue_idx, size_t max_pq_size )
 {
@@ -27,18 +28,19 @@ uint64_t sparc64_spillpq_pop(int queue_idx)
 
 int sparc64_spillpq_handle_extract(int queue_idx, uint64_t kv)
 {
-  // fixme: update spill count and remove hack in hwpq_decoder
   return spillpq_ops->extract(queue_idx, kv);
 }
 
-int sparc64_spillpq_handle_spill(int queue_idx, int count)
+int sparc64_spillpq_handle_spill(int queue_idx)
 {
-  return spillpq_ops->spill(queue_idx, count);
+  /* FIXME: make count arg more flexible */
+  return spillpq_ops->spill(queue_idx, spillpq_queue_max_size[queue_idx]/2);
 }
 
-int sparc64_spillpq_handle_fill(int queue_idx, int count)
+int sparc64_spillpq_handle_fill(int queue_idx)
 {
-  return spillpq_ops->fill(queue_idx, count);
+  /* FIXME: make count arg more flexible */
+  return spillpq_ops->fill(queue_idx, spillpq_queue_max_size[queue_idx]/2);
 }
 
 int sparc64_spillpq_drain( int queue_id )

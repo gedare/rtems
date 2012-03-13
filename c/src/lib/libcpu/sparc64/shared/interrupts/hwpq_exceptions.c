@@ -68,18 +68,12 @@ void sparc64_hwpq_exception_handler(
 
   switch (softint_bit) {
     case 1: // need_spill
-      sparc64_spillpq_handle_spill(
-          queue_idx,
-          spillpq_queue_max_size[queue_idx]/2
-      );
+      sparc64_spillpq_handle_spill(queue_idx);
       break;
     case 2: // need_fill
-      sparc64_spillpq_handle_fill(
-          queue_idx,
-          spillpq_queue_max_size[queue_idx]/2
-      );
+      sparc64_spillpq_handle_fill(queue_idx);
       break;
-    case 3: { // soft_extract
+    case 3: { // soft_extract: FIXME: emulate other operations?
       uint64_t kv;
       HWDS_GET_PAYLOAD(kv);
       if (!sparc64_spillpq_handle_extract(queue_idx, kv))
@@ -89,10 +83,7 @@ void sparc64_hwpq_exception_handler(
     case 4: // context_switch
       sparc64_spillpq_context_switch(queue_idx);
       HWDS_SET_CURRENT_ID(trap_idx);
-      sparc64_spillpq_handle_fill(
-          trap_idx,
-          spillpq_queue_max_size[trap_idx]/2
-      );
+      //sparc64_spillpq_handle_fill(trap_idx);
       break;
 
     default:
