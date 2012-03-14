@@ -34,6 +34,7 @@ typedef struct {
   SpillPQ_Function  context_switch;
 } sparc64_spillpq_operations;
 
+// FIXME: only one set of spillpq_ops => only one kind of spillpq can be used.
 extern sparc64_spillpq_operations *spillpq_ops;
 
 #define NUM_QUEUES (10)
@@ -46,7 +47,7 @@ typedef struct {
 } hwpq_context_t;
 
 extern hwpq_context_t hwpq_context;
-extern int sparc64_spillpq_hwpq_context_initialize( int hwpq_id );
+extern int sparc64_spillpq_hwpq_context_initialize( int, hwpq_context_t* );
 
 extern int sparc64_spillpq_initialize( int queue_idx, size_t max_pq_size );
 extern uint64_t sparc64_spillpq_first(int queue_idx, uint64_t kv);

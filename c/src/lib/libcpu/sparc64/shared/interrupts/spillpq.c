@@ -4,7 +4,7 @@ sparc64_spillpq_operations *spillpq_ops = NULL;
 size_t spillpq_queue_max_size[NUM_QUEUES];
 hwpq_context_t hwpq_context;
 
-int sparc64_spillpq_hwpq_context_initialize( int hwpq_id )
+int sparc64_spillpq_hwpq_context_initialize( int hwpq_id, hwpq_context_t *ctx )
 {
   uint64_t reg;
   HWDS_GET_SIZE_LIMIT(hwpq_id, reg);

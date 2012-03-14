@@ -2,6 +2,14 @@
 #include <hwpqlib.h>
 
 // TODO: extra hwpq state can be tracked here.
+hwpqlib_context_t hwpqlib_context;
+void hwpqlib_initialize( int hwpq_id )
+{
+  sparc64_spillpq_hwpq_context_initialize(
+      hwpq_id,
+      &hwpqlib_context.hwpq_context
+  );
+}
 
 static inline void unitedlist_initialize( int id, int size ) {
   spillpq_ops = &sparc64_unitedlistpq_ops;
@@ -13,14 +21,17 @@ static inline void splitheap_initialize( int id, int size ) {
   sparc64_spillpq_initialize(id, size);
 }
 
-void hwpqlib_pq_initialize( hwpqlib_spillpq_t type, int hwpq_id, int size ) {
+void hwpqlib_pq_initialize( hwpqlib_spillpq_t type, int qid, int size ) {
+  if ( qid == 0 ) /* hack */
+    hwpqlib_initialize(qid);
+
   switch(type) {
     case HWPQLIB_SPILLPQ_UNITEDLIST:
-      unitedlist_initialize(hwpq_id, size);
+      unitedlist_initialize(qid, size);
       break;
 
     case HWPQLIB_SPILLPQ_SPLITHEAP:
-      splitheap_initialize(hwpq_id, size);
+      splitheap_initialize(qid, size);
       break;
 
     default:

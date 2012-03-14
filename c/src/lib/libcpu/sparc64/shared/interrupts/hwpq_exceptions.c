@@ -7,7 +7,6 @@ void sparc64_hwpq_initialize()
 {
   proc_ptr old;
 
-  /* FIXME: make these all synchronous and failover? */
   _CPU_ISR_install_vector(
     SPARC_ASYNCHRONOUS_TRAP(0x41),
     sparc64_hwpq_exception_handler,
@@ -32,7 +31,7 @@ void sparc64_hwpq_initialize()
     &old
    );
 
-  sparc64_spillpq_hwpq_context_initialize(0); /* there's only one hwpq...*/
+  sparc64_spillpq_hwpq_context_initialize(0, &hwpq_context);
 }
 
 void sparc64_hwpq_drain_queue( int qid ) {

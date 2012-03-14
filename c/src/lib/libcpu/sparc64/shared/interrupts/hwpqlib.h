@@ -13,11 +13,17 @@ typedef enum {
   HWPQLIB_SPILLPQ_NONE
 } hwpqlib_spillpq_t;
 
+typedef struct {
+  hwpq_context_t hwpq_context;
+} hwpqlib_context_t;
+
+extern hwpqlib_context_t hwpqlib_context;
+
 // initialize the hwpqlib
 void hwpqlib_initialize( int hwpq_id );
 
 // Initialize spillpq callouts
-void hwpqlib_pq_initialize( hwpqlib_spillpq_t type, int pq_id, int size );
+void hwpqlib_pq_initialize( hwpqlib_spillpq_t type, int qid, int size );
 
 // Interposition functions for PQ operations
 void hwpqlib_insert( int pq_id, int key, int value );
