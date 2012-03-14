@@ -46,7 +46,7 @@ typedef struct {
   int current_qid;
 } hwpq_context_t;
 
-extern hwpq_context_t hwpq_context;
+extern hwpq_context_t *hwpq_context;
 extern int sparc64_spillpq_hwpq_context_initialize( int, hwpq_context_t* );
 
 extern int sparc64_spillpq_initialize( int queue_idx, size_t max_pq_size );

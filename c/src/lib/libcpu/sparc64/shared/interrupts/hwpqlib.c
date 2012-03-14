@@ -2,13 +2,31 @@
 #include <hwpqlib.h>
 
 // TODO: extra hwpq state can be tracked here.
-hwpqlib_context_t hwpqlib_context;
-void hwpqlib_initialize( int hwpq_id )
+hwpqlib_context_t hwpqlib_context = {
+  .pq_context = NULL,
+  .num_pqs = 0,
+  .hwpq_context = {
+    .max_size = 0,
+    .current_qid = 0
+  }
+};
+
+void hwpqlib_initialize( int hwpq_id, int num_pqs )
 {
   sparc64_spillpq_hwpq_context_initialize(
       hwpq_id,
       &hwpqlib_context.hwpq_context
   );
+
+  hwpqlib_context.pq_context = 
+    _Workspace_Allocate(
+      num_pqs * sizeof(hwpqlib_pq_context_t)
+    );
+  if (!hwpqlib_context.pq_context) {
+    printk("Unable to allocate hwpqlib_context.pq_context\n");
+    while (1);
+  }
+  hwpqlib_context.num_pqs = num_pqs;
 }
 
 static inline void unitedlist_initialize( int id, int size ) {
@@ -22,9 +40,6 @@ static inline void splitheap_initialize( int id, int size ) {
 }
 
 void hwpqlib_pq_initialize( hwpqlib_spillpq_t type, int qid, int size ) {
-  if ( qid == 0 ) /* hack */
-    hwpqlib_initialize(qid);
-
   switch(type) {
     case HWPQLIB_SPILLPQ_UNITEDLIST:
       unitedlist_initialize(qid, size);

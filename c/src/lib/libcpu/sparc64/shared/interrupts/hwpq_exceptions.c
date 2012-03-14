@@ -3,6 +3,8 @@
 #include "spillpq.h"
 #include <rtems/bspIo.h>
 
+hwpq_context_t hwpq_context_default;
+
 void sparc64_hwpq_initialize()
 {
   proc_ptr old;
@@ -31,7 +33,7 @@ void sparc64_hwpq_initialize()
     &old
    );
 
-  sparc64_spillpq_hwpq_context_initialize(0, &hwpq_context);
+  sparc64_spillpq_hwpq_context_initialize(0, &hwpq_context_default);
 }
 
 void sparc64_hwpq_drain_queue( int qid ) {

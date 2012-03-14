@@ -14,13 +14,21 @@ typedef enum {
 } hwpqlib_spillpq_t;
 
 typedef struct {
+  int current_size;
+  /* threads? */
+} hwpqlib_pq_context_t;
+
+typedef struct {
+  hwpqlib_pq_context_t *pq_context; // array of pqs
+  int num_pqs; // size of pq_context array.
+
   hwpq_context_t hwpq_context;
 } hwpqlib_context_t;
 
 extern hwpqlib_context_t hwpqlib_context;
 
 // initialize the hwpqlib
-void hwpqlib_initialize( int hwpq_id );
+void hwpqlib_initialize( int hwpq_id, int num_pqs );
 
 // Initialize spillpq callouts
 void hwpqlib_pq_initialize( hwpqlib_spillpq_t type, int qid, int size );

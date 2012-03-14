@@ -2,13 +2,18 @@
 
 sparc64_spillpq_operations *spillpq_ops = NULL; 
 size_t spillpq_queue_max_size[NUM_QUEUES];
-hwpq_context_t hwpq_context;
+hwpq_context_t *hwpq_context = NULL;
 
 int sparc64_spillpq_hwpq_context_initialize( int hwpq_id, hwpq_context_t *ctx )
 {
-  uint64_t reg;
-  HWDS_GET_SIZE_LIMIT(hwpq_id, reg);
-  hwpq_context.max_size = reg;
+  if ( hwpq_context ) {
+    *ctx = *hwpq_context;
+  } else {
+    uint64_t reg;
+    HWDS_GET_SIZE_LIMIT(hwpq_id, reg);
+    ctx->max_size = reg;
+  }
+  hwpq_context = ctx;
 }
 
 int sparc64_spillpq_initialize( int queue_idx, size_t max_pq_size )
@@ -85,7 +90,7 @@ int sparc64_spillpq_handle_spill(int queue_idx)
 {
   /* FIXME: make count arg more flexible */
   int rv;
-  rv = spillpq_ops->spill(queue_idx, hwpq_context.max_size/2);
+  rv = spillpq_ops->spill(queue_idx, hwpq_context->max_size/2);
   return rv;
 }
 
@@ -93,7 +98,7 @@ int sparc64_spillpq_handle_fill(int queue_idx)
 {
   /* FIXME: make count arg more flexible */
   int rv;
-  rv = spillpq_ops->fill(queue_idx, hwpq_context.max_size/2);
+  rv = spillpq_ops->fill(queue_idx, hwpq_context->max_size/2);
   return rv;
 }
 
@@ -116,7 +121,7 @@ int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_context)
   // FIXME: choose whether or not to context switch.
   rv = spillpq_ops->context_switch(from_idx, 0);
   HWDS_SET_CURRENT_ID(trap_idx);
-  hwpq_context.current_qid = trap_idx;
+  hwpq_context->current_qid = trap_idx;
   return rv;
 }
 
