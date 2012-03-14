@@ -15,10 +15,11 @@
  * Spill structure:
  *  pq_node: 2 ptrs and 2 uint32: 192b = 24B
  *  Max nodes: PQ_MAX_SIZE - QUEUE_SIZE
- *
- * Upper bound on space: PQ_MAX_SIZE * sizeof(pq_node)
+ *  for splitheap need 1 extra u32 (round up to u64) 
+ *  and 1 pointer per spilled node (for the heap)
  */
 #include "../shared/params.h"
-#define CONFIGURE_MEMORY_OVERHEAD ((NUM_APERIODIC_TASKS*PQ_MAX_SIZE * 24)/1000)
+#define CONFIGURE_MEMORY_OVERHEAD \
+  ((NUM_APERIODIC_TASKS*PQ_MAX_SIZE * (24+8+8))/1000)
 
 #include <rtems/confdefs.h>
