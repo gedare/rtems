@@ -152,27 +152,18 @@ int sparc64_splitheappq_initialize( int qid, size_t max_pq_size )
 
 uint64_t sparc64_splitheappq_insert(int queue_idx, uint64_t kv)
 {
-
+  heap_insert(queue_idx, kv);
+  return 0;
 }
 
 uint64_t sparc64_splitheappq_first(int queue_idx, uint64_t kv)
 {
-  Chain_Node *first;
-  Chain_Control *spill_pq;
-  pq_node *p;
-  spill_pq = &queues[queue_idx];
-  first = _Chain_First(spill_pq);
-  if ( _Chain_Is_tail(spill_pq, first) ) {
-    return (uint64_t)-1;
-  }
-  p = (pq_node*)first;
-
-  return pq_node_to_kv(p);
+  return heap_min( queue_idx );
 }
 
 uint64_t sparc64_splitheappq_pop(int queue_idx, uint64_t kv)
 {
-
+  return heap_pop_min( queue_idx );
 }
 
 uint64_t sparc64_splitheappq_extract(int qid, uint64_t kv )
@@ -286,9 +277,9 @@ uint64_t sparc64_splitheappq_context_switch( int qid, uint64_t ignored )
 
 sparc64_spillpq_operations sparc64_splitheappq_ops = {
   sparc64_splitheappq_initialize,
-  sparc64_spillpq_null_handler,
+  sparc64_splitheappq_insert,
   sparc64_splitheappq_first,
-  sparc64_spillpq_null_handler,
+  sparc64_splitheappq_pop,
   sparc64_splitheappq_extract,
   sparc64_splitheappq_handle_spill,
   sparc64_splitheappq_handle_fill,

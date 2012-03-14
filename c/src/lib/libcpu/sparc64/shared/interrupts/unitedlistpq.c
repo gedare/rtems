@@ -44,7 +44,41 @@ uint64_t sparc64_unitedlistpq_initialize( int qid, size_t max_pq_size )
 
 uint64_t sparc64_unitedlistpq_insert(int queue_idx, uint64_t kv)
 {
+  uint32_t key;
+  uint32_t val;
+  Chain_Node *iter;
+  Chain_Control *spill_pq;
+  pq_node *new_node;
 
+  key = kv_key(kv);
+  val = kv_value(kv);
+
+  // linear search, ugh
+  spill_pq = &queues[queue_idx];
+  iter = _Chain_First(spill_pq);
+  while(!_Chain_Is_tail(spill_pq,iter)) {
+    pq_node *p = (pq_node*)iter;
+    if (p->key > key) {
+      break;
+    }
+    iter = _Chain_Next(iter);
+  }
+  if ( !_Chain_Is_first(iter) )
+    iter = _Chain_Previous(iter);
+
+  new_node = freelist_get_node(&free_nodes[queue_idx]);
+  if (!new_node) {
+    // debug output
+    sparc64_print_all_queues();
+    printk("%d\tUnable to allocate new node during insert\n", queue_idx);
+    while (1);
+  }
+
+  // key > iter->key, insert new node after iter
+  new_node->key = key;
+  new_node->val = val; // FIXME: not full 64-bits
+  _Chain_Insert_unprotected(iter, (Chain_Node*)new_node);
+  return 0;
 }
 
 uint64_t sparc64_unitedlistpq_first(int queue_idx, uint64_t kv)
@@ -64,7 +98,19 @@ uint64_t sparc64_unitedlistpq_first(int queue_idx, uint64_t kv)
 
 uint64_t sparc64_unitedlistpq_pop(int queue_idx, uint64_t kv)
 {
+  Chain_Node *first;
+  Chain_Control *spill_pq;
+  uint64_t rv;
+  spill_pq = &queues[queue_idx];
 
+
+  first = _Chain_Get_unprotected(spill_pq);
+  if (first) {
+    rv = pq_node_to_kv((pq_node*)first);
+  } else {
+    rv = (uint64_t)-1;
+  }
+  return rv;
 }
 
 uint64_t sparc64_unitedlistpq_extract(int queue_idx, uint64_t kv)
@@ -255,7 +301,7 @@ uint64_t sparc64_unitedlistpq_context_switch( int qid, uint64_t ignored )
 }
 sparc64_spillpq_operations sparc64_unitedlistpq_ops = {
   sparc64_unitedlistpq_initialize,
-  sparc64_spillpq_null_handler,
+  sparc64_unitedlistpq_insert,
   sparc64_unitedlistpq_first,
   sparc64_spillpq_null_handler,
   sparc64_unitedlistpq_extract,

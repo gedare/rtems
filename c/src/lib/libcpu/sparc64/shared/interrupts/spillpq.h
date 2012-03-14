@@ -10,10 +10,10 @@
 extern "C" {
 #endif
 
-#define kv_value(kv) ((uint32_t)kv)
-#define kv_key(kv)   (kv>>32)
+#define kv_value(kv) ((uint32_t)(kv))
+#define kv_key(kv)   ((kv)>>32)
 // following works if the node defines key and val as field names...
-#define pq_node_to_kv(n) ((((uint64_t)n->key) << 32UL) | (uint64_t)n->val)
+#define pq_node_to_kv(n) ((((uint64_t)(n)->key) << 32UL) | (uint64_t)(n)->val)
 
 //#define GAB_DEBUG
 
@@ -49,9 +49,10 @@ extern hwpq_context_t hwpq_context;
 extern int sparc64_spillpq_hwpq_context_initialize( int hwpq_id );
 
 extern int sparc64_spillpq_initialize( int queue_idx, size_t max_pq_size );
-extern int sparc64_spillpq_insert(int queue_idx, uint64_t kv);
-extern uint64_t sparc64_spillpq_first(int queue_idx);
-extern uint64_t sparc64_spillpq_pop(int queue_idx);
+extern uint64_t sparc64_spillpq_first(int queue_idx, uint64_t kv);
+extern uint64_t sparc64_spillpq_insert(int queue_idx, uint64_t kv);
+extern uint64_t sparc64_spillpq_extract(int queue_idx, uint64_t kv);
+extern uint64_t sparc64_spillpq_pop(int queue_idx, uint64_t kv);
 extern int sparc64_spillpq_handle_spill(int queue_idx); /* FIXME: count */
 extern int sparc64_spillpq_handle_fill(int queue_idx);
 extern int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_ctx);

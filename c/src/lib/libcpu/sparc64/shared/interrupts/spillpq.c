@@ -18,26 +18,35 @@ int sparc64_spillpq_initialize( int queue_idx, size_t max_pq_size )
   return rv;
 }
 
-int sparc64_spillpq_insert(int queue_idx, uint64_t kv)
-{
-  // FIXME: update spill count
-  int rv;
-  rv = spillpq_ops->insert(queue_idx, kv);
-  return rv;
-}
-
-uint64_t sparc64_spillpq_first(int queue_idx)
+uint64_t sparc64_spillpq_first(int queue_idx, uint64_t ignored)
 {
   uint64_t rv;
   rv = spillpq_ops->first(queue_idx, 0);
   return rv;
 }
 
-uint64_t sparc64_spillpq_pop(int queue_idx)
+uint64_t sparc64_spillpq_insert(int queue_idx, uint64_t kv)
 {
-  // fixme: update spill count
+  uint64_t rv;
+  rv = spillpq_ops->insert(queue_idx, kv);
+  HWDS_ADJUST_SPILL_COUNT(queue_idx, (int32_t)1);
+  return rv;
+}
+
+uint64_t sparc64_spillpq_extract(int queue_idx, uint64_t kv)
+{
+  uint64_t rv;
+  rv = spillpq_ops->extract(queue_idx, kv);
+  if (!rv)
+    HWDS_ADJUST_SPILL_COUNT(queue_idx, (int32_t)-1); // adjust spill count.
+  return rv;
+}
+
+uint64_t sparc64_spillpq_pop(int queue_idx, uint64_t kv)
+{
   uint64_t rv;
   rv = spillpq_ops->pop(queue_idx, 0);
+  HWDS_ADJUST_SPILL_COUNT(queue_idx, (int32_t)-1); // adjust spill count.
   return rv;
 }
 
@@ -53,11 +62,16 @@ int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_context)
   HWDS_GET_PAYLOAD(kv);
 
   switch (trap_operation) {
-  
+    case 1:
+      rv = sparc64_spillpq_first(queue_idx, kv);
+      break;
+
+    case 2:
+      rv = sparc64_spillpq_insert(queue_idx, kv);
+      break;
+
     case 3:
-      rv = spillpq_ops->extract(queue_idx, kv);
-      if (!rv)
-        HWDS_ADJUST_SPILL_COUNT(queue_idx, (int32_t)-1); // adjust spill count.
+      rv = sparc64_spillpq_extract(queue_idx, kv);
       break;
 
     default:
