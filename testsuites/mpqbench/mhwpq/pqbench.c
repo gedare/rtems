@@ -6,20 +6,26 @@
 
 /* test interface */
 void pq_initialize( rtems_task_argument tid, int size ) {
-  if ( tid == 0 )
-    hwpqlib_initialize(0, NUM_TASKS); // FIXME
-  hwpqlib_pq_initialize( HWPQLIB_SPILLPQ_UNITEDLIST, tid, size );//FIXME spillpq
+  if (hwpqlib_context.pq_context == NULL)
+    hwpqlib_initialize(0, NUM_TASKS);
+
+  // FIXME: how to determine the spillpq structure?
+  if ( tid%2 == 0 )
+    hwpqlib_pq_initialize( HWPQLIB_SPILLPQ_UNITEDLIST, tid, size );
+  else
+    hwpqlib_pq_initialize( HWPQLIB_SPILLPQ_SPLITHEAP, tid, size );
+
 }
 
 void pq_insert( rtems_task_argument tid, uint64_t p ) {
-  hwpqlib_insert(tid, kv_key(p), kv_value(p));// FIXME: PQ number
+  hwpqlib_insert(tid, kv_key(p), kv_value(p));
 }
 
 uint64_t pq_first(  rtems_task_argument tid ) {
-  return hwpqlib_first( tid ); // FIXME: PQ number
+  return hwpqlib_first( tid );
 }
 
 uint64_t pq_pop( rtems_task_argument tid ) {
-  return hwpqlib_pop( tid );  // FIXME: PQ number
+  return hwpqlib_pop( tid );
 }
 
