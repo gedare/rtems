@@ -8,7 +8,7 @@
 
 /* test interface */
 void pq_initialize( int size ) {
-  SPARC64_SPILLPQ_OPERATIONS;
+  SPARC64_SET_UNITEDLISTPQ_OPERATIONS(4); // FIXME
   sparc64_spillpq_initialize(4, size); // FIXME: PQ number
 }
 
