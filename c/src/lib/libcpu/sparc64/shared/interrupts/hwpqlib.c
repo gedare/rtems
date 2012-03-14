@@ -65,8 +65,8 @@ void hwpqlib_pq_initialize( hwpqlib_spillpq_t type, int qid, int size ) {
 }
 
 void hwpqlib_insert( int pq_id, int key, int value ) {
-  HWDS_ENQUEUE(pq_id, key, value);
   hwpqlib_context.pq_context[pq_id].current_size++;
+  HWDS_ENQUEUE(pq_id, key, value);
 }
 
 uint64_t hwpqlib_first( int pq_id ) {
@@ -80,8 +80,8 @@ uint64_t hwpqlib_pop( int pq_id ) {
   // TODO: why not just one op for pop?
   HWDS_FIRST(pq_id, kv);
   if ( kv != (uint64_t)-1 ) {
-    HWDS_EXTRACT(pq_id, kv);  
     hwpqlib_context.pq_context[pq_id].current_size--;
+    HWDS_EXTRACT(pq_id, kv);  
   }
   return kv;
 }
