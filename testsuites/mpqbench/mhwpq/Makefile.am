@@ -16,6 +16,8 @@ include $(RTEMS_ROOT)/make/custom/@RTEMS_BSP@.cfg
 include $(top_srcdir)/../automake/compile.am
 include $(top_srcdir)/../automake/leaf.am
 
+AM_CPPFLAGS += -I$(top_srcdir)/../support/include
+
 LINK_OBJS = $(mhwpq_OBJECTS) $(mhwpq_LDADD)
 LINK_LIBS = $(mhwpq_LDLIBS)
 
