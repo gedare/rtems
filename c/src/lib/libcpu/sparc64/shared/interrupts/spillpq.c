@@ -119,7 +119,8 @@ int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_context)
   trap_operation = (trap_context)&~(~0 << (3 + 1));
   
   // FIXME: choose whether or not to context switch.
-  rv = spillpq_ops[from_idx]->context_switch(from_idx, 0);
+  if ( from_idx < NUM_QUEUES && spillpq_ops[from_idx] ) // hack
+    rv = spillpq_ops[from_idx]->context_switch(from_idx, 0);
   HWDS_SET_CURRENT_ID(trap_idx);
   hwpq_context->current_qid = trap_idx;
   return rv;
