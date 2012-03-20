@@ -119,17 +119,17 @@ rtems_task PQ_Workload_Task(rtems_task_argument argument)
   put_name( Task_name[ argument ], 1 );
 
   /* initialize PQ structures */
-  initialize(argument - NUM_PERIODIC_TASKS - 1);
+  initialize(argument - 1);
 
   /* Barrier: tasks will be released by the init function */
   status = rtems_semaphore_obtain(tasks_complete_sem, RTEMS_DEFAULT_OPTIONS, 0);
 
   /* active computing */
   /* reach PQ steady state */
-  warmup(argument - NUM_PERIODIC_TASKS - 1);
+  warmup(argument - 1);
 
   /* workload */
-  work(argument - NUM_PERIODIC_TASKS - 1);
+  work(argument - 1);
 
   status = rtems_semaphore_obtain(tasks_complete_sem, RTEMS_DEFAULT_OPTIONS, 0);
   directive_failed( status, "rtems_semaphore_obtain" );
