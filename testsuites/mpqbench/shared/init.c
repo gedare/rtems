@@ -211,13 +211,13 @@ rtems_task Init(
     directive_failed( status, "rtems_task_create loop" );
   }
 
-  for ( index = 1 ; index <= NUM_PERIODIC_TASKS ; index++ ) {
-    status = rtems_task_start( Task_id[ index ], PQ_Periodic_Task, index );
+  for ( index = 1 ; index <= NUM_APERIODIC_TASKS ; index++ ) {
+    status = rtems_task_start( Task_id[ index ], PQ_Workload_Task, index );
     directive_failed( status, "rtems_task_start loop" );
   }
 
-  for ( index = NUM_PERIODIC_TASKS+1 ; index <= NUM_TASKS ; index++ ) {
-    status = rtems_task_start( Task_id[ index ], PQ_Workload_Task, index );
+  for ( index = NUM_APERIODIC_TASKS+1 ; index <= NUM_TASKS ; index++ ) {
+    status = rtems_task_start( Task_id[ index ], PQ_Periodic_Task, index );
     directive_failed( status, "rtems_task_start loop" );
   }
 
