@@ -6,10 +6,15 @@
  */
 
 #define GAB_TIMESLICE
+//#define CACHE_TASK
 
 #include "params.h"
 #define CONFIGURE_MAXIMUM_SEMAPHORES        2
-#define CONFIGURE_MAXIMUM_TASKS               (1+NUM_TASKS)
+#if defined(CACHE_TASK)
+  #define CONFIGURE_MAXIMUM_TASKS               (2+NUM_TASKS)
+#else
+  #define CONFIGURE_MAXIMUM_TASKS               (1+NUM_TASKS)
+#endif
 #define CONFIGURE_MAXIMUM_PERIODS             (1+NUM_PERIODIC_TASKS)
 #define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
@@ -79,6 +84,29 @@ static unsigned int get_Frequency(void)
 	return freq;
 }
 
+rtems_task PQ_Cache_Task(rtems_task_argument argument)
+{
+  int *p, x;
+  rtems_status_code status;
+  printf("CT01\n");
+
+  x = 0;
+  p = 0;
+  /* Barrier: tasks will be released by the init function */
+  status = rtems_semaphore_obtain(tasks_complete_sem,RTEMS_DEFAULT_OPTIONS,0);
+
+  while (FOREVER) {
+    x += *p;
+    p += 4;
+    if ( x == -1 ) {
+      printf("Killing cache task!\n");
+      status = rtems_task_delete(RTEMS_SELF); /* probably unreached... */
+      directive_failed(status, "rtems_task_delete of RTEMS_SELF");
+      return (rtems_task)x; /* unreached */
+    }
+  }
+}
+
 rtems_task PQ_Periodic_Task(rtems_task_argument argument)
 {
   rtems_id          rmid;
@@ -90,8 +118,7 @@ rtems_task PQ_Periodic_Task(rtems_task_argument argument)
   directive_failed( status, "rtems_rate_monotonic_create" );
 
   /* Barrier: tasks will be released by the init function */
-  status = rtems_semaphore_obtain( tasks_complete_sem, 
-      RTEMS_DEFAULT_OPTIONS, 0 );
+  status = rtems_semaphore_obtain(tasks_complete_sem,RTEMS_DEFAULT_OPTIONS,0);
 
   /* Periodic Loop */
   while (FOREVER) {
@@ -121,12 +148,11 @@ rtems_task PQ_Workload_Task(rtems_task_argument argument)
   /* initialize PQ structures */
   initialize(argument - 1);
 
-  /* Barrier: tasks will be released by the init function */
-  status = rtems_semaphore_obtain(tasks_complete_sem, RTEMS_DEFAULT_OPTIONS, 0);
-
-  /* active computing */
   /* reach PQ steady state */
   warmup(argument - 1);
+
+  /* Barrier: tasks will be released by the init function */
+  status = rtems_semaphore_obtain(tasks_complete_sem, RTEMS_DEFAULT_OPTIONS, 0);
 
   /* workload */
   work(argument - 1);
@@ -159,6 +185,14 @@ rtems_task Init(
   uint32_t          index;
   uint32_t          freq; 
   rtems_status_code status;
+
+#if defined(CACHE_TASK)
+  rtems_id   cacheTask_id;
+  rtems_name cacheTask_name;
+
+  cacheTask_name = rtems_build_name( 'C', 'T', '0', '1' );
+#endif
+
 
   freq = get_Frequency( );
   Instructions_per_us = freq / 1000000;
@@ -221,7 +255,25 @@ rtems_task Init(
     directive_failed( status, "rtems_task_start loop" );
   }
 
-  rtems_task_wake_after( 10 );
+#if defined(CACHE_TASK)
+
+  status = rtems_task_create(
+      cacheTask_name,
+      200, /* FIXME */
+      RTEMS_MINIMUM_STACK_SIZE,
+  #if defined(GAB_TIMESLICE)
+      RTEMS_PREEMPT|RTEMS_TIMESLICE,
+  #else
+      RTEMS_DEFAULT_MODES,
+  #endif
+      RTEMS_DEFAULT_ATTRIBUTES,
+      &cacheTask_id
+  );
+  status = rtems_task_start( cacheTask_id, PQ_Cache_Task, NUM_TASKS+1 );
+#endif
+
+
+  rtems_task_wake_after( 100 );
   /* release all of the waiting tasks */
   status = rtems_semaphore_flush( tasks_complete_sem );
   directive_failed( status, "rtems_semaphore_flush" );
@@ -230,7 +282,8 @@ rtems_task Init(
   directive_failed( status, "rtems_semaphore_release" );
  
   /* start measurement */
-  asm volatile("break_start_opal:");
+  asm volatile("break_start_opal:"); // uncomment to warmup
+
   /* Should block forever */
   status = rtems_semaphore_obtain( final_barrier, RTEMS_DEFAULT_OPTIONS, 0 );
   directive_failed( status, "rtems_semaphore_obtain" );

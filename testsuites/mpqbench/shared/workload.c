@@ -27,6 +27,7 @@ inline void pq_print_node( uint64_t p ) {
 
 static int execute( rtems_task_argument tid, int current_op ) {
   uint64_t n;
+
   switch (ops[current_op]) {
     case f:
       n = pq_first(tid);
@@ -66,7 +67,51 @@ static int execute( rtems_task_argument tid, int current_op ) {
 #endif
       break;
     case h:
+      n = pq_pop(tid); // skip first otherwise take ctxt switch..
+
+      // measure dequeue
+      /*
+      asm volatile("break_start_opal:"); // comment to warmup
+      MAGIC(1);
       n = pq_pop(tid);
+      MAGIC_BREAKPOINT;
+      */
+
+      // measure enqueue
+      /*
+      asm volatile("break_start_opal:"); // comment to warmup
+      MAGIC(1);
+      pq_insert(tid, n)
+      MAGIC_BREAKPOINT;
+      */
+ 
+#define QUEUE_SIZE (101)
+      // measure spill exception
+      /*
+      {
+        int i;
+        for ( i = 0; i < QUEUE_SIZE - (QUEUE_SIZE/2); i++ ) {
+          n = pq_add_to_key(n, args[current_op++].key);
+          pq_insert(tid,n);
+        }
+      }
+      //asm volatile("break_start_opal:"); // comment to warmup
+      n = pq_add_to_key(n, args[current_op++].key);
+      pq_insert(tid,n);
+      MAGIC_BREAKPOINT;
+      */
+
+      // measure fill exception
+      {
+        int i;
+        for ( i = 0; i < QUEUE_SIZE/2-1; i++ ) {
+          n = pq_pop(tid);
+        }
+      }
+//      asm volatile("break_start_opal:"); // comment to warmup
+      n = pq_pop(tid);
+      MAGIC_BREAKPOINT;
+
 #if defined(GAB_DEBUG)
       if ( kv_key(n) != args[current_op].val ) {
         printf("%d\tInvalid node popped (args=%d,%d):\t",tid, args[current_op].key, args[current_op].val);
@@ -121,8 +166,10 @@ void work( rtems_task_argument tid  ) {
 #if defined(GAB_PRINT)
   printf("%d\tWork: %d\n",tid, PQ_WORK_OPS);
 #endif
+  MAGIC(1);
   for ( i = 0; i < PQ_WORK_OPS; i++ ) {
     execute(tid, PQ_WARMUP_OPS + i);
+    MAGIC(1);
   }
 #if defined(GAB_CHECK)
   drain_and_check(tid);

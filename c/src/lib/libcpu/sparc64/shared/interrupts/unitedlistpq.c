@@ -153,7 +153,7 @@ uint64_t sparc64_unitedlistpq_extract(int queue_idx, uint64_t kv)
 // to have lower priority than the lowest priority node in the hwpq; this is
 // simple when there is not concurrent access to a pq in the hwpq.
 static inline 
-int sparc64_unitedlistpq_spill_node(
+Chain_Node* sparc64_unitedlistpq_spill_node(
     int queue_idx,
     Chain_Control *spill_pq,
     Chain_Node *iter
@@ -200,8 +200,8 @@ int sparc64_unitedlistpq_spill_node(
   return new_node;
 }
 
-static inline 
-int sparc64_unitedlistpq_fill_node(int queue_idx, Chain_Control *spill_pq)
+static inline Chain_Node*
+sparc64_unitedlistpq_fill_node(int queue_idx, Chain_Control *spill_pq)
 {
   uint32_t exception;
   pq_node *p;

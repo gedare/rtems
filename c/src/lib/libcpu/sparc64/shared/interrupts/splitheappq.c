@@ -195,24 +195,23 @@ uint64_t sparc64_splitheappq_extract(int qid, uint64_t kv )
   return 0;
 }
 
-static inline 
-int sparc64_splitheappq_spill_node(int qid)
+static inline uint64_t 
+sparc64_splitheappq_spill_node(int qid)
 {
   uint64_t kv;
 
   HWDS_SPILL(qid, kv);
   if (!kv) {
     DPRINTK("%d\tNothing to spill!\n", qid);
-    return kv;
+  } else {
+    heap_insert(qid, kv);
   }
 
-  heap_insert(qid, kv);
-
-  return 0;
+  return kv;
 }
 
-static inline 
-int sparc64_splitheappq_fill_node(int qid)
+static inline uint64_t
+sparc64_splitheappq_fill_node(int qid)
 {
   uint32_t exception;
   uint64_t kv;
