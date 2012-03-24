@@ -222,19 +222,13 @@ extern "C" {
     ); \
   } while (0)
 
-// TODO: Create an interface / wrapper for this.
-#define HWDS_SETRANGE( _queue, _base_addr, _bounds ) \
+#define HWDS_GET_CURRENT_SIZE( _queue, _size ) \
   do { \
     __asm__ __volatile__ ( \
-      "sll  %0, 20, %%l0\n\t" \
-      "sll  %2, 4, %%l1\n\t" \
-      "or   %%l0, %%l1, %%l0\n\t" \
-      "or   %%l0, 4, %%l0\n\t" \
-      "impdep2  %1, %%l0, %%g0" \
-      : \
-      : "r" (_queue), "r" (_base_addr), "r" (_bounds)\
-      : "l0" \
-        ); \
+        "sll  %1, 20, %%l0\n\t" \
+        "or   %%l0, 4, %%l0\n\t" \
+        "impdep2  %%g0, %%l0, %0" \
+        : "=r" (_size) : "r" (_queue) : "l0" ); \
   } while (0)
 
 // get the HWDS context (last queue, operation)
@@ -341,6 +335,7 @@ extern "C" {
         "impdep2  %%g0, %%l0, %0" \
         : "=r" (_currid) : : "l0" ); \
   } while (0)
+
 
 // these macros support generic HWDS operations and can save on 
 // loop-based operations by avoiding the setup for the queue id and operation.
