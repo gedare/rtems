@@ -235,11 +235,12 @@ uint64_t sparc64_splitheappq_handle_spill( int qid, uint64_t count )
 
   // pop elements off tail of hwpq, merge into software pq
   while ( i < count ) {
+    if (!sparc64_splitheappq_spill_node(qid))
+      break;
     i++;
-    sparc64_splitheappq_spill_node(qid);
   }
 
-  return 0;
+  return i;
 }
 
 /*
@@ -264,16 +265,6 @@ uint64_t sparc64_splitheappq_drain( int qid, uint64_t ignored )
   return 0;
 }
 
-uint64_t sparc64_splitheappq_context_switch( int qid, uint64_t ignored )
-{
-  int i = 0;
-
-  // pop elements off tail of hwpq, merge into software pq
-  while ( sparc64_splitheappq_spill_node(qid) ); // FIXME: pass heap pointer
-
-  return 0;
-}
-
 sparc64_spillpq_operations sparc64_splitheappq_ops = {
   sparc64_splitheappq_initialize,
   sparc64_splitheappq_insert,
@@ -282,7 +273,6 @@ sparc64_spillpq_operations sparc64_splitheappq_ops = {
   sparc64_splitheappq_extract,
   sparc64_splitheappq_handle_spill,
   sparc64_splitheappq_handle_fill,
-  sparc64_splitheappq_drain,
-  sparc64_splitheappq_context_switch
+  sparc64_splitheappq_drain
 };
 

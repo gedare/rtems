@@ -1,7 +1,10 @@
 #include "spillpq.h"
+#include "gabdebug.h"
 
 sparc64_spillpq_operations *spillpq_ops[NUM_QUEUES];
 size_t spillpq_queue_max_size[NUM_QUEUES];
+int spillpq_cs_count[NUM_QUEUES];
+
 hwpq_context_t *hwpq_context = NULL;
 
 int sparc64_spillpq_hwpq_context_initialize( int hwpq_id, hwpq_context_t *ctx )
@@ -19,6 +22,9 @@ int sparc64_spillpq_hwpq_context_initialize( int hwpq_id, hwpq_context_t *ctx )
 int sparc64_spillpq_initialize( int queue_idx, size_t max_pq_size )
 {
   int rv;
+  int i;
+  for ( i = 0; i < NUM_QUEUES; i++ )
+    spillpq_cs_count[i] = 0;
   rv = spillpq_ops[queue_idx]->initialize(queue_idx, max_pq_size);
   return rv;
 }
@@ -113,16 +119,28 @@ int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_context)
 {
   uint32_t trap_operation;
   uint32_t trap_idx;
-  int rv;
+  Chain_Control *spill_pq;
+  Chain_Node *iter;
+  int rv = 0;
   
   trap_idx = ((trap_context)&(~0))>>20;
   trap_operation = (trap_context)&~(~0 << (3 + 1));
   
+  DPRINTK("context switch\tfrom: %d\tto: %d\tduring: %d\n",
+      from_idx, trap_idx, trap_operation);
+
   // FIXME: choose whether or not to context switch.
-  if ( from_idx < NUM_QUEUES && spillpq_ops[from_idx] ) // hack
-    rv = spillpq_ops[from_idx]->context_switch(from_idx, 0);
-  HWDS_SET_CURRENT_ID(trap_idx);
-  hwpq_context->current_qid = trap_idx;
+  if ( from_idx < NUM_QUEUES && spillpq_ops[from_idx] ) {
+    // spill all of from_idx
+    rv = spillpq_ops[from_idx]->spill(from_idx, hwpq_context->max_size);
+    spillpq_cs_count[from_idx] = rv;
+  }
+  if ( trap_idx < NUM_QUEUES && spillpq_ops[trap_idx] ) {
+    // fill up to cs_count[trap_idx]
+    HWDS_SET_CURRENT_ID(trap_idx);
+    hwpq_context->current_qid = trap_idx;
+    spillpq_ops[trap_idx]->fill(trap_idx, spillpq_cs_count[trap_idx]);
+  }
   return rv;
 }
 

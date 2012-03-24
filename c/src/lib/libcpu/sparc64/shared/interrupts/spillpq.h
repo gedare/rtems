@@ -31,13 +31,14 @@ typedef struct {
   SpillPQ_Function  spill;
   SpillPQ_Function  fill;
   SpillPQ_Function  drain;
-  SpillPQ_Function  context_switch;
 } sparc64_spillpq_operations;
 
 
 #define NUM_QUEUES (10) // FIXME:number of queues...
 extern sparc64_spillpq_operations *spillpq_ops[NUM_QUEUES];
 extern size_t spillpq_queue_max_size[NUM_QUEUES]; /* FIXME: swpq_context */
+
+extern int spillpq_cs_count[NUM_QUEUES]; // num of nodes in queue when switched.
 
 // HWPQ context
 typedef struct {

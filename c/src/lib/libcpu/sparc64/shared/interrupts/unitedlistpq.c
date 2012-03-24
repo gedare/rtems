@@ -234,10 +234,11 @@ uint64_t sparc64_unitedlistpq_handle_spill( int queue_idx, uint64_t count )
   iter = _Chain_Last(spill_pq);
   // pop elements off tail of hwpq, merge into software pq
   while ( i < count ) {
+    if (!(iter = sparc64_unitedlistpq_spill_node(queue_idx, spill_pq, iter)))
+      break;
     i++;
-    iter = sparc64_unitedlistpq_spill_node(queue_idx, spill_pq, iter);
   }
-  return 0;
+  return i;
 }
 
 /*
@@ -271,34 +272,6 @@ uint64_t sparc64_unitedlistpq_drain( int qid, uint64_t ignored )
   return 0;
 }
 
-uint64_t sparc64_unitedlistpq_context_switch( int qid, uint64_t ignored )
-{
-  Chain_Control *spill_pq;
-  Chain_Node *iter;
-  int i = 0;
-
-  DPRINTK("%d\tcontext_switch\n", qid);
-  spill_pq = &queues[qid];
-  iter = _Chain_Last(spill_pq);
-  while ( (iter = sparc64_unitedlistpq_spill_node(qid, spill_pq, iter)) );
-  
-  // pull back one node (head/first) to satisfy 'read first' requests.
-//  sparc64_unitedlistpq_fill_node(qid, spill_pq);
-
-#if defined(GAB_DEBUG)
-  iter = _Chain_First(spill_pq);
-  i = 0;
-
-  while(!_Chain_Is_tail(spill_pq,iter)) {
-    pq_node *p = (pq_node*)iter;
-    printk("%d\tChain: %d\t%X\t%d\t%x\n",qid,i,p,p->key,p->val);
-    i++;
-    iter = _Chain_Next(iter);
-  }
-#endif
-
-  return 0;
-}
 sparc64_spillpq_operations sparc64_unitedlistpq_ops = {
   sparc64_unitedlistpq_initialize,
   sparc64_unitedlistpq_insert,
@@ -307,7 +280,6 @@ sparc64_spillpq_operations sparc64_unitedlistpq_ops = {
   sparc64_unitedlistpq_extract,
   sparc64_unitedlistpq_handle_spill,
   sparc64_unitedlistpq_handle_fill,
-  sparc64_unitedlistpq_drain,
-  sparc64_unitedlistpq_context_switch
+  sparc64_unitedlistpq_drain
 };
 
