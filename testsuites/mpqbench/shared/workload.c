@@ -85,12 +85,14 @@ static int execute( rtems_task_argument tid, int current_op ) {
       MAGIC_BREAKPOINT;
       */
  
-#define QUEUE_SIZE (101)
       // measure spill exception
       /*
+      //FIXME: not working since context switch change.
       {
         int i;
-        for ( i = 0; i < QUEUE_SIZE - (QUEUE_SIZE/2); i++ ) {
+        int s;
+        HWDS_GET_SIZE_LIMIT(tid, s);
+        for ( i = 0; i < s - (s/2); i++ ) {
           n = pq_add_to_key(n, args[current_op++].key);
           pq_insert(tid,n);
         }
@@ -102,15 +104,20 @@ static int execute( rtems_task_argument tid, int current_op ) {
       */
 
       // measure fill exception
+      /*
+      //FIXME: not working since context switch change.
       {
         int i;
-        for ( i = 0; i < QUEUE_SIZE/2-1; i++ ) {
+        int s;
+        HWDS_GET_SIZE_LIMIT(tid, s);
+        for ( i = 0; i < s/2-1; i++ ) {
           n = pq_pop(tid);
         }
       }
 //      asm volatile("break_start_opal:"); // comment to warmup
       n = pq_pop(tid);
       MAGIC_BREAKPOINT;
+      */
 
 #if defined(GAB_DEBUG)
       if ( kv_key(n) != args[current_op].val ) {
@@ -159,6 +166,7 @@ void warmup( rtems_task_argument tid ) {
   for ( i = 0; i < PQ_WARMUP_OPS; i++ ) {
     execute(tid, i);
   }
+  // TODO: fill up the hwpq to full capacity for testing the context switch
 }
 
 void work( rtems_task_argument tid  ) {
