@@ -7,6 +7,8 @@
 #include "params.h"
 #include "params.i"
 
+#include <libcpu/spillpq.h> // bad
+
 #include <stdlib.h>
 
 #define ARG_TO_UINT64(n) ((((uint64_t)n->key) << 32UL) | (uint64_t)n->val)
@@ -166,7 +168,14 @@ void warmup( rtems_task_argument tid ) {
   for ( i = 0; i < PQ_WARMUP_OPS; i++ ) {
     execute(tid, i);
   }
-  // TODO: fill up the hwpq to full capacity for testing the context switch
+
+  // fill up the hwpq to full capacity for testing the context switch
+  {
+    int s, c;
+    HWDS_GET_SIZE_LIMIT(tid, s);
+    HWDS_GET_CURRENT_SIZE(tid, c);
+    spillpq_ops[tid]->fill(tid, s-c);
+  }
 }
 
 void work( rtems_task_argument tid  ) {
