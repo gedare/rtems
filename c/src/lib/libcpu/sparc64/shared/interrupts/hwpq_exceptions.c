@@ -68,11 +68,9 @@ void sparc64_hwpq_exception_handler(
 
   switch (softint_bit) {
     case 1:
-      //MAGIC(1); // reset stats for exceptions
       sparc64_spillpq_handle_spill(queue_idx);
       break;
     case 2:
-      MAGIC(1); // reset stats for exceptions
       sparc64_spillpq_handle_fill(queue_idx);
       break;
     case 3:
