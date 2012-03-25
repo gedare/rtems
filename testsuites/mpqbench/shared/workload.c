@@ -69,58 +69,13 @@ static int execute( rtems_task_argument tid, int current_op ) {
 #endif
       break;
     case h:
-      n = pq_pop(tid); // skip first otherwise take ctxt switch..
-
-      // measure dequeue
-      /*
-      asm volatile("break_start_opal:"); // comment to warmup
-      MAGIC(1);
-      n = pq_pop(tid);
-      MAGIC_BREAKPOINT;
-      */
-
-      // measure enqueue
-      /*
-      asm volatile("break_start_opal:"); // comment to warmup
-      MAGIC(1);
-      pq_insert(tid, n)
-      MAGIC_BREAKPOINT;
-      */
- 
-      // measure spill exception
-      /*
-      //FIXME: not working since context switch change.
-      {
-        int i;
-        int s;
-        HWDS_GET_SIZE_LIMIT(tid, s);
-        for ( i = 0; i < s - (s/2); i++ ) {
-          n = pq_add_to_key(n, args[current_op++].key);
-          pq_insert(tid,n);
-        }
-      }
-      //asm volatile("break_start_opal:"); // comment to warmup
-      n = pq_add_to_key(n, args[current_op++].key);
-      pq_insert(tid,n);
-      MAGIC_BREAKPOINT;
-      */
-
-      // measure fill exception
-      /*
-      //FIXME: not working since context switch change.
-      {
-        int i;
-        int s;
-        HWDS_GET_SIZE_LIMIT(tid, s);
-        for ( i = 0; i < s/2-1; i++ ) {
-          n = pq_pop(tid);
-        }
-      }
-//      asm volatile("break_start_opal:"); // comment to warmup
-      n = pq_pop(tid);
-      MAGIC_BREAKPOINT;
-      */
-
+      #ifdef MEASURE_DEQUEUE
+        MAGIC(1);
+        n = pq_pop(tid);
+        MAGIC(2);
+      #else
+        n = pq_pop(tid);
+      #endif
 #if defined(GAB_DEBUG)
       if ( kv_key(n) != args[current_op].val ) {
         printf("%d\tInvalid node popped (args=%d,%d):\t",tid, args[current_op].key, args[current_op].val);
@@ -132,7 +87,13 @@ static int execute( rtems_task_argument tid, int current_op ) {
       printf("%d\tPQ hold (args=%d,%d):\t",tid, args[current_op].key, args[current_op].val);
       pq_print_node(n);
 #endif
-      pq_insert(tid,n);
+      #ifdef MEASURE_ENQUEUE
+        MAGIC(1);
+        pq_insert(tid,n);
+        MAGIC(2);
+      #else
+        pq_insert(tid,n);
+      #endif
       break;
     default:
 #if defined(GAB_PRINT)
@@ -141,6 +102,77 @@ static int execute( rtems_task_argument tid, int current_op ) {
       break;
   }
   current_op++;
+}
+
+static int measure( rtems_task_argument tid, int current_op )
+{
+  uint64_t n;
+
+  // measure context switch
+#ifdef MEASURE_CS
+#ifndef WARMUP
+  asm volatile("break_start_opal:");
+#endif
+  MAGIC(1);
+  n = pq_pop(tid);
+  MAGIC_BREAKPOINT;
+#endif
+
+  n = pq_pop(tid); // take ctxt switch
+
+  // measure dequeue
+#ifdef MEASURE_DEQUEUE
+#ifndef WARMUP
+  asm volatile("break_start_opal:");
+#endif
+  MAGIC(1);
+  n = pq_pop(tid);
+  MAGIC_BREAKPOINT;
+#endif
+
+  // measure enqueue
+#ifdef MEASURE_ENQUEUE
+#ifndef WARMUP
+  asm volatile("break_start_opal:");
+#endif
+  MAGIC(1);
+  pq_insert(tid, n);
+  MAGIC_BREAKPOINT;
+#endif
+
+  // measure spill exception
+#ifdef MEASURE_SPILL 
+  n = pq_add_to_key(n, args[current_op++].key);
+  pq_insert(tid, n);
+  n = pq_add_to_key(n, args[current_op++].key);
+  pq_insert(tid, n);
+#ifndef WARMUP
+  asm volatile("break_start_opal:");
+#endif
+  MAGIC(1);
+  n = pq_add_to_key(n, args[current_op++].key);
+  pq_insert(tid, n);
+  MAGIC_BREAKPOINT;
+#endif
+
+  // measure fill exception
+#ifdef MEASURE_FILL
+  {
+    int s;
+    HWDS_GET_CURRENT_SIZE(tid, s);
+    while ( s-- > 0 ) {
+      n = pq_pop(tid);
+    }
+#ifndef WARMUP
+    asm volatile("break_start_opal:");
+#endif
+    MAGIC(1);
+    n = pq_pop(tid);
+    MAGIC_BREAKPOINT;
+  }
+#endif
+
+  return 0;
 }
 
 void initialize(rtems_task_argument tid ) {
@@ -169,13 +201,15 @@ void warmup( rtems_task_argument tid ) {
     execute(tid, i);
   }
 
-  // fill up the hwpq to full capacity for testing the context switch
-  {
+#ifdef DOMEASURE
+  // fill up the hwpq to full capacity for measuring exceptions
+  if (spillpq_ops[tid]) {
     int s, c;
     HWDS_GET_SIZE_LIMIT(tid, s);
     HWDS_GET_CURRENT_SIZE(tid, c);
     spillpq_ops[tid]->fill(tid, s-c);
   }
+#endif
 }
 
 void work( rtems_task_argument tid  ) {
@@ -183,6 +217,17 @@ void work( rtems_task_argument tid  ) {
 #if defined(GAB_PRINT)
   printf("%d\tWork: %d\n",tid, PQ_WORK_OPS);
 #endif
+
+#ifdef DOMEASURE
+#ifdef WARMUP
+  if (spillpq_ops[tid]) {
+    measure(tid, PQ_WARMUP_OPS);
+  }
+#else
+  measure(tid, PQ_WARMUP_OPS);
+#endif
+#endif
+
   MAGIC(1);
   for ( i = 0; i < PQ_WORK_OPS; i++ ) {
     execute(tid, PQ_WARMUP_OPS + i);
