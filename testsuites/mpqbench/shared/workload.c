@@ -107,6 +107,10 @@ static int execute( rtems_task_argument tid, int current_op ) {
 static int measure( rtems_task_argument tid, int current_op )
 {
   uint64_t n;
+  PQ_arg a;
+
+  a.key = 1;
+  a.val = 1;
 
   // measure context switch
 #ifdef MEASURE_CS
@@ -132,6 +136,7 @@ static int measure( rtems_task_argument tid, int current_op )
 
   // measure enqueue
 #ifdef MEASURE_ENQUEUE
+  n = pq_node_initialize( &a );
 #ifndef WARMUP
   asm volatile("break_start_opal:");
 #endif
@@ -146,11 +151,11 @@ static int measure( rtems_task_argument tid, int current_op )
   pq_insert(tid, n);
   n = pq_add_to_key(n, args[current_op++].key);
   pq_insert(tid, n);
+  n = pq_node_initialize( &a );
 #ifndef WARMUP
   asm volatile("break_start_opal:");
 #endif
   MAGIC(1);
-  n = pq_add_to_key(n, args[current_op++].key);
   pq_insert(tid, n);
   MAGIC_BREAKPOINT;
 #endif
@@ -202,10 +207,21 @@ void warmup( rtems_task_argument tid ) {
   }
 
 #ifdef DOMEASURE
+
+  // insert some minimum priority elements (to prime the hwpq) and
   // fill up the hwpq to full capacity for measuring exceptions
   if (spillpq_ops[tid]) {
+    uint64_t n;
+    PQ_arg a;
     int s, c;
     HWDS_GET_SIZE_LIMIT(tid, s);
+    for ( i = 0; i < s; i++ ) {
+      n = pq_pop(tid); // keep pq size the same
+      a.key = i+2;
+      a.val = i+2;
+      n = pq_node_initialize( &a );
+      pq_insert(tid,n);
+    }
     HWDS_GET_CURRENT_SIZE(tid, c);
     spillpq_ops[tid]->fill(tid, s-c);
   }
