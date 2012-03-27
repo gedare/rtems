@@ -336,6 +336,17 @@ extern "C" {
         : "=r" (_currid) : : "l0" ); \
   } while (0)
 
+#define HWDS_SET_SIZE_LIMIT( _queue, _size ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "sll  %0, 20, %%l0\n\t" \
+        "or   %%l0, 14, %%l0\n\t" \
+        "impdep2  %1, %%l0, %%g0" \
+        : \
+        : "r" (_queue), "r" (_size) \
+        : "l0" ); \
+  } while (0)
+
 
 // these macros support generic HWDS operations and can save on 
 // loop-based operations by avoiding the setup for the queue id and operation.
