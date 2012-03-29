@@ -340,7 +340,7 @@ extern "C" {
   do { \
     __asm__ __volatile__ ( \
         "sll  %0, 20, %%l0\n\t" \
-        "or   %%l0, 14, %%l0\n\t" \
+        "or   %%l0, 15, %%l0\n\t" \
         "impdep2  %1, %%l0, %%g0" \
         : \
         : "r" (_queue), "r" (_size) \
