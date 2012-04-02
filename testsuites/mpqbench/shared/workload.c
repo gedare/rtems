@@ -126,6 +126,8 @@ static int measure( rtems_task_argument tid, int current_op )
 
   // measure dequeue
 #ifdef MEASURE_DEQUEUE
+  n = pq_add_to_key(n, args[current_op++].key);
+  pq_insert(tid, n);
 #ifndef WARMUP
   asm volatile("break_start_opal:");
 #endif
@@ -136,6 +138,8 @@ static int measure( rtems_task_argument tid, int current_op )
 
   // measure enqueue
 #ifdef MEASURE_ENQUEUE
+  n = pq_add_to_key(n, args[current_op++].key);
+  pq_insert(tid, n);
   n = pq_node_initialize( &a );
 #ifndef WARMUP
   asm volatile("break_start_opal:");
@@ -163,15 +167,11 @@ static int measure( rtems_task_argument tid, int current_op )
   // measure fill exception
 #ifdef MEASURE_FILL
   {
-    int s;
-    HWDS_GET_CURRENT_SIZE(tid, s);
-    while ( s-- > 0 ) {
-      n = pq_pop(tid);
-    }
 #ifndef WARMUP
     asm volatile("break_start_opal:");
 #endif
     MAGIC(1);
+    HWDS_INVALIDATE(tid);
     n = pq_pop(tid);
     MAGIC_BREAKPOINT;
   }
@@ -217,13 +217,15 @@ void warmup( rtems_task_argument tid ) {
     HWDS_GET_SIZE_LIMIT(tid, s);
     for ( i = 0; i < s; i++ ) {
       n = pq_pop(tid); // keep pq size the same
+    }
+    for ( i = 0; i < s; i++ ) {
       a.key = i+2;
       a.val = i+2;
       n = pq_node_initialize( &a );
       pq_insert(tid,n);
     }
     HWDS_GET_CURRENT_SIZE(tid, c);
-    spillpq_ops[tid]->fill(tid, s-c);
+    spillpq_ops[tid]->fill(tid, s-c-1);
   }
 #endif
 }

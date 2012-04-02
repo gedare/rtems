@@ -347,6 +347,16 @@ extern "C" {
         : "l0" ); \
   } while (0)
 
+#define HWDS_INVALIDATE( _queue ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "sll  %0, 20, %%l0\n\t" \
+        "or   %%l0, 16, %%l0\n\t" \
+        "impdep2  %%g0, %%l0, %%g0" \
+        : \
+        : "r" (_queue) \
+        : "l0" ); \
+  } while (0)
 
 // these macros support generic HWDS operations and can save on 
 // loop-based operations by avoiding the setup for the queue id and operation.
