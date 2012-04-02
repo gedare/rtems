@@ -22,6 +22,6 @@
  */
 #include "../shared/params.h"
 #define CONFIGURE_MEMORY_OVERHEAD \
-    ((NUM_APERIODIC_TASKS*PQ_MAX_SIZE * (24+8+8))/1000)
+    (1+(NUM_APERIODIC_TASKS*PQ_MAX_SIZE * (24+8+8))/1000)
 
 #include <rtems/confdefs.h>
