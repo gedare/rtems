@@ -200,27 +200,6 @@ Chain_Node* sparc64_unitedlistpq_spill_node(
   return new_node;
 }
 
-static inline Chain_Node*
-sparc64_unitedlistpq_fill_node(int queue_idx, Chain_Control *spill_pq)
-{
-  uint32_t exception;
-  pq_node *p;
-
-  p = (pq_node*)_Chain_Get_first_unprotected(spill_pq);
-
-  DPRINTK("%d\tfill node: %x\tprio: %d\n", queue_idx, p->val, p->key);
-
-  // add node to hw pq 
-  HWDS_FILL(queue_idx, p->key, p->val, exception); 
-
-  freelist_put_node(&free_nodes[queue_idx], p);
-
-  if (exception) {
-    DPRINTK("%d\tSpilling while filling\n", queue_idx);
-    return sparc64_unitedlistpq_spill_node(queue_idx, spill_pq, _Chain_Last(spill_pq));
-  }
-  return 0;
-}
 
 uint64_t sparc64_unitedlistpq_handle_spill( int queue_idx, uint64_t count )
 {
@@ -241,6 +220,31 @@ uint64_t sparc64_unitedlistpq_handle_spill( int queue_idx, uint64_t count )
   return i;
 }
 
+static inline uint64_t
+sparc64_unitedlistpq_fill_node(
+    int queue_idx,
+    Chain_Control *spill_pq,
+    uint64_t count
+) {
+  uint32_t exception;
+  pq_node *p;
+
+  p = (pq_node*)_Chain_Get_first_unprotected(spill_pq);
+
+  DPRINTK("%d\tfill node: %x\tprio: %d\n", queue_idx, p->val, p->key);
+
+  // add node to hw pq 
+  HWDS_FILL(queue_idx, p->key, p->val, exception); 
+
+  freelist_put_node(&free_nodes[queue_idx], p);
+
+  if (exception) {
+    DPRINTK("%d\tSpilling while filling\n", queue_idx);
+    return sparc64_unitedlistpq_handle_spill(queue_idx, count);
+  }
+  return 0;
+}
+
 /*
  * Current algorithm pulls nodes from the head of the sorted sw pq
  * and fills them into the hw pq.
@@ -255,7 +259,7 @@ uint64_t sparc64_unitedlistpq_handle_fill(int queue_idx, uint64_t count)
 
   while (!_Chain_Is_empty(spill_pq) && i < count) {
     i++;
-    sparc64_unitedlistpq_fill_node(queue_idx, spill_pq);
+    sparc64_unitedlistpq_fill_node(queue_idx, spill_pq, count);
   }
   return 0;
 }

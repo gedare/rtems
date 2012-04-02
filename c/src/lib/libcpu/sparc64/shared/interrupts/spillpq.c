@@ -122,6 +122,7 @@ int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_context)
   Chain_Control *spill_pq;
   Chain_Node *iter;
   int rv = 0;
+  int size = 0;
   
   trap_idx = ((trap_context)&(~0))>>20;
   trap_operation = (trap_context)&~(~0 << (3 + 1));
@@ -129,10 +130,14 @@ int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_context)
   DPRINTK("context switch\tfrom: %d\tto: %d\tduring: %d\n",
       from_idx, trap_idx, trap_operation);
 
+  HWDS_GET_CURRENT_SIZE(from_idx, size);
   // FIXME: choose whether or not to context switch.
   if ( from_idx < NUM_QUEUES && spillpq_ops[from_idx] ) {
     // spill all of from_idx
-    rv = spillpq_ops[from_idx]->spill(from_idx, hwpq_context->max_size);
+    rv = spillpq_ops[from_idx]->spill(from_idx, size);
+    if ( rv != size ) {
+      printk("failed to spill whole queue!\n");
+    }
     spillpq_cs_count[from_idx] = rv;
   }
   if ( trap_idx < NUM_QUEUES && spillpq_ops[trap_idx] ) {
