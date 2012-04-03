@@ -21,7 +21,7 @@
 #define CONFIGURE_RTEMS_INIT_TASKS_TABLE
 #if defined(GAB_TIMESLICE)
 #define CONFIGURE_TICKS_PER_TIMESLICE       1
-#define CONFIGURE_MICROSECONDS_PER_TICK   RTEMS_MILLISECONDS_TO_MICROSECONDS(5)
+#define CONFIGURE_MICROSECONDS_PER_TICK   RTEMS_MILLISECONDS_TO_MICROSECONDS(200)
 #endif
 #define CONFIGURE_INIT
 #include "system.h"
@@ -145,11 +145,11 @@ rtems_task PQ_Workload_Task(rtems_task_argument argument)
 
   put_name( Task_name[ argument ], 1 );
 
-  /* Barrier: tasks will be released by the init function */
-  status = rtems_semaphore_obtain(tasks_complete_sem, RTEMS_DEFAULT_OPTIONS, 0);
-  
   /* initialize PQ structures */
   initialize(argument - 1);
+
+  /* Barrier: tasks will be released by the init function */
+  status = rtems_semaphore_obtain(tasks_complete_sem, RTEMS_DEFAULT_OPTIONS, 0);
   
   /* reach PQ steady state */
   warmup(argument - 1);

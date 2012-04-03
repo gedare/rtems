@@ -20,6 +20,6 @@
  * Upper bound on space: PQ_MAX_SIZE * sizeof(pq_node)
  */
 #include "../shared/params.h"
-#define CONFIGURE_MEMORY_OVERHEAD (1+(NUM_APERIODIC_TASKS*PQ_MAX_SIZE * 24)/1000)
+#define CONFIGURE_MEMORY_OVERHEAD (16+(NUM_APERIODIC_TASKS*PQ_MAX_SIZE * 24)/1000)
 
 #include <rtems/confdefs.h>

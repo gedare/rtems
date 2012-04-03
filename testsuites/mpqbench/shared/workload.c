@@ -215,6 +215,8 @@ void warmup( rtems_task_argument tid ) {
     PQ_arg a;
     int s, c;
     HWDS_GET_SIZE_LIMIT(tid, s);
+    if ( s > PQ_MAX_SIZE )
+      s = PQ_MAX_SIZE;
     for ( i = 0; i < s; i++ ) {
       n = pq_pop(tid); // keep pq size the same
     }
@@ -225,7 +227,10 @@ void warmup( rtems_task_argument tid ) {
       pq_insert(tid,n);
     }
     HWDS_GET_CURRENT_SIZE(tid, c);
-    spillpq_ops[tid]->fill(tid, s-c-1);
+    if ( s > c )
+      spillpq_ops[tid]->fill(tid, s-c-1);
+    HWDS_GET_CURRENT_SIZE(tid, c);
+    printk("s: %d\tc: %d\n",s,c);
   }
 #endif
 }
