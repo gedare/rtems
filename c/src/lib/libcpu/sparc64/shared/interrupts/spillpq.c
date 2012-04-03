@@ -9,6 +9,7 @@ hwpq_context_t *hwpq_context = NULL;
 
 int sparc64_spillpq_hwpq_context_initialize( int hwpq_id, hwpq_context_t *ctx )
 {
+  int i;
   if ( hwpq_context ) {
     *ctx = *hwpq_context;
   } else {
@@ -17,14 +18,14 @@ int sparc64_spillpq_hwpq_context_initialize( int hwpq_id, hwpq_context_t *ctx )
     ctx->max_size = reg;
   }
   hwpq_context = ctx;
+
+  for ( i = 0; i < NUM_QUEUES; i++ )
+    spillpq_cs_count[i] = 0;
 }
 
 int sparc64_spillpq_initialize( int queue_idx, size_t max_pq_size )
 {
   int rv;
-  int i;
-  for ( i = 0; i < NUM_QUEUES; i++ )
-    spillpq_cs_count[i] = 0;
   rv = spillpq_ops[queue_idx]->initialize(queue_idx, max_pq_size);
   return rv;
 }

@@ -21,7 +21,7 @@ void sparc64_print_all_queues()
     spill_pq = &queues[k];
     iter = _Chain_First(spill_pq);
     i = 0;
-    while(!_Chain_Is_tail(spill_pq,iter)) {
+    while(iter && !_Chain_Is_tail(spill_pq,iter)) {
       pq_node *p = (pq_node*)iter;
       printk("%d\tChain: %d\t%X\t%d\t%x\n", k, i, p,p->key,p->val);
       i++;
