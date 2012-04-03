@@ -4,9 +4,9 @@
 
 ACLOCAL_AMFLAGS = -I ../aclocal
 
-SUBDIRS = miheap msplay \
+SUBDIRS = miheap \
 					mhwpqsplitheap mhwpqunitedlist mhwpq
-#					mrbtree
+#					mrbtree msplay
 
 if MPTESTS
 endif
