@@ -232,8 +232,8 @@ done:  /* split is done, branches of n need reversal */
 static splay_tree_node *spdeq( splay_tree_node **np )
 {
   splay_tree_node * deq;    /* one to return */
-  splay_tree_node * next;         /* the next thing to deal with */
-  splay_tree_node * left;        /* the left child of next */
+  splay_tree_node * next;   /* the next thing to deal with */
+  splay_tree_node * left;  /* the left child of next */
   splay_tree_node * farleft;    /* the left child of left */
   splay_tree_node * farfarleft;  /* the left child of farleft */
 
@@ -251,7 +251,7 @@ static splay_tree_node *spdeq( splay_tree_node **np )
       *np = next->rightlink;
 
       if( *np != NULL )
-        (*np)->uplink = NULL;
+  (*np)->uplink = NULL;
 
     }
     else for(;;)  /* left is not null */
@@ -260,22 +260,22 @@ static splay_tree_node *spdeq( splay_tree_node **np )
       farleft = left->leftlink;
       if( farleft == NULL )
       {
-        deq = left;
-        next->leftlink = left->rightlink;
-        if( left->rightlink != NULL )
-          left->rightlink->uplink = next;
-        break;
+  deq = left;
+  next->leftlink = left->rightlink;
+  if( left->rightlink != NULL )
+    left->rightlink->uplink = next;
+  break;
       }
 
       /* next, left are not it, farleft is not NULL, might be it */
       farfarleft = farleft->leftlink;
       if( farfarleft == NULL )
       {
-        deq = farleft;
-        left->leftlink = farleft->rightlink;
-        if( farleft->rightlink != NULL )
-          farleft->rightlink->uplink = left;
-        break;
+  deq = farleft;
+  left->leftlink = farleft->rightlink;
+  if( farleft->rightlink != NULL )
+    farleft->rightlink->uplink = left;
+  break;
       }
 
       /* next, left, farleft are not it, rotate */
@@ -283,7 +283,7 @@ static splay_tree_node *spdeq( splay_tree_node **np )
       farleft->uplink = next;
       left->leftlink = farleft->rightlink;
       if( farleft->rightlink != NULL )
-        farleft->rightlink->uplink = left;
+  farleft->rightlink->uplink = left;
       farleft->rightlink = left;
       left->uplink = farleft;
       next = farleft;
@@ -471,49 +471,49 @@ static void splay( splay_tree_node *n, splay_tree *q )
     {
       if( upup != NULL && upup->leftlink == up )  /* rotate */
       {
-        upupup = upup->uplink;
-        upup->leftlink = up->rightlink;
-        if( upup->leftlink != NULL )
-          upup->leftlink->uplink = upup;
-        up->rightlink = upup;
-        upup->uplink = up;
-        if( upupup == NULL )
-          q->root = up;
-        else if( upupup->leftlink == upup )
-          upupup->leftlink = up;
-        else
-          upupup->rightlink = up;
-        up->uplink = upupup;
-        upup = upupup;
+  upupup = upup->uplink;
+  upup->leftlink = up->rightlink;
+  if( upup->leftlink != NULL )
+    upup->leftlink->uplink = upup;
+  up->rightlink = upup;
+  upup->uplink = up;
+  if( upupup == NULL )
+    q->root = up;
+  else if( upupup->leftlink == upup )
+    upupup->leftlink = up;
+  else
+    upupup->rightlink = up;
+  up->uplink = upupup;
+  upup = upupup;
       }
       up->leftlink = right;
       if( right != NULL )
-        right->uplink = up;
+  right->uplink = up;
       right = up;
 
     }
-    else        /* up is to the left of n */
+    else  /* up is to the left of n */
     {
       if( upup != NULL && upup->rightlink == up )  /* rotate */
       {
-        upupup = upup->uplink;
-        upup->rightlink = up->leftlink;
-        if( upup->rightlink != NULL )
-          upup->rightlink->uplink = upup;
-        up->leftlink = upup;
-        upup->uplink = up;
-        if( upupup == NULL )
-          q->root = up;
-        else if( upupup->rightlink == upup )
-          upupup->rightlink = up;
-        else
-          upupup->leftlink = up;
-        up->uplink = upupup;
-        upup = upupup;
+  upupup = upup->uplink;
+  upup->rightlink = up->leftlink;
+  if( upup->rightlink != NULL )
+    upup->rightlink->uplink = upup;
+  up->leftlink = upup;
+  upup->uplink = up;
+  if( upupup == NULL )
+    q->root = up;
+  else if( upupup->rightlink == upup )
+    upupup->rightlink = up;
+  else
+    upupup->leftlink = up;
+  up->uplink = upupup;
+  upup = upupup;
       }
       up->rightlink = left;
       if( left != NULL )
-        left->uplink = up;
+  left->uplink = up;
       left = up;
     }
     prev = up;
@@ -539,6 +539,27 @@ static void splay( splay_tree_node *n, splay_tree *q )
 
 } /* splay */
 /* /sptree.c */
+
+/**
+ *  spfind
+ *
+ *  Searches for a particular key in the tree returning the first one found.
+ *  If a node is found splay it and return it. Returns NULL if none is found.
+ */
+splay_tree_node *spfind(splay_tree *tree, int key)
+{
+  splay_tree_node *iter = tree->root;
+  while ( iter ) {
+    if(iter->key > key)
+      iter = iter->leftlink;
+    else if(iter->key < key)
+      iter = iter->rightlink;
+    else
+      splay(iter, tree);
+      break;
+  }
+  return iter;
+}
 
 void splay_initialize(rtems_task_argument tid, int size ) {
   int i;
@@ -607,6 +628,25 @@ uint64_t splay_pop_min( rtems_task_argument tid) {
     assert(p->key == stn->key);
     kv = PQ_NODE_TO_KV(p);
     free_node(tid,n);
+  } else {
+    kv = (uint64_t)-1;
+  }
+  return kv;
+}
+
+uint64_t splay_search( rtems_task_argument tid, int k) {
+  uint64_t kv;
+  splay_tree_node *stn;
+  splay_tree *tree;
+  node *n;
+  pq_node *p;
+  tree = &the_tree[tid];
+  stn = spfind(tree, k);
+  if ( stn ) {
+    n = ST_NODE_TO_NODE(stn);
+    p = &n->data;
+    assert(p->key == stn->key);
+    kv = PQ_NODE_TO_KV(p);
   } else {
     kv = (uint64_t)-1;
   }

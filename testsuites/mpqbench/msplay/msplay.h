@@ -71,5 +71,6 @@ extern void splay_initialize( rtems_task_argument tid, int size );
 extern void splay_insert( rtems_task_argument tid, uint64_t kv );
 extern uint64_t splay_min( rtems_task_argument tid );
 extern uint64_t splay_pop_min( rtems_task_argument tid );
+extern uint64_t splay_search( rtems_task_argument tid, int k );
 
 #endif
