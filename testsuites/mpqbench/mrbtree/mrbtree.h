@@ -25,22 +25,24 @@ typedef struct {
   pq_node             data;
 } node;
 
-extern rtems_chain_control freelist;
+//extern rtems_chain_control freelist;
 
 // container-of magic
 #define PQ_NODE_TO_NODE(hn) \
   ((node*)((size_t)hn - ((size_t)(&((node *)0)->data))))
 #define PQ_NODE_TO_KV(n) ((((uint64_t)n->key) << 32UL) | (uint64_t)n->val)
 
-extern node the_nodes[NUM_NODES];
-extern rtems_rbtree_control the_rbtree;
+//extern node the_nodes[NUM_NODES];
+//extern rtems_rbtree_control the_rbtree;
 
-node *alloc_node(void);
-void free_node(node *h);
+//node *alloc_node(void);
+//void free_node(node *h);
 
-void rbtree_initialize( int size );
-void rbtree_insert( uint64_t kv );
-uint64_t rbtree_min( void );
-uint64_t rbtree_pop_min( void );
+extern void rbtree_initialize( rtems_task_argument tid, int size );
+extern void rbtree_insert( rtems_task_argument tid, uint64_t kv );
+extern uint64_t rbtree_min( rtems_task_argument tid );
+extern uint64_t rbtree_pop_min( rtems_task_argument tid );
+extern uint64_t rbtree_search( rtems_task_argument tid, int k );
+
 
 #endif

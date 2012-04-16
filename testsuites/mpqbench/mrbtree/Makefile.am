@@ -20,6 +20,8 @@ include $(top_srcdir)/../automake/leaf.am
 
 mrbtree_LDADD = $(MANAGERS_NOT_WANTED:%=$(PROJECT_LIB)/no-%.rel)
 
+AM_CPPFLAGS += -I$(top_srcdir)/../support/include
+
 LINK_OBJS = $(mrbtree_OBJECTS) $(mrbtree_LDADD)
 LINK_LIBS = $(mrbtree_LDLIBS)
 

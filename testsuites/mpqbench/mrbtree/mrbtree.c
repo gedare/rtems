@@ -3,16 +3,16 @@
 
 #include <stdlib.h>
 
-node the_nodes[NUM_NODES];
-rtems_rbtree_control the_rbtree;
-rtems_chain_control freelist;
+node the_nodes[NUM_NODES][NUM_APERIODIC_TASKS];
+rtems_rbtree_control the_rbtree[NUM_APERIODIC_TASKS];
+rtems_chain_control freelist[NUM_APERIODIC_TASKS];
 
-node *alloc_node() {
-  node *n = rtems_chain_get_unprotected( &freelist );
+node *alloc_node(rtems_task_argument tid) {
+  node *n = rtems_chain_get_unprotected( &freelist[tid] );
   return n;
 }
-void free_node(node *n) {
-  rtems_chain_append_unprotected( &freelist, n );
+void free_node(rtems_task_argument tid, node *n) {
+  rtems_chain_append_unprotected( &freelist[tid], n );
 }
 
 int rbtree_compare(
@@ -30,6 +30,7 @@ int rbtree_compare(
     return 0;
 }
 
+#if 0
 /** @brief Find the node with given key in the tree
  *
  *  This function returns a pointer to the node in @a the_rbtree 
@@ -111,38 +112,47 @@ rtems_rbtree_node* test_rbtree_insert_int32(
   }
   return (rtems_rbtree_node*)0;
 }
+#endif
 
-void rbtree_initialize( int size ) {
+void rbtree_initialize( rtems_task_argument tid, int size ) {
   int i;
 
-  rtems_chain_initialize_empty ( &freelist );
+  rtems_chain_initialize_empty ( &freelist[tid] );
   for ( i = 0; i < size; i++ ) {
-    rtems_chain_append(&freelist, &the_nodes[i].link);
+    rtems_chain_append(&freelist[tid], &the_nodes[i][tid].link);
   }
 
   rtems_rbtree_initialize_empty(
-      &the_rbtree,
+      &the_rbtree[tid],
+      &rbtree_compare,
+      RTEMS_RBTREE_DUPLICATE
+  );
+
+#if 0
+  rtems_rbtree_initialize_empty(
+      &the_rbtree[tid],
       &test_rbtree_insert_int32,
       &test_rbtree_find_int32,
       RTEMS_RBTREE_DUPLICATE
   );
+#endif
 }
 
-void rbtree_insert( uint64_t kv ) {
-  node *n = alloc_node();
+void rbtree_insert( rtems_task_argument tid,  uint64_t kv ) {
+  node *n = alloc_node(tid);
   pq_node *pn = &n->data;
   pn->key = kv_key(kv);
   pn->val = kv_value(kv);
-  rtems_rbtree_insert( &the_rbtree, &n->rbt_node );
+  rtems_rbtree_insert( &the_rbtree[tid], &n->rbt_node );
 }
 
-uint64_t rbtree_min( ) {
+uint64_t rbtree_min( rtems_task_argument tid ) {
   uint64_t kv;
   rtems_rbtree_node *rn;
   node *n;
   pq_node *p;
 
-  rn = rtems_rbtree_min(&the_rbtree);
+  rn = rtems_rbtree_min(&the_rbtree[tid]);
 
   if ( rn ) {
     n = rtems_rbtree_container_of(rn, node, rbt_node);
@@ -153,21 +163,44 @@ uint64_t rbtree_min( ) {
   return (uint64_t)-1; // FIXME: error handling
 }
 
-uint64_t rbtree_pop_min( ) {
+uint64_t rbtree_pop_min( rtems_task_argument tid ) {
   uint64_t kv;
   rtems_rbtree_node *rn;
   node *n;
   pq_node *p;
 
-  rn = rtems_rbtree_get_min(&the_rbtree);
+  rn = rtems_rbtree_get_min(&the_rbtree[tid]);
 
   if ( rn ) {
     n = rtems_rbtree_container_of(rn, node, rbt_node);
     p = &n->data;
     kv = PQ_NODE_TO_KV(p);
-    free_node(n);
+    free_node(tid, n);
   } else {
     kv = (uint64_t)-1;
   }
   return kv;
 }
+
+uint64_t rbtree_search( rtems_task_argument tid, int k )
+{
+  rtems_rbtree_node *rn;
+  node search_node;
+
+  node *n;
+  pq_node *p;
+  uint64_t kv;
+
+  search_node.data.key = k;
+
+  rn = rtems_rbtree_find(&the_rbtree[tid], &search_node.rbt_node);
+  if ( rn ) {
+    n = rtems_rbtree_container_of(rn, node, rbt_node);
+    p = &n->data;
+    kv = PQ_NODE_TO_KV(p);
+  } else {
+    kv = (uint64_t)-1;
+  }
+  return kv;
+}
+
