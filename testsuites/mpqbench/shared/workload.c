@@ -95,6 +95,20 @@ static int execute( rtems_task_argument tid, int current_op ) {
         pq_insert(tid,n);
       #endif
       break;
+    case s:
+      n = pq_search(tid, args[current_op].key); // UNIQUE!
+#if defined(GAB_DEBUG)
+      if (kv_value(n) != args[current_op].val) {
+        printf("%d\tInvalid node found (args=%d,%d):\t",
+            tid, args[current_op].key, args[current_op].val);
+        pq_print_node(n);
+      }
+#endif
+#if defined(GAB_PRINT)
+      printf("%d\tPQ search (args=%d,%d):\t",
+          tid, args[current_op].key, args[current_op].val);
+      pq_print_node(n);
+#endif
     default:
 #if defined(GAB_PRINT)
       printf("%d\tInvalid Op: %d\n",tid,ops[current_op]);

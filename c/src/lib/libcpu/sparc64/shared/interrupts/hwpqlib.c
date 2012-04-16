@@ -77,3 +77,8 @@ uint64_t hwpqlib_pop( int pq_id ) {
   return kv;
 }
 
+uint64_t hwpqlib_search( int pq_id, int key) {
+  uint64_t kv;
+  HWDS_SEARCH(pq_id, key, kv);
+  return kv;
+}

@@ -23,3 +23,6 @@ uint64_t pq_pop( void ) {
   return the_heap->pop();
 }
 
+uint64_t pq_search( ) {
+  return (uint64_t)-1;
+}

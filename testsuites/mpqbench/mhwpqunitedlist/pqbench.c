@@ -30,3 +30,9 @@ uint64_t pq_pop( rtems_task_argument tid ) {
   return kv;
 }
 
+uint64_t pq_search( rtems_task_argument tid, int key ) {
+  uint64_t kv;
+  HWDS_SEARCH(tid, key, kv);
+  return kv;
+}
+

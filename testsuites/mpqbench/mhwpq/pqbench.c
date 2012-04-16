@@ -29,3 +29,7 @@ uint64_t pq_pop( rtems_task_argument tid ) {
   return hwpqlib_pop( tid );
 }
 
+uint64_t pq_search( rtems_task_argument tid, int key ) {
+  return hwpqlib_search(tid, key);
+}
+

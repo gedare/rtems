@@ -358,6 +358,19 @@ extern "C" {
         : "l0" ); \
   } while (0)
 
+#define HWDS_SEARCH( _queue, _key, _rv ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "sll  %1, 20, %%l0\n\t" \
+        "sllx %2, 32, %%l1\n\t" \
+        "or   %%l0, 17, %%l0\n\t" \
+        "impdep2  %%l1, %%l0, %0" \
+        : "=r" (_rv) \
+        : "r" (_queue), "r" (_key) \
+        : "l0", "l1" ); \
+  } while (0)
+
+
 // these macros support generic HWDS operations and can save on 
 // loop-based operations by avoiding the setup for the queue id and operation.
 #define HWDS_REGOP( _value, _queueOp ) \
@@ -367,18 +380,6 @@ extern "C" {
         : \
         : "r" (_value), "r" (_queueOp) \
         : \
-        ); \
-  } while (0)
-
-
-// TODO: Implement HWDS_FIND
-#define HWDS_FIND( _queue, _ptr, _result ) \
-  do { \
-    __asm__ __volatile__ ( \
-      "nop" \
-      : \
-      : \
-      : \
         ); \
   } while (0)
 

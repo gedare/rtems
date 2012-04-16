@@ -22,3 +22,8 @@ uint64_t pq_first( rtems_task_argument tid ) {
 uint64_t pq_pop( rtems_task_argument tid  ) {
   return heap_pop_min(tid);
 }
+
+uint64_t pq_search( rtems_task_argument tid, int key ) {
+  return heap_search(tid, key);
+}
+

@@ -21,3 +21,7 @@ uint64_t pq_pop( void ) {
   return rbtree_pop_min();
 }
 
+uint64_t pq_search( rtems_task_argument tid, int key ) {
+  return rbtree_search();
+}
+

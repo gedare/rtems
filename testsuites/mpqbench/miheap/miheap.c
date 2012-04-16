@@ -119,3 +119,7 @@ uint64_t heap_pop_min( rtems_task_argument tid ) {
     heap_remove(tid,1);
   return kv;
 }
+
+uint64_t heap_search( rtems_task_argument tid, int k ) {
+  return (uint64_t)-1;
+}

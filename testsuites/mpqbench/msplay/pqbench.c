@@ -21,3 +21,7 @@ uint64_t pq_pop( rtems_task_argument tid ) {
   return splay_pop_min(tid);
 }
 
+uint64_t pq_search( rtems_task_argument tid, int key ) {
+  return splay_search(tid, key);
+}
+
