@@ -278,18 +278,19 @@ rtems_task Init(
 #endif
 
  
-  /* start measurement */
-#ifdef WARMUP
-  asm volatile("break_start_opal:");
-#endif
-
   rtems_task_wake_after( 1 );
+
   /* release all of the waiting tasks */
   status = rtems_semaphore_flush( tasks_complete_sem );
   directive_failed( status, "rtems_semaphore_flush" );
 
   status = rtems_semaphore_release( tasks_complete_sem );
   directive_failed( status, "rtems_semaphore_release" );
+
+  /* start measurement */
+#ifdef WARMUP
+  asm volatile("break_start_opal:");
+#endif
 
   /* Should block forever */
   status = rtems_semaphore_obtain( final_barrier, RTEMS_DEFAULT_OPTIONS, 0 );
