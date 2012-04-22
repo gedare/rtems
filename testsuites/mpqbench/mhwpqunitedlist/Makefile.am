@@ -8,7 +8,7 @@ rtems_tests_PROGRAMS = mhwpqunitedlist
 mhwpqunitedlist_SOURCES = ../shared/init.c ../shared/pqbench.h \
  									../shared/workload.c ../shared/workload.h \
 									../shared/params.h ../shared/params.i \
-									pqbench.c system.h
+									pqbench.c system.h ../shared/hwpqbench.c
 
 #dist_rtems_tests_DATA = mhwpqunitedlist.scn
 #dist_rtems_tests_DATA += mhwpqunitedlist.doc
