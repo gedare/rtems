@@ -22,7 +22,7 @@ void sparc64_hwpq_initialize()
    );
 
   _CPU_ISR_install_vector(
-    SPARC_SYNCHRONOUS_TRAP(0x43), /* Failover--emulate */
+    SPARC_ASYNCHRONOUS_TRAP(0x43), /* Failover--emulate */
     sparc64_hwpq_exception_handler,
     &old
    );
