@@ -546,19 +546,93 @@ static void splay( splay_tree_node *n, splay_tree *q )
  *  Searches for a particular key in the tree returning the first one found.
  *  If a node is found splay it and return it. Returns NULL if none is found.
  */
-splay_tree_node *spfind(splay_tree *tree, int key)
+static splay_tree_node *spfind(splay_tree *tree, int key)
 {
   splay_tree_node *iter = tree->root;
   while ( iter ) {
-    if(iter->key > key)
+    if(iter->key > key) {
       iter = iter->leftlink;
-    else if(iter->key < key)
+    }
+    else if(iter->key < key) {
       iter = iter->rightlink;
-    else
+    }
+    else {
       splay(iter, tree);
       break;
+    }
   }
   return iter;
+}
+
+/**
+ * spget_successor
+ *
+ * Find the in-order successor of n. Assumes it exists
+ */
+static splay_tree_node* spget_successor( splay_tree_node *n ) {
+  n = n->rightlink;
+  while ( n->leftlink ) {
+    n = n->leftlink;
+  }
+  return n;
+}
+
+/**
+ *  spdelete
+ *
+ *  Searches for and removes a particular key in the tree.
+ *  If a node is pruned then return it. Return NULL if key is not found.
+ */
+static splay_tree_node* spdelete(splay_tree *tree, int key)
+{
+  splay_tree_node *node = spfind(tree, key);
+  splay_tree_node *new_root = NULL;
+  splay_tree_node *left;
+  splay_tree_node *right;
+
+  if ( node ) {
+    /* because of splaying in spfind() node is the root */
+    if ( node->leftlink == NULL ) {
+      /* replace with right child if it exists */
+      right = node->rightlink;
+      if ( right ) {
+        right->uplink = NULL;
+      }
+      tree->root = right;
+    } else if ( node->rightlink == NULL ) {
+      /* replace with left child, which exists */
+      left = node->leftlink;
+      left->uplink = NULL;
+      tree->root = left;
+    } else {
+      /* replace node with its successor */
+      splay_tree_node *suc = spget_successor(node);
+      right = node->rightlink;
+      left = node->leftlink;
+      if ( suc != node->rightlink ) {
+        new_root = suc->uplink;
+        if ( suc->rightlink ) {
+          suc->rightlink->uplink = new_root;
+          new_root->leftlink = suc->rightlink;
+        } else {
+          new_root->leftlink = NULL;
+        }
+        suc->uplink = node->uplink;
+        node->rightlink->uplink = suc;
+        node->leftlink->uplink = suc;
+        suc->rightlink = node->rightlink;
+        suc->leftlink = node->leftlink;
+      } else { /* successor is the right child */
+        new_root = suc;
+        suc->uplink = node->uplink;
+        node->leftlink->uplink = suc;
+        suc->leftlink = node->leftlink;
+      }
+      tree->root = suc;
+      splay(new_root, tree);
+    }
+  }
+  return node;
 }
 
 void splay_initialize(rtems_task_argument tid, int size ) {
@@ -578,7 +652,7 @@ void splay_initialize(rtems_task_argument tid, int size ) {
   the_tree[tid].root = NULL;
 }
 
-void splay_insert( rtems_task_argument tid,uint64_t kv ) {
+void splay_insert( rtems_task_argument tid, uint64_t kv ) {
   node *n = alloc_node(tid);
   pq_node *pn = &n->data;
   pn->key = kv_key(kv);
@@ -647,6 +721,27 @@ uint64_t splay_search( rtems_task_argument tid, int k) {
     p = &n->data;
     assert(p->key == stn->key);
     kv = PQ_NODE_TO_KV(p);
+  } else {
+    kv = (uint64_t)-1;
+  }
+  return kv;
+}
+
+uint64_t splay_extract( rtems_task_argument tid, int k) {
+  uint64_t kv;
+  splay_tree_node *stn;
+  splay_tree *tree;
+  node *n;
+  pq_node *p;
+
+  tree = &the_tree[tid];
+  stn = spdelete(tree, k);
+  if ( stn ) {
+    n = ST_NODE_TO_NODE(stn);
+    p = &n->data;
+    assert(p->key == stn->key);
+    kv = PQ_NODE_TO_KV(p);
+    free_node(tid, n);
   } else {
     kv = (uint64_t)-1;
   }

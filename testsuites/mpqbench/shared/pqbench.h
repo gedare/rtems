@@ -25,6 +25,7 @@ typedef enum {
   p,      /* pop */
   h,      /* hold */
   s,      /* search */
+  x,      /* extract */
 } PQ_op;
 
 typedef struct {
@@ -38,6 +39,7 @@ extern void pq_insert( rtems_task_argument tid, uint64_t p );
 extern uint64_t pq_first( rtems_task_argument tid );
 extern uint64_t pq_pop( rtems_task_argument tid );
 extern uint64_t pq_search( rtems_task_argument tid, int key );
+extern uint64_t pq_extract( rtems_task_argument tid, int key );
 
 #ifdef __cplusplus
 }

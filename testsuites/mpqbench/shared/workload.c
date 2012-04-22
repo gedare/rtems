@@ -109,6 +109,22 @@ static int execute( rtems_task_argument tid, int current_op ) {
           tid, args[current_op].key, args[current_op].val);
       pq_print_node(n);
 //#endif
+      break;
+    case x:
+      n = pq_extract(tid, args[current_op].key);
+#if defined(GAB_DEBUG)
+      if (kv_value(n) != args[current_op].val) {
+        printf("%d\tInvalid node found (args=%d,%d):\t",
+            tid, args[current_op].key, args[current_op].val);
+        pq_print_node(n);
+      }
+#endif
+//#if defined(GAB_PRINT)
+      printf("%d\tPQ extract (args=%d,%d):\t",
+          tid, args[current_op].key, args[current_op].val);
+      pq_print_node(n);
+//#endif
+      break;
     default:
 #if defined(GAB_PRINT)
       printf("%d\tInvalid Op: %d\n",tid,ops[current_op]);
