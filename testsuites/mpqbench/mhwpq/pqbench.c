@@ -33,3 +33,6 @@ uint64_t pq_search( rtems_task_argument tid, int key ) {
   return hwpqlib_search(tid, key);
 }
 
+uint64_t pq_extract( rtems_task_argument tid, int key ) {
+  return hwpqlib_extract(tid, key);
+}

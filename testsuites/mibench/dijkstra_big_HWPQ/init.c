@@ -63,10 +63,12 @@ void enqueue (int iNode, int iDist, int iPrev)
 {
   NODE *qNew = &rgnNodes[iNode];
   uint64_t kv;
+  int key;
   assert(iNode < NUM_NODES);
   if (qNew->qFlag) {
     kv = NODE_TO_KV(qNew);
-    HWDS_EXTRACT ( 4, kv );
+    key = KV_TO_K(kv);
+    HWDS_EXTRACT ( 4, key, kv );
     g_qCount--;
   }
 
@@ -86,8 +88,10 @@ void dequeue (int *piNode, int *piDist, int *piPrev)
 {
   NODE *qKill = NULL;
   uint64_t kv;
+  int key;
   HWDS_FIRST( 4, kv );
   qKill = (NODE*)KV_TO_V(kv);
+  key = KV_TO_K(kv);
 
   if (qKill)
     {
@@ -96,7 +100,7 @@ void dequeue (int *piNode, int *piDist, int *piPrev)
       *piDist = qKill->iDist;
       *piPrev = qKill->iPrev;
       assert(*piNode < NUM_NODES);
-      HWDS_EXTRACT( 4, kv );
+      HWDS_EXTRACT( 4, key, kv );
       qKill->qFlag = 0;
       g_qCount--;
     } 

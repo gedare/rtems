@@ -4,6 +4,7 @@
 sparc64_spillpq_operations *spillpq_ops[NUM_QUEUES];
 size_t spillpq_queue_max_size[NUM_QUEUES];
 int spillpq_cs_count[NUM_QUEUES];
+uint64_t spillpq_cs_payload[NUM_QUEUES];
 
 hwpq_context_t *hwpq_context = NULL;
 
@@ -19,8 +20,10 @@ int sparc64_spillpq_hwpq_context_initialize( int hwpq_id, hwpq_context_t *ctx )
   }
   hwpq_context = ctx;
 
-  for ( i = 0; i < NUM_QUEUES; i++ )
+  for ( i = 0; i < NUM_QUEUES; i++ ) {
     spillpq_cs_count[i] = 0;
+    spillpq_cs_payload[i] = 0;
+  }
 }
 
 int sparc64_spillpq_initialize( int queue_idx, size_t max_pq_size )
@@ -54,6 +57,13 @@ uint64_t sparc64_spillpq_extract(int queue_idx, uint64_t kv)
   return rv;
 }
 
+uint64_t sparc64_spillpq_search(int queue_idx, uint64_t kv)
+{
+  uint64_t rv;
+  rv = spillpq_ops[queue_idx]->search(queue_idx, kv);
+  return rv;
+}
+
 uint64_t sparc64_spillpq_pop(int queue_idx, uint64_t kv)
 {
   uint64_t rv;
@@ -71,7 +81,7 @@ int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_context)
   trap_idx = ((trap_context)&(~0))>>20; // what is trying to be used?
   trap_operation = (trap_context)&~(~0 << (3 + 1)); // what is the op?
   
-  HWDS_GET_PAYLOAD(kv);
+  HWDS_GET_PAYLOAD(queue_idx, kv);
 
   switch (trap_operation) {
     case 1:
@@ -86,10 +96,16 @@ int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_context)
       rv = sparc64_spillpq_extract(queue_idx, kv);
       break;
 
+    case 17:
+      rv = sparc64_spillpq_search(queue_idx, kv);
+      break;
+
     default:
       printk("Unknown operation to emulate: %d\n", trap_operation);
       break;
   }
+
+  HWDS_SET_PAYLOAD(trap_idx, rv);
   return rv;
 }
 
@@ -124,14 +140,17 @@ int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_context)
   Chain_Node *iter;
   int rv = 0;
   int size = 0;
+  uint64_t kv;
   
   trap_idx = ((trap_context)&(~0))>>20;
   trap_operation = (trap_context)&~(~0 << (3 + 1));
   
   DPRINTK("context switch\tfrom: %d\tto: %d\tduring: %d\n",
       from_idx, trap_idx, trap_operation);
-
+  
   HWDS_GET_CURRENT_SIZE(from_idx, size);
+  HWDS_GET_PAYLOAD(from_idx, kv); // SAVE PAYLOAD
+  spillpq_cs_payload[from_idx] = kv;
   // FIXME: choose whether or not to context switch.
   if ( from_idx < NUM_QUEUES && spillpq_ops[from_idx] ) {
     // spill all of from_idx
@@ -142,10 +161,13 @@ int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_context)
     spillpq_cs_count[from_idx] = rv;
   }
   if ( trap_idx < NUM_QUEUES && spillpq_ops[trap_idx] ) {
+    // FIXME: choose how much to fill
     // fill up to cs_count[trap_idx]
     HWDS_SET_CURRENT_ID(trap_idx);
     hwpq_context->current_qid = trap_idx;
     spillpq_ops[trap_idx]->fill(trap_idx, spillpq_cs_count[trap_idx]);
+    kv = spillpq_cs_payload[trap_idx];
+    HWDS_SET_PAYLOAD(trap_idx, kv);
   }
   return rv;
 }

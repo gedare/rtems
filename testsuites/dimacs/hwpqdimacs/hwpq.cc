@@ -54,8 +54,14 @@ Node *HWPQ::Enqueue(Node *node)
 Node *HWPQ::Update(Node *node, int dist)
 {
   uint64_t kv;
+  int key;
   kv = NODE_TO_KV(node);
-  HWDS_EXTRACT(4, kv); // TODO: why not one op for update prio?
+  key = KV_TO_K(kv);
+  HWDS_EXTRACT(4, key, kv); // TODO: why not one op for update prio?
+  if ( kv == (uint64_t)-1 ) {
+    HWDS_GET_PAYLOAD(4, kv);
+    assert(NODE_TO_KV(node) == kv);
+  }
   node->dist = dist;
   HWDS_ENQUEUE(4, node->dist, node);
   return node;
@@ -69,9 +75,13 @@ Node *HWPQ::Update(Node *node, int dist)
 Node *HWPQ::PopMin()
 {
   uint64_t kv;
+  int key;
   HWDS_FIRST( 4, kv );
-  if (kv != (uint64_t)-1 )
-    HWDS_EXTRACT(4, kv); // TODO: why not just one op for pop?
+  if (kv != (uint64_t)-1 ) {
+    uint64_t kv2;
+    key = KV_TO_K(kv);
+    HWDS_EXTRACT(4, key, kv2); // TODO: why not just one op for pop?
+  }
   else
     return NULL;
   return (Node*)KV_TO_V(kv); // FIXME: truncates to 32 bits..

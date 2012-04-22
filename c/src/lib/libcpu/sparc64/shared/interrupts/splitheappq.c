@@ -166,34 +166,58 @@ uint64_t sparc64_splitheappq_pop(int queue_idx, uint64_t kv)
   return heap_pop_min( queue_idx );
 }
 
-uint64_t sparc64_splitheappq_extract(int qid, uint64_t kv )
+static int search_helper(int qid, uint64_t kv)
 {
   uint32_t key;
-  uint32_t val;
   int i;
-
+  
   key = kv_key(kv);
-  val = kv_value(kv);
-
-  DPRINTK("software extract: queue: %d\tnode: %x\tprio: %d\n",
-      qid,val,key);
 
   // linear search, ugh
-  for ( i = 0; i < heap_current_size[qid]; i++ ) {
+  for ( i = 1; i <= heap_current_size[qid]; i++ ) {
     if ( the_heap[qid][i]->key == key ) {
-      heap_remove(qid,i);
-      i--;
-      break;
+      return i;
     }
   }
-
-  if ( i == heap_current_size[qid]) {
-    DPRINTK("Failed software extract: %d\t%X\n", key, val);
-    return -1;
-  }
-
+ 
   return 0;
 }
+
+uint64_t sparc64_splitheappq_extract(int qid, uint64_t kv )
+{
+  uint64_t rv;
+  int i;
+
+  i = search_helper(qid, kv);
+
+  if (i) {
+    rv = HEAP_NODE_TO_KV(the_heap[qid][i]);
+    heap_remove(qid,i);
+  } else {
+    DPRINTK("%d: Failed extract: %d\t%X\n", qid, kv_key(kv), kv_value(kv));
+    rv = (uint64_t)-1;
+  }
+
+  return rv;
+}
+
+uint64_t sparc64_splitheappq_search(int qid, uint64_t kv )
+{
+  uint64_t rv;
+  int i;
+
+  i = search_helper(qid, kv);
+
+  if (i) {
+    rv = HEAP_NODE_TO_KV(the_heap[qid][i]);
+  } else {
+    DPRINTK("%d: Failed search: %d\t%X\n", qid, kv_key(kv), kv_value(kv));
+    rv = (uint64_t)-1;
+  }
+
+  return rv;
+}
+
 
 static inline uint64_t 
 sparc64_splitheappq_spill_node(int qid)
@@ -271,6 +295,7 @@ sparc64_spillpq_operations sparc64_splitheappq_ops = {
   sparc64_splitheappq_first,
   sparc64_splitheappq_pop,
   sparc64_splitheappq_extract,
+  sparc64_splitheappq_search,
   sparc64_splitheappq_handle_spill,
   sparc64_splitheappq_handle_fill,
   sparc64_splitheappq_drain

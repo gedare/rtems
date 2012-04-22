@@ -68,11 +68,13 @@ uint64_t hwpqlib_first( int pq_id ) {
 
 uint64_t hwpqlib_pop( int pq_id ) {
   uint64_t kv;
+  int key;
   // TODO: why not just one op for pop?
   HWDS_FIRST(pq_id, kv);
   if ( kv != (uint64_t)-1 ) {
+    key = kv_key(kv);
     hwpqlib_context.pq_context[pq_id].current_size--;
-    HWDS_EXTRACT(pq_id, kv);  
+    HWDS_EXTRACT(pq_id, key, kv);
   }
   return kv;
 }
@@ -82,3 +84,13 @@ uint64_t hwpqlib_search( int pq_id, int key) {
   HWDS_SEARCH(pq_id, key, kv);
   return kv;
 }
+
+uint64_t hwpqlib_extract( int pq_id, int key) {
+  uint64_t kv;
+  HWDS_EXTRACT(pq_id, key, kv);
+  if ( kv == (uint64_t)-1 ) {
+    HWDS_GET_PAYLOAD(pq_id, kv);
+  }
+  return kv;
+}
+

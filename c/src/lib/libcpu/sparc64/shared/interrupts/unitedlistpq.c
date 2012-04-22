@@ -113,42 +113,64 @@ uint64_t sparc64_unitedlistpq_pop(int queue_idx, uint64_t kv)
   return rv;
 }
 
-uint64_t sparc64_unitedlistpq_extract(int queue_idx, uint64_t kv)
+static pq_node* search_helper(int queue_idx, uint64_t kv)
 {
   uint32_t key;
-  uint32_t val;
   Chain_Node *iter;
   Chain_Control *spill_pq;
-
+  
   key = kv_key(kv);
-  val = kv_value(kv);
-
-  DPRINTK("%d\tsoftware extract:\t%X\tprio: %d\n",queue_idx, key, val);
-
+  
   // linear search, ugh
   spill_pq = &queues[queue_idx];
   iter = _Chain_First(spill_pq);
   while(!_Chain_Is_tail(spill_pq,iter)) {
     pq_node *p = (pq_node*)iter;
-    if (p->val == val) {
-      if (_Chain_Is_first(iter))
-        _Chain_Get_first_unprotected(spill_pq);
-      else
-        _Chain_Extract_unprotected(iter);
-      freelist_put_node(&free_nodes[queue_idx], iter);
-      break;
+    if (p->key == key) {
+      return p;
     }
     iter = _Chain_Next(iter);
   }
-
-  if (_Chain_Is_tail(spill_pq,iter)) {
-    DPRINTK("%d\tFailed software extract: %d\t%X\n",queue_idx, key,val);
-    return -1;
-  }
-  return 0;
+  return NULL;
 }
 
-// FIXME: make a single pass to spill all the nodes..
+uint64_t sparc64_unitedlistpq_extract(int queue_idx, uint64_t kv)
+{
+  uint64_t rv;
+  pq_node *node = search_helper(queue_idx, kv);
+  Chain_Control *spill_pq = &queues[queue_idx];
+
+  node = search_helper(queue_idx, kv);
+
+  if ( node ) {
+    if ( _Chain_Is_first((Chain_Node*)node) ) {
+      _Chain_Get_first_unprotected(spill_pq);
+    } else {
+      _Chain_Extract_unprotected((Chain_Node*)node);
+    }
+    rv = pq_node_to_kv(node);
+  } else {
+    DPRINTK("%d\tFailed software extract: %d\t%X\n",queue_idx, key,val);
+    rv = (uint64_t)-1;
+  }
+  return rv;
+}
+
+uint64_t sparc64_unitedlistpq_search(int queue_idx, uint64_t kv)
+{
+  uint64_t rv;
+  pq_node *node = search_helper(queue_idx, kv);
+
+  if (node) {
+    rv = pq_node_to_kv(node);
+  } else {
+    DPRINTK("%d\tFailed search: %d\t%X\n",queue_idx, kv_key(kv), kv_value(kv));
+    rv = (uint64_t)-1;
+  }
+
+  return rv;
+}
+
 // Pass iter node as either the tail of spill_pq or as a node that is known
 // to have lower priority than the lowest priority node in the hwpq; this is
 // simple when there is not concurrent access to a pq in the hwpq.
@@ -282,6 +304,7 @@ sparc64_spillpq_operations sparc64_unitedlistpq_ops = {
   sparc64_unitedlistpq_first,
   sparc64_spillpq_null_handler,
   sparc64_unitedlistpq_extract,
+  sparc64_unitedlistpq_search,
   sparc64_unitedlistpq_handle_spill,
   sparc64_unitedlistpq_handle_fill,
   sparc64_unitedlistpq_drain

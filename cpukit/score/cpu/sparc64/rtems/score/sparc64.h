@@ -210,15 +210,16 @@ extern "C" {
         : "l0", "l1" ); \
   } while (0)
 
-#define HWDS_EXTRACT( _queue, _kv ) \
+#define HWDS_EXTRACT( _queue, _key, _kv ) \
   do { \
     __asm__ __volatile__ ( \
-        "sll  %1, 20, %%l0\n\t" \
+        "sll  %2, 20, %%l0\n\t" \
+        "sllx %1, 32, %%l1\n\t" \
         "or   %%l0, 3, %%l0\n\t" \
-        "impdep2  %0, %%l0, %%g0" \
-        : \
-        : "r" (_kv), "r" (_queue) \
-        : "l0" \
+        "impdep2  %%l1, %%l0, %0" \
+        : "=r" (_kv) \
+        : "r" (_key), "r" (_queue) \
+        : "l0", "l1" \
     ); \
   } while (0)
 
@@ -289,13 +290,14 @@ extern "C" {
         : "r" (_queue) : "l0" ); \
   } while (0)
 
-#define HWDS_GET_PAYLOAD( _ptr ) \
+#define HWDS_GET_PAYLOAD( _queue, _ptr ) \
   do { \
     __asm__ __volatile__ ( \
-        "or   %%g0, 10, %%l0\n\t" \
+        "sll  %1, 20, %%l0\n\t" \
+        "or   %%l0, 10, %%l0\n\t" \
         "impdep2  %%g0, %%l0, %0" \
         : "=r" (_ptr) \
-        : : "l0" \
+        : "r" (_queue) : "l0" \
         ); \
   } while (0)
 
@@ -368,6 +370,17 @@ extern "C" {
         : "=r" (_rv) \
         : "r" (_queue), "r" (_key) \
         : "l0", "l1" ); \
+  } while (0)
+
+#define HWDS_SET_PAYLOAD( _queue, _kv ) \
+  do { \
+    __asm__ __volatile__ ( \
+        "sll  %0, 20, %%l0\n\t" \
+        "or   %%l0, 18, %%l0\n\t" \
+        "impdep2  %1, %%l0, %%g0" \
+        : \
+        : "r" (_queue), "r" (_kv) \
+        : "l0" ); \
   } while (0)
 
 

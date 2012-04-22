@@ -38,4 +38,5 @@ void hwpqlib_insert( int pq_id, int key, int value );
 uint64_t hwpqlib_first( int pq_id );
 uint64_t hwpqlib_pop( int pq_id );
 uint64_t hwpqlib_search( int pq_id, int key);
+uint64_t hwpqlib_extract( int pq_id, int key);
 
