@@ -121,5 +121,26 @@ uint64_t heap_pop_min( rtems_task_argument tid ) {
 }
 
 uint64_t heap_search( rtems_task_argument tid, int k ) {
+  int i;
+  for ( i = 1; i <= heap_current_size[tid]; i++ ) {
+    if ( the_heap[i][tid]->key == k ) {
+      return (HEAP_NODE_TO_KV(the_heap[i][tid]));
+    }
+  }
   return (uint64_t)-1;
 }
+
+/* this can be a lot more efficient if the heap node is known/passed */
+uint64_t heap_extract( rtems_task_argument tid, int k ) {
+  int i;
+  uint64_t kv;
+  for ( i = 1; i <= heap_current_size[tid]; i++ ) {
+    if ( the_heap[i][tid]->key == k ) {
+      kv = HEAP_NODE_TO_KV(the_heap[i][tid]);
+      heap_remove( tid, i );
+      return kv;
+    }
+  }
+  return (uint64_t)-1;
+}
+

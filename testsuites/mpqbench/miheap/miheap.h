@@ -39,5 +39,6 @@ void heap_decrease_key( rtems_task_argument tid, int index, int new_key );
 uint64_t heap_min( rtems_task_argument tid );
 uint64_t heap_pop_min( rtems_task_argument tid );
 uint64_t heap_search( rtems_task_argument tid, int key );
+uint64_t heap_extract( rtems_task_argument tid, int key );
 
 #endif
