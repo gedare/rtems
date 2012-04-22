@@ -1,8 +1,6 @@
 
 #include "mstlheap.h"
 
-pq_t* the_heap;
-
 uint64_t pq_t::first() {
   pq_node_t *n = m_pq.front();
   return PQ_NODE_TO_KV(n);
@@ -19,4 +17,14 @@ void pq_t::insert(uint64_t kv) {
   pq_node_t *n = new pq_node_t(kv);
   m_pq.push_back(n);
   push_heap( m_pq.begin(), m_pq.end(), pq_node_min_compare() );
+}
+
+uint64_t pq_t::search(int k) {
+  return (uint64_t)-1;
+
+}
+
+uint64_t pq_t::extract(int k) {
+  return (uint64_t)-1;
+
 }

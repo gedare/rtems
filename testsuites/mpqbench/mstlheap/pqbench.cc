@@ -4,25 +4,33 @@
 /* PQ implementation */
 #include "mstlheap.h"
 
+#include "../shared/params.h"
+static pq_t* the_heap[NUM_APERIODIC_TASKS];
+
 /* test interface */
-void pq_initialize( int size ) { 
- the_heap = new pq_t();
+void pq_initialize( rtems_task_argument tid, int size ) { 
+ the_heap[tid] = new pq_t();
 }
 
-void pq_insert( uint64_t p ) {
-  the_heap->insert(p);
+void pq_insert( rtems_task_argument tid, uint64_t p ) {
+  the_heap[tid]->insert(p);
 }
 
 //void pq_extract( pq_node *n ) { heap_remove(n->hIndex); }
 
-uint64_t pq_first( void ) {
-  return the_heap->first();
+uint64_t pq_first( rtems_task_argument tid ) {
+  return the_heap[tid]->first();
 }
 
-uint64_t pq_pop( void ) {
-  return the_heap->pop();
+uint64_t pq_pop( rtems_task_argument tid ) {
+  return the_heap[tid]->pop();
 }
 
-uint64_t pq_search( ) {
-  return (uint64_t)-1;
+uint64_t pq_search( rtems_task_argument tid, int key ) {
+  return the_heap[tid]->search(key);
 }
+
+uint64_t pq_extract( rtems_task_argument tid, int key ) {
+  return the_heap[tid]->extract(key);
+}
+

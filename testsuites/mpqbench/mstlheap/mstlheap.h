@@ -6,11 +6,6 @@
 #ifndef __MSTLHEAP_H_
 #define __MSTLHEAP_H_
 
-#include "../shared/pqbench.h"
-
-#define NUM_NODES (PQ_MAX_SIZE)
-
-#include "rtems/chain.h"
 #include "rtems/rtems/types.h"
 
 #include <algorithm>
@@ -45,6 +40,8 @@ class pq_t {
     uint64_t pop();
 
     void insert(uint64_t kv);
+    uint64_t search( int key );
+    uint64_t extract( int key );
 
     class pq_node_min_compare {
       public:
@@ -56,7 +53,5 @@ class pq_t {
   private:
     std::vector<pq_node_t *> m_pq;
 };
-
-extern pq_t* the_heap;
 
 #endif
