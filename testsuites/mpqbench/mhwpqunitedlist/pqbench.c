@@ -51,8 +51,9 @@ uint64_t pq_extract( rtems_task_argument tid, int key ) {
   HWDS_EXTRACT(tid, key, kv);
   if ( kv == (uint64_t)-1 ) {
     HWDS_GET_PAYLOAD(tid, kv);
-    if ( kv_key(kv) != key )
+    if ( kv_key(kv) != key ) {
       kv = (uint64_t)-1;
+    }
   }
   return kv;
 }

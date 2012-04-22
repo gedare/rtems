@@ -213,12 +213,12 @@ extern "C" {
 #define HWDS_EXTRACT( _queue, _key, _kv ) \
   do { \
     __asm__ __volatile__ ( \
-        "sll  %2, 20, %%l0\n\t" \
-        "sllx %1, 32, %%l1\n\t" \
+        "sll  %1, 20, %%l0\n\t" \
+        "sllx %2, 32, %%l1\n\t" \
         "or   %%l0, 3, %%l0\n\t" \
         "impdep2  %%l1, %%l0, %0" \
         : "=r" (_kv) \
-        : "r" (_key), "r" (_queue) \
+        : "r" (_queue), "r" (_key) \
         : "l0", "l1" \
     ); \
   } while (0)
