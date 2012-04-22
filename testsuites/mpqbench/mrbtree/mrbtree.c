@@ -204,3 +204,27 @@ uint64_t rbtree_search( rtems_task_argument tid, int k )
   return kv;
 }
 
+uint64_t rbtree_extract( rtems_task_argument tid, int k )
+{
+  rtems_rbtree_node *rn;
+  node search_node;
+
+  node *n;
+  pq_node *p;
+  uint64_t kv;
+
+  search_node.data.key = k;
+
+  rn = rtems_rbtree_find(&the_rbtree[tid], &search_node.rbt_node);
+  if ( rn ) {
+    rtems_rbtree_extract(&the_rbtree[tid], rn);
+    n = rtems_rbtree_container_of(rn, node, rbt_node);
+    p = &n->data;
+    kv = PQ_NODE_TO_KV(p);
+    free_node(tid, n);
+  } else {
+    kv = (uint64_t)-1;
+  }
+  return kv;
+}
+

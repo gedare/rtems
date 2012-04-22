@@ -43,6 +43,6 @@ extern void rbtree_insert( rtems_task_argument tid, uint64_t kv );
 extern uint64_t rbtree_min( rtems_task_argument tid );
 extern uint64_t rbtree_pop_min( rtems_task_argument tid );
 extern uint64_t rbtree_search( rtems_task_argument tid, int k );
-
+extern uint64_t rbtree_extract( rtems_task_argument tid, int k );
 
 #endif
