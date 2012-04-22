@@ -52,7 +52,7 @@ uint64_t sparc64_spillpq_extract(int queue_idx, uint64_t kv)
 {
   uint64_t rv;
   rv = spillpq_ops[queue_idx]->extract(queue_idx, kv);
-  if (!rv)
+  if (rv != (uint64_t)-1)
     HWDS_ADJUST_SPILL_COUNT(queue_idx, (int32_t)-1); // adjust spill count.
   return rv;
 }
