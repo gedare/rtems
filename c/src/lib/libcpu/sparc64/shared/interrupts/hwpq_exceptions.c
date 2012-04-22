@@ -49,8 +49,9 @@ void sparc64_hwpq_exception_handler(
   uint64_t context;
   uint32_t queue_idx;
   uint32_t trap_context;
-  int softint_bit = (vector - 0x40);
+  int softint_bit = ((vector&~SPARC_SYNCHRONOUS_TRAP_BIT_MASK) - 0x40);
   int mask = (1<<softint_bit);
+//  int synchronous = vector & SPARC_SYNCHRONOUS_TRAP_BIT_MASK;
 
   level = sparc_disable_interrupts(); // necessary?
 
@@ -81,7 +82,7 @@ void sparc64_hwpq_exception_handler(
       break;
 
     default:
-      printk("Invalid softint hwpq exception\n");
+      printk("Invalid softint hwpq exception %d\n", softint_bit);
       break;
   }
 

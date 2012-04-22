@@ -79,7 +79,7 @@ int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_context)
   uint64_t kv;
   int rv = 0;
   trap_idx = ((trap_context)&(~0))>>20; // what is trying to be used?
-  trap_operation = (trap_context)&~(~0 << (3 + 1)); // what is the op?
+  trap_operation = (trap_context)&~(~0 << (16 + 1)); // what is the op?
   
   HWDS_GET_PAYLOAD(queue_idx, kv);
 
@@ -105,7 +105,7 @@ int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_context)
       break;
   }
 
-  HWDS_SET_PAYLOAD(trap_idx, rv);
+  HWDS_SET_PAYLOAD(queue_idx, rv);
   return rv;
 }
 
@@ -143,7 +143,7 @@ int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_context)
   uint64_t kv;
   
   trap_idx = ((trap_context)&(~0))>>20;
-  trap_operation = (trap_context)&~(~0 << (3 + 1));
+  trap_operation = (trap_context)&~(~0 << (16 + 1));
   
   DPRINTK("context switch\tfrom: %d\tto: %d\tduring: %d\n",
       from_idx, trap_idx, trap_operation);
