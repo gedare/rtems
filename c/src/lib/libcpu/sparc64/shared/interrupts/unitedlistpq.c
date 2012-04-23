@@ -290,7 +290,7 @@ sparc64_spillpq_operations sparc64_unitedlistpq_ops = {
   sparc64_unitedlistpq_initialize,
   sparc64_unitedlistpq_insert,
   sparc64_unitedlistpq_first,
-  sparc64_spillpq_null_handler,
+  sparc64_unitedlistpq_pop,
   sparc64_unitedlistpq_extract,
   sparc64_unitedlistpq_search,
   sparc64_unitedlistpq_handle_spill,
