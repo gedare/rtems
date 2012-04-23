@@ -30,6 +30,31 @@ void sparc64_print_all_queues()
   }
 }
 
+/*
+ * Returns either the pq_node with key = kv_key(kv), the first node with
+ * a greater key, or the tail of the list in case no node has a greater key
+ */
+static pq_node* search_helper(int queue_idx, uint64_t kv)
+{
+  uint32_t key;
+  Chain_Node *iter;
+  Chain_Control *spill_pq;
+  
+  key = kv_key(kv);
+  
+  // linear search, ugh
+  spill_pq = &queues[queue_idx];
+  iter = _Chain_First(spill_pq);
+  while(!_Chain_Is_tail(spill_pq,iter)) {
+    pq_node *p = (pq_node*)iter;
+    if (p->key >= key) {
+      return p;
+    }
+    iter = _Chain_Next(iter);
+  }
+  return (pq_node*)iter;
+}
+
 uint64_t sparc64_unitedlistpq_initialize( int qid, size_t max_pq_size )
 {
   int i;
@@ -44,25 +69,11 @@ uint64_t sparc64_unitedlistpq_initialize( int qid, size_t max_pq_size )
 
 uint64_t sparc64_unitedlistpq_insert(int queue_idx, uint64_t kv)
 {
-  uint32_t key;
-  uint32_t val;
   Chain_Node *iter;
-  Chain_Control *spill_pq;
   pq_node *new_node;
 
-  key = kv_key(kv);
-  val = kv_value(kv);
+  iter = (Chain_Node*)search_helper(queue_idx, kv);
 
-  // linear search, ugh
-  spill_pq = &queues[queue_idx];
-  iter = _Chain_First(spill_pq);
-  while(!_Chain_Is_tail(spill_pq,iter)) {
-    pq_node *p = (pq_node*)iter;
-    if (p->key > key) {
-      break;
-    }
-    iter = _Chain_Next(iter);
-  }
   if ( !_Chain_Is_first(iter) )
     iter = _Chain_Previous(iter);
 
@@ -75,8 +86,8 @@ uint64_t sparc64_unitedlistpq_insert(int queue_idx, uint64_t kv)
   }
 
   // key > iter->key, insert new node after iter
-  new_node->key = key;
-  new_node->val = val; // FIXME: not full 64-bits
+  new_node->key = kv_key(kv);
+  new_node->val = kv_value(kv); // FIXME: not full 64-bits
   _Chain_Insert_unprotected(iter, (Chain_Node*)new_node);
   return 0;
 }
@@ -113,34 +124,15 @@ uint64_t sparc64_unitedlistpq_pop(int queue_idx, uint64_t kv)
   return rv;
 }
 
-static pq_node* search_helper(int queue_idx, uint64_t kv)
-{
-  uint32_t key;
-  Chain_Node *iter;
-  Chain_Control *spill_pq;
-  
-  key = kv_key(kv);
-  
-  // linear search, ugh
-  spill_pq = &queues[queue_idx];
-  iter = _Chain_First(spill_pq);
-  while(!_Chain_Is_tail(spill_pq,iter)) {
-    pq_node *p = (pq_node*)iter;
-    if (p->key == key) {
-      return p;
-    }
-    iter = _Chain_Next(iter);
-  }
-  return NULL;
-}
 
 uint64_t sparc64_unitedlistpq_extract(int queue_idx, uint64_t kv)
 {
   uint64_t rv;
-  pq_node *node = search_helper(queue_idx, kv);
+  uint32_t key = kv_key(kv);
   Chain_Control *spill_pq = &queues[queue_idx];
+  pq_node *node = search_helper(queue_idx, kv);
 
-  if ( node ) {
+  if ( !_Chain_Is_tail(spill_pq, (Chain_Node*)node) && node->key == key ) {
     if ( _Chain_Is_first((Chain_Node*)node) ) {
       _Chain_Get_first_unprotected(spill_pq);
     } else {
@@ -157,9 +149,11 @@ uint64_t sparc64_unitedlistpq_extract(int queue_idx, uint64_t kv)
 uint64_t sparc64_unitedlistpq_search(int queue_idx, uint64_t kv)
 {
   uint64_t rv;
+  uint32_t key = kv_key(kv);
+  Chain_Control *spill_pq = &queues[queue_idx];
   pq_node *node = search_helper(queue_idx, kv);
 
-  if (node) {
+  if ( !_Chain_Is_tail(spill_pq, (Chain_Node*)node) && node->key == key ) {
     rv = pq_node_to_kv(node);
   } else {
     DPRINTK("%d\tFailed search: %d\t%X\n",queue_idx, kv_key(kv), kv_value(kv));
@@ -286,12 +280,8 @@ uint64_t sparc64_unitedlistpq_handle_fill(int queue_idx, uint64_t count)
 
 uint64_t sparc64_unitedlistpq_drain( int qid, uint64_t ignored )
 {
-  Chain_Node *tmp;
-  Chain_Control *spill_pq;
-  pq_node *p;
 
-  DPRINTK("%d\tdrain queue\n", qid);
-  spill_pq = &queues[qid];
+  DPRINTK("%d\tdrain queue unimplemented\n", qid);
 
   return 0;
 }
