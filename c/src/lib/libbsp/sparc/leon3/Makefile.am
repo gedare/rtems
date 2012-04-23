@@ -35,26 +35,51 @@ libbsp_a_SOURCES =
 # startup
 libbsp_a_SOURCES += ../../shared/bspclean.c ../../shared/bsplibc.c \
     ../../shared/bsppost.c ../../shared/bootcard.c startup/bspstart.c \
-    ../../sparc/shared/bsppretaskinghook.c ../../shared/bsppredriverhook.c \
+    ../../sparc/shared/bsppretaskinghook.c startup/bsppredriver.c \
     ../../sparc/shared/bspgetworkarea.c ../../shared/sbrk.c startup/setvec.c \
     startup/spurious.c startup/bspidle.S startup/bspdelay.c \
-    ../../shared/bspinit.c
+    ../../shared/bspinit.c ../../sparc/shared/startup/early_malloc.c
 
 # ISR Handler
 libbsp_a_SOURCES += ../../sparc/shared/irq_asm.S
 # gnatsupp
 libbsp_a_SOURCES += gnatsupp/gnatsupp.c ../../sparc/shared/gnatcommon.c
-# amba
+# AMBA bus
 include_HEADERS += include/amba.h
 include_HEADERS += ../../sparc/shared/include/ambapp.h
-libbsp_a_SOURCES += amba/amba.c ../../sparc/shared/amba/ambapp.c
+include_HEADERS += ../../sparc/shared/include/ambapp_ids.h
+libbsp_a_SOURCES += amba/amba.c
+libbsp_a_SOURCES += ../../sparc/shared/amba/ambapp.c
+libbsp_a_SOURCES += ../../sparc/shared/amba/ambapp_alloc.c
+libbsp_a_SOURCES += ../../sparc/shared/amba/ambapp_count.c
+libbsp_a_SOURCES += ../../sparc/shared/amba/ambapp_depth.c
+libbsp_a_SOURCES += ../../sparc/shared/amba/ambapp_find_by_idx.c
+libbsp_a_SOURCES += ../../sparc/shared/amba/ambapp_freq.c
+libbsp_a_SOURCES += ../../sparc/shared/amba/ambapp_parent.c
+libbsp_a_SOURCES += ../../sparc/shared/amba/ambapp_old.c
+libbsp_a_SOURCES += ../../sparc/shared/amba/ambapp_names.c
+libbsp_a_SOURCES += ../../sparc/shared/amba/ambapp_show.c
 # console
 libbsp_a_SOURCES += console/console.c
 # debugio
-libbsp_a_SOURCES += console/debugputs.c
+libbsp_a_SOURCES += console/printk_support.c
 # clock
 libbsp_a_SOURCES += clock/ckinit.c
 libbsp_a_SOURCES += ../../shared/clockdrv_shell.h
+# IRQ
+include_bsp_HEADERS = \
+    ../../shared/include/irq-generic.h \
+    ../../shared/include/irq-info.h \
+    include/bsp/irq.h
+libbsp_a_SOURCES += \
+    startup/eirq.c \
+    ../../sparc/shared/irq/irq-shared.c \
+    ../../shared/src/irq-default-handler.c \
+    ../../shared/src/irq-generic.c \
+    ../../shared/src/irq-info.c \
+    ../../shared/src/irq-legacy.c \
+    ../../shared/src/irq-server.c \
+    ../../shared/src/irq-shell.c
 # PCI
 include_HEADERS += ../../sparc/shared/include/pci.h
 libbsp_a_SOURCES += pci/pci.c ../../sparc/shared/pci/pcifinddevice.c
@@ -126,7 +151,9 @@ libbsp_a_SOURCES += shmsupp/addrconv.c shmsupp/getcfg.c shmsupp/lock.c \
     shmsupp/mpisr.c
 endif
 
-libbsp_a_LIBADD = ../../../libcpu/@RTEMS_CPU@/cache.rel \
+libbsp_a_LIBADD = \
+    ../../../libcpu/@RTEMS_CPU@/access.rel \
+    ../../../libcpu/@RTEMS_CPU@/cache.rel \
     ../../../libcpu/@RTEMS_CPU@/reg_win.rel \
     ../../../libcpu/@RTEMS_CPU@/syscall.rel
 

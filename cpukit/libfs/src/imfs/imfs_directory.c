@@ -12,49 +12,13 @@
  */
 
 #if HAVE_CONFIG_H
-#include "config.h"
+  #include "config.h"
 #endif
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <rtems/chain.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include "imfs.h"
+
 #include <string.h>
 #include <dirent.h>
-
-#include "imfs.h"
-#include <rtems/libio_.h>
-#include <rtems/seterr.h>
-
-/*
- *  imfs_dir_open
- *
- *  This rountine will verify that the node being opened as a directory is
- *  in fact a directory node. If it is then the offset into the directory
- *  will be set to 0 to position to the first directory entry.
- */
-
-int imfs_dir_open(
-  rtems_libio_t  *iop,
-  const char *pathname,
-  uint32_t   flag,
-  uint32_t   mode
-)
-{
-  IMFS_jnode_t      *the_jnode;
-
-  /* Is the node a directory ? */
-  the_jnode = (IMFS_jnode_t *) iop->pathinfo.node_access;
-
-  if ( the_jnode->type != IMFS_DIRECTORY )
-     return -1;      /* It wasn't a directory --> return error */
-
-  iop->offset = 0;
-  return 0;
-}
 
 /*
  *  imfs_dir_read
@@ -90,34 +54,29 @@ ssize_t imfs_dir_read(
    int                  last_entry;
    struct dirent        tmp_dirent;
 
+   rtems_filesystem_instance_lock( &iop->pathinfo );
+
    the_jnode = (IMFS_jnode_t *)iop->pathinfo.node_access;
    the_chain = &the_jnode->info.directory.Entries;
 
-   if ( rtems_chain_is_empty( the_chain ) )
-      return 0;
-
    /* Move to the first of the desired directory entries */
-   the_node = rtems_chain_first( the_chain );
 
    bytes_transferred = 0;
    first_entry = iop->offset;
    /* protect against using sizes that are not exact multiples of the */
    /* -dirent- size. These could result in unexpected results          */
-   last_entry = first_entry + (count/sizeof(struct dirent)) * sizeof(struct dirent);
+   last_entry = first_entry
+     + (count / sizeof( struct dirent )) * sizeof( struct dirent );
 
    /* The directory was not empty so try to move to the desired entry in chain*/
    for (
-      current_entry = 0;
-      current_entry < last_entry;
-      current_entry = current_entry + sizeof(struct dirent) ){
-
-      if ( rtems_chain_is_tail( the_chain, the_node ) ){
-         /* We hit the tail of the chain while trying to move to the first */
-         /* entry in the read */
-         return bytes_transferred;  /* Indicate that there are no more */
-                                    /* entries to return */
-      }
-
+      current_entry = 0,
+        the_node = rtems_chain_first( the_chain );
+      current_entry < last_entry
+        && !rtems_chain_is_tail( the_chain, the_node );
+      current_entry +=  sizeof( struct dirent ),
+        the_node = rtems_chain_next( the_node )
+   ) {
       if( current_entry >= first_entry ) {
          /* Move the entry to the return buffer */
          tmp_dirent.d_off = current_entry;
@@ -131,40 +90,15 @@ ssize_t imfs_dir_read(
             (void *)&tmp_dirent,
             sizeof( struct dirent )
          );
-         iop->offset = iop->offset + sizeof(struct dirent);
-         bytes_transferred = bytes_transferred + sizeof( struct dirent );
+         iop->offset += sizeof( struct dirent );
+         bytes_transferred += sizeof( struct dirent );
       }
-
-      the_node = the_node->next;
    }
 
-   /* Success */
+   rtems_filesystem_instance_unlock( &iop->pathinfo );
+
    return bytes_transferred;
 }
-
-
-
-/*
- *  imfs_dir_close
- *
- *  This routine will be called by the generic close routine to cleanup any
- *  resources that have been allocated for the management of the file
- */
-
-int imfs_dir_close(
-  rtems_libio_t  *iop
-)
-{
-  /*
-   *  The generic close routine handles the deallocation of the file control
-   *  and associated memory. At present the imfs_dir_close simply
-   *  returns a successful completion status.
-   */
-
-  return 0;
-}
-
-
 
 /*
  *  imfs_dir_lseek
@@ -200,118 +134,6 @@ off_t imfs_dir_lseek(
         rtems_set_errno_and_return_minus_one( EINVAL );
         break;
   }
-
-  return 0;
-}
-
-
-
-/*
- *  imfs_dir_fstat
- *
- *  This routine will obtain the following information concerning the current
- *  directory:
- *        st_dev      0ll
- *        st_ino      1
- *        st_mode     mode extracted from the jnode
- *        st_nlink    number of links to this node
- *        st_uid      uid extracted from the jnode
- *        st_gid      gid extracted from the jnode
- *        st_rdev     0ll
- *        st_size     the number of bytes in the directory
- *                    This is calculated by taking the number of entries
- *                    in the directory and multiplying by the size of a
- *                    dirent structure
- *        st_blksize  0
- *        st_blocks   0
- *        stat_atime  time of last access
- *        stat_mtime  time of last modification
- *        stat_ctime  time of the last change
- *
- *  This information will be returned to the calling function in a -stat- struct
- *
- */
-
-int imfs_dir_fstat(
-  rtems_filesystem_location_info_t *loc,
-  struct stat                      *buf
-)
-{
-   rtems_chain_node    *the_node;
-   rtems_chain_control *the_chain;
-   IMFS_jnode_t        *the_jnode;
-
-
-   the_jnode = (IMFS_jnode_t *) loc->node_access;
-
-   buf->st_dev = 0ll;
-   buf->st_ino   = the_jnode->st_ino;
-   buf->st_mode  = the_jnode->st_mode;
-   buf->st_nlink = the_jnode->st_nlink;
-   buf->st_uid   = the_jnode->st_uid;
-   buf->st_gid   = the_jnode->st_gid;
-   buf->st_rdev = 0ll;
-   buf->st_blksize = 0;
-   buf->st_blocks = 0;
-   buf->st_atime = the_jnode->stat_atime;
-   buf->st_mtime = the_jnode->stat_mtime;
-   buf->st_ctime = the_jnode->stat_ctime;
-
-   buf->st_size = 0;
-
-   the_chain = &the_jnode->info.directory.Entries;
-
-   /* Run through the chain and count the number of directory entries */
-   /* that are subordinate to this directory node                     */
-   for ( the_node = rtems_chain_first( the_chain );
-         !rtems_chain_is_tail( the_chain, the_node ) ;
-         the_node = the_node->next ) {
-
-      buf->st_size = buf->st_size + sizeof( struct dirent );
-   }
-
-   return 0;
-}
-
-/*
- *  IMFS_dir_rmnod
- *
- *  This routine is available from the optable to remove a node
- *  from the IMFS file system.
- */
-
-int imfs_dir_rmnod(
-  rtems_filesystem_location_info_t  *parent_pathloc, /* IN */
-  rtems_filesystem_location_info_t  *pathloc         /* IN */
-)
-{
-  IMFS_jnode_t *the_jnode;
-
-  the_jnode = (IMFS_jnode_t *) pathloc->node_access;
-
-  /*
-   * You cannot remove a node that still has children
-   */
-
-  if ( ! rtems_chain_is_empty( &the_jnode->info.directory.Entries ) )
-     rtems_set_errno_and_return_minus_one( ENOTEMPTY );
-
-  /*
-   * You cannot remove the file system root node.
-   */
-
-  if ( rtems_filesystem_is_root_location(pathloc) )
-     rtems_set_errno_and_return_minus_one( EBUSY );
-
-  /*
-   * You cannot remove a mountpoint.
-   */
-
-   if ( the_jnode->info.directory.mt_fs != NULL )
-     rtems_set_errno_and_return_minus_one( EBUSY );
-
-  IMFS_create_orphan( the_jnode );
-  IMFS_check_node_remove( the_jnode );
 
   return 0;
 }

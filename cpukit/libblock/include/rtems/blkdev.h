@@ -161,8 +161,48 @@ typedef struct rtems_blkdev_request {
 #define RTEMS_BLKIO_SYNCDEV         _IO('B', 6)
 #define RTEMS_BLKIO_DELETED         _IO('B', 7)
 #define RTEMS_BLKIO_CAPABILITIES    _IO('B', 8)
+#define RTEMS_BLKIO_GETDISKDEV      _IOR('B', 9, rtems_disk_device *)
 
 /** @} */
+
+static inline int rtems_disk_fd_get_media_block_size(
+  int fd,
+  uint32_t *media_block_size
+)
+{
+  return ioctl(fd, RTEMS_BLKIO_GETMEDIABLKSIZE, media_block_size);
+}
+
+static inline int rtems_disk_fd_get_block_size(int fd, uint32_t *block_size)
+{
+  return ioctl(fd, RTEMS_BLKIO_GETBLKSIZE, block_size);
+}
+
+static inline int rtems_disk_fd_set_block_size(int fd, uint32_t block_size)
+{
+  return ioctl(fd, RTEMS_BLKIO_SETBLKSIZE, &block_size);
+}
+
+static inline int rtems_disk_fd_get_block_count(
+  int fd,
+  rtems_blkdev_bnum *block_count
+)
+{
+  return ioctl(fd, RTEMS_BLKIO_GETSIZE, block_count);
+}
+
+static inline int rtems_disk_fd_get_disk_device(
+  int fd,
+  const rtems_disk_device **dd_ptr
+)
+{
+  return ioctl(fd, RTEMS_BLKIO_GETDISKDEV, dd_ptr);
+}
+
+static inline int rtems_disk_fd_sync(int fd)
+{
+  return ioctl(fd, RTEMS_BLKIO_SYNCDEV);
+}
 
 /**
  * Only consecutive multi-sector buffer requests are supported.
@@ -266,6 +306,56 @@ rtems_blkdev_ioctl(rtems_disk_device *dd, uint32_t req, void *argp);
  * @brief Generic block operations driver address table.
  */
 extern const rtems_driver_address_table rtems_blkdev_generic_ops;
+
+/**
+ * @brief Creates a block device.
+ *
+ * @param[in] device The path for the new block device.
+ * @param[in] block_size The block size.  Must be positive.
+ * @param[in] block_count The block count.  Must be positive.
+ * @param[in] handler The block device IO control handler.  Must not be @c NULL.
+ * @param[in] driver_data The block device driver data.
+ *
+ * @retval RTEMS_SUCCESSFUL Successful operation.
+ * @retval RTEMS_INVALID_NUMBER Block size or block count is not positive.
+ * @retval RTEMS_NO_MEMORY Not enough memory.
+ * @retval RTEMS_UNSATISFIED Cannot create generic device node.
+ */
+rtems_status_code rtems_blkdev_create(
+  const char *device,
+  uint32_t block_size,
+  rtems_blkdev_bnum block_count,
+  rtems_block_device_ioctl handler,
+  void *driver_data
+);
+
+/**
+ * @brief Creates a partition within a block device.
+ *
+ * A partition manages a subset of consecutive blocks contained in a block
+ * device.  The blocks must be within the range of blocks managed by the
+ * associated block device.  The media block size, block size, and IO control
+ * handler are inherited by the block device.
+ *
+ * @param[in] partition The path for the new partition device.
+ * @param[in] device The block device path.
+ * @param[in] block_begin The block begin of the partition.
+ * @param[in] block_count The block count of the partition.
+ *
+ * @retval RTEMS_SUCCESSFUL Successful operation.
+ * @retval RTEMS_INVALID_ID Block device node does not exist.
+ * @retval RTEMS_INVALID_NODE File system node is not a block device.
+ * @retval RTEMS_NOT_IMPLEMENTED Block device implementation is incomplete.
+ * @retval RTEMS_INVALID_NUMBER Block begin or block count is invalid.
+ * @retval RTEMS_NO_MEMORY Not enough memory.
+ * @retval RTEMS_UNSATISFIED Cannot create generic device node.
+ */
+rtems_status_code rtems_blkdev_create_partition(
+  const char *partition,
+  const char *device,
+  rtems_blkdev_bnum block_begin,
+  rtems_blkdev_bnum block_count
+);
 
 /** @} */
 

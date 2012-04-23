@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2009-2011 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009-2012 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Obere Lagerstr. 30
@@ -20,11 +20,15 @@
  * http://www.rtems.com/license/LICENSE.
  */
 
+#include <rtems.h>
+
 #include <bsp/lpc-clock-config.h>
 #include <bsp/lpc-timer.h>
 
+#ifdef ARM_MULTILIB_ARCH_V4
+
 /* This is defined in ../../../shared/clockdrv_shell.h */
-rtems_isr Clock_isr(rtems_vector_number vector);
+void Clock_isr(rtems_irq_hdl_param arg);
 
 static volatile lpc_timer *const lpc_clock =
   (volatile lpc_timer *) LPC_CLOCK_TIMER_BASE;
@@ -127,3 +131,5 @@ static uint32_t lpc_clock_nanoseconds_since_last_tick(void)
 
 /* Include shared source clock driver code */
 #include "../../../../shared/clockdrv_shell.h"
+
+#endif /* ARM_MULTILIB_ARCH_V4 */

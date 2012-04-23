@@ -14,7 +14,6 @@ include_HEADERS = include/bsp.h
 include_HEADERS += include/tm27.h
 include_HEADERS += include/rasta.h
 include_HEADERS += include/cchip.h
-include_HEADERS += ../../sparc/shared/include/ambapp.h
 include_HEADERS += ../../sparc/shared/include/grspw.h
 include_HEADERS += ../../sparc/shared/include/grspw_pci.h
 include_HEADERS += ../../sparc/shared/include/grspw_rasta.h
@@ -51,11 +50,12 @@ libbsp_a_SOURCES =
 
 # startup
 libbsp_a_SOURCES += ../../shared/bspclean.c ../../shared/bsplibc.c \
-    ../../shared/bsppost.c ../../shared/bsppredriverhook.c \
+    ../../shared/bsppost.c startup/bsppredriver.c \
     startup/bspstart.c ../../sparc/shared/bsppretaskinghook.c \
     ../../sparc/shared/bspgetworkarea.c ../../shared/bootcard.c \
     ../../shared/sbrk.c startup/setvec.c startup/spurious.c startup/bspidle.c \
-    ../../shared/bspinit.c startup/bspdelay.c
+    ../../shared/bspinit.c startup/bspdelay.c \
+    ../../sparc/shared/startup/early_malloc.c
 # ISR Handler
 libbsp_a_SOURCES += ../../sparc/shared/irq_asm.S
 # gnatsupp
@@ -65,8 +65,33 @@ libbsp_a_SOURCES += console/console.c console/debugputs.c
 # clock
 libbsp_a_SOURCES += clock/ckinit.c
 libbsp_a_SOURCES += ../../shared/clockdrv_shell.h
-# AMBA PnP Scanning
+# IRQ
+include_bsp_HEADERS = \
+    ../../shared/include/irq-generic.h \
+    ../../shared/include/irq-info.h \
+    include/bsp/irq.h
+libbsp_a_SOURCES += \
+    ../../sparc/shared/irq/irq-shared.c \
+    ../../shared/src/irq-default-handler.c \
+    ../../shared/src/irq-generic.c \
+    ../../shared/src/irq-info.c \
+    ../../shared/src/irq-legacy.c \
+    ../../shared/src/irq-server.c \
+    ../../shared/src/irq-shell.c
+
+# AMBA bus
+include_HEADERS += ../../sparc/shared/include/ambapp.h
+include_HEADERS += ../../sparc/shared/include/ambapp_ids.h
 libbsp_a_SOURCES += ../../sparc/shared/amba/ambapp.c
+libbsp_a_SOURCES += ../../sparc/shared/amba/ambapp_alloc.c
+libbsp_a_SOURCES += ../../sparc/shared/amba/ambapp_count.c
+libbsp_a_SOURCES += ../../sparc/shared/amba/ambapp_depth.c
+libbsp_a_SOURCES += ../../sparc/shared/amba/ambapp_find_by_idx.c
+libbsp_a_SOURCES += ../../sparc/shared/amba/ambapp_freq.c
+libbsp_a_SOURCES += ../../sparc/shared/amba/ambapp_parent.c
+libbsp_a_SOURCES += ../../sparc/shared/amba/ambapp_old.c
+libbsp_a_SOURCES += ../../sparc/shared/amba/ambapp_names.c
+libbsp_a_SOURCES += ../../sparc/shared/amba/ambapp_show.c
 # PCI
 libbsp_a_SOURCES += pci/pci.c ../../sparc/shared/pci/pcifinddevice.c
 # RASTA Kit
@@ -118,6 +143,7 @@ leon_open_eth_rel_LDFLAGS = $(RTEMS_RELLDFLAGS)
 endif
 
 libbsp_a_LIBADD = \
+    ../../../libcpu/@RTEMS_CPU@/access.rel \
     ../../../libcpu/@RTEMS_CPU@/cache.rel \
     ../../../libcpu/@RTEMS_CPU@/reg_win.rel \
     ../../../libcpu/@RTEMS_CPU@/syscall.rel

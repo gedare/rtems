@@ -39,6 +39,7 @@ include_bsp_HEADERS += ../shared/lpc/include/lpc-i2s.h
 include_bsp_HEADERS += ../shared/lpc/include/lpc-emc.h
 include_bsp_HEADERS += ../shared/lpc/include/lpc-dma.h
 include_bsp_HEADERS += ../shared/lpc/include/lpc-lcd.h
+include_bsp_HEADERS += ../shared/armv7m/include/armv7m-irq.h
 include_bsp_HEADERS += include/dma.h
 include_bsp_HEADERS += include/i2c.h
 include_bsp_HEADERS += include/io.h
@@ -74,6 +75,7 @@ EXTRA_DIST += startup/linkcmds.lpc24xx_ea
 EXTRA_DIST += startup/linkcmds.lpc24xx_ncs_ram
 EXTRA_DIST += startup/linkcmds.lpc24xx_ncs_rom_ext
 EXTRA_DIST += startup/linkcmds.lpc24xx_ncs_rom_int
+EXTRA_DIST += startup/linkcmds.lpc24xx_plx800_ram
 EXTRA_DIST += startup/linkcmds.lpc24xx_plx800_rom_int
 
 ###############################################################################
@@ -105,13 +107,16 @@ libbsp_a_SOURCES += startup/bspreset.c
 libbsp_a_SOURCES += startup/bspstart.c
 
 # IRQ
-libbsp_a_SOURCES += ../../shared/src/irq-generic.c \
-	../../shared/src/irq-legacy.c \
-	../../shared/src/irq-info.c \
-	../../shared/src/irq-shell.c \
-	../../shared/src/irq-server.c \
-	irq/irq.c \
-	irq/irq-dispatch.c
+libbsp_a_SOURCES += ../../shared/src/irq-default-handler.c
+libbsp_a_SOURCES += ../../shared/src/irq-generic.c
+libbsp_a_SOURCES += ../../shared/src/irq-info.c
+libbsp_a_SOURCES += ../../shared/src/irq-legacy.c
+libbsp_a_SOURCES += ../../shared/src/irq-server.c
+libbsp_a_SOURCES += ../../shared/src/irq-shell.c
+libbsp_a_SOURCES += ../shared/armv7m/irq/armv7m-irq.c
+libbsp_a_SOURCES += ../shared/armv7m/irq/armv7m-irq-dispatch.c
+libbsp_a_SOURCES += irq/irq.c
+libbsp_a_SOURCES += irq/irq-dispatch.c
 
 # Console
 libbsp_a_SOURCES += ../../shared/console.c \
@@ -120,8 +125,9 @@ libbsp_a_SOURCES += ../../shared/console.c \
     ../../shared/console_control.c
 
 # Clock
-libbsp_a_SOURCES += ../shared/lpc/clock/lpc-clock-config.c
 libbsp_a_SOURCES += ../../shared/clockdrv_shell.h
+libbsp_a_SOURCES += ../shared/lpc/clock/lpc-clock-config.c
+libbsp_a_SOURCES += ../shared/armv7m/clock/armv7m-clock-config.c
 
 # RTC
 libbsp_a_SOURCES += ../../shared/tod.c \

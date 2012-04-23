@@ -296,6 +296,8 @@ typedef struct {
 #define ARMV7M_VECTOR_IRQ(n) ((n) + 16)
 #define ARMV7M_IRQ_OF_VECTOR(n) ((n) - 16)
 
+#define ARMV7M_EXCEPTION_PRIORITY_LOWEST 255
+
 static inline bool _ARMV7M_Is_vector_an_irq( int vector )
 {
   return vector >= 16;
@@ -454,6 +456,12 @@ ARMV7M_Exception_handler _ARMV7M_Get_exception_handler( int index );
 
 void _ARMV7M_Set_exception_handler(
   int index,
+  ARMV7M_Exception_handler handler
+);
+
+void _ARMV7M_Set_exception_priority_and_handler(
+  int index,
+  int priority,
   ARMV7M_Exception_handler handler
 );
 

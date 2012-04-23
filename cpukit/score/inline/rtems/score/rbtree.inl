@@ -31,6 +31,16 @@
  *  @{
  */
 
+/**
+ * @brief Get the direction opposite to @a the_dir
+ */
+RTEMS_INLINE_ROUTINE RBTree_Direction _RBTree_Opposite_direction(
+  RBTree_Direction the_dir
+)
+{
+  return (RBTree_Direction) !((int) the_dir);
+}
+
 /** @brief Set off rbtree
  *
  *  This function sets the parent and child fields of the @a node to NULL
@@ -97,8 +107,8 @@ RTEMS_INLINE_ROUTINE bool _RBTree_Is_null_node(
  *  This function returns a pointer to the root node of @a the_rbtree.
  */
 RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Root(
-    RBTree_Control *the_rbtree
-    )
+  const RBTree_Control *the_rbtree
+)
 {
   return the_rbtree->root;
 }
@@ -109,9 +119,9 @@ RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Root(
  *  where @a dir specifies whether to return the minimum (0) or maximum (1).
  */
 RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_First(
-    RBTree_Control *the_rbtree,
-    RBTree_Direction dir
-    )
+  const RBTree_Control *the_rbtree,
+  RBTree_Direction dir
+)
 {
   return the_rbtree->first[dir];
 }
@@ -121,8 +131,8 @@ RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_First(
  *  This function returns a pointer to the parent node of @a the_node.
  */
 RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Parent(
-    RBTree_Node *the_node
-    )
+  const RBTree_Node *the_node
+)
 {
   if (!the_node->parent->parent) return NULL;
   return the_node->parent;
@@ -137,8 +147,8 @@ RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Parent(
  *  @return This method returns the left node on the rbtree.
  */
 RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Left(
-    RBTree_Node *the_node
-    )
+  const RBTree_Node *the_node
+)
 {
   return the_node->child[RBT_LEFT];
 }
@@ -152,8 +162,8 @@ RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Left(
  *  @return This method returns the right node on the rbtree.
  */
 RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Right(
-    RBTree_Node *the_node
-    )
+  const RBTree_Node *the_node
+)
 {
   return the_node->child[RBT_RIGHT];
 }
@@ -169,8 +179,8 @@ RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Right(
  *  @a the_rbtree and false otherwise.
  */
 RTEMS_INLINE_ROUTINE bool _RBTree_Is_empty(
-    RBTree_Control *the_rbtree
-    )
+  const RBTree_Control *the_rbtree
+)
 {
   return (the_rbtree->root == NULL);
 }
@@ -183,10 +193,10 @@ RTEMS_INLINE_ROUTINE bool _RBTree_Is_empty(
  *
  */
 RTEMS_INLINE_ROUTINE bool _RBTree_Is_first(
-    RBTree_Control *the_rbtree,
-    const RBTree_Node *the_node,
-    RBTree_Direction dir
-    )
+  const RBTree_Control *the_rbtree,
+  const RBTree_Node *the_node,
+  RBTree_Direction dir
+)
 {
   return (the_node == _RBTree_First(the_rbtree, dir));
 }
@@ -223,9 +233,9 @@ RTEMS_INLINE_ROUTINE bool _RBTree_Has_only_one_node(
  *  false otherwise.
  */
 RTEMS_INLINE_ROUTINE bool _RBTree_Is_root(
-    RBTree_Control *the_rbtree,
-    const RBTree_Node    *the_node
-    )
+  const RBTree_Control *the_rbtree,
+  const RBTree_Node    *the_node
+)
 {
   return (the_node == _RBTree_Root(the_rbtree));
 }
@@ -255,8 +265,8 @@ RTEMS_INLINE_ROUTINE void _RBTree_Initialize_empty(
  *  
  */
 RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Grandparent(
-    RBTree_Node *the_node
-    )
+  const RBTree_Node *the_node
+)
 {
   if(!the_node) return NULL;
   if(!(the_node->parent)) return NULL;
@@ -271,8 +281,8 @@ RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Grandparent(
  *  exists, and NULL if not. 
  */
 RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Sibling(
-    RBTree_Node *the_node
-    )
+  const RBTree_Node *the_node
+)
 {
   if(!the_node) return NULL;
   if(!(the_node->parent)) return NULL;
@@ -290,8 +300,8 @@ RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Sibling(
  *  @a the_node if it exists, and NULL if not. 
  */
 RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Parent_sibling(
-    RBTree_Node *the_node
-    )
+  const RBTree_Node *the_node
+)
 {
   if(!the_node) return NULL;
   if(_RBTree_Grandparent(the_node) == NULL) return NULL;
@@ -314,6 +324,25 @@ RTEMS_INLINE_ROUTINE RBTree_Control *_RBTree_Find_header_unprotected(
   return (RBTree_Control*)the_node;
 }
 
+RTEMS_INLINE_ROUTINE bool _RBTree_Is_equal( int compare_result )
+{
+  return compare_result == 0;
+}
+
+RTEMS_INLINE_ROUTINE bool _RBTree_Is_greater(
+  int compare_result
+)
+{
+  return compare_result > 0;
+}
+
+RTEMS_INLINE_ROUTINE bool _RBTree_Is_lesser(
+  int compare_result
+)
+{
+  return compare_result < 0;
+}
+
 /** @brief Find the node with given key in the tree
  *
  *  This function returns a pointer to the node in @a the_rbtree 
@@ -333,55 +362,78 @@ RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Find_unprotected(
   int compare_result;
   while (iter_node) {
     compare_result = the_rbtree->compare_function(the_node, iter_node);
-    if (compare_result == 0) {
+    if ( _RBTree_Is_equal( compare_result ) ) {
       found = iter_node;
       if ( the_rbtree->is_unique )
         break;
     }
 
-    RBTree_Direction dir = (compare_result == 1);
+    RBTree_Direction dir =
+      (RBTree_Direction) _RBTree_Is_greater( compare_result );
     iter_node = iter_node->child[dir];
   } /* while(iter_node) */
 
   return found;
 }
 
-/** @brief Find the nodes in-order predecessor
+/**
+ * @brief Returns the predecessor of a node.
  *
- *  This function returns a pointer to the in-order predecessor 
- *  of @a the_node if it exists, and NULL if not. 
+ * @param[in] rbtree The red-black tree.
+ * @param[in] node The node.
+ *
+ * @retval NULL The predecessor does not exist.
+ * @retval otherwise The predecessor node.
  */
-RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Predecessor(
-    RBTree_Node *the_node
-    )
+RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Predecessor_unprotected(
+  const RBTree_Control *rbtree,
+  const RBTree_Node *node
+)
 {
-  RBTree_Node* iter_node;
-  if (!the_node) return NULL;
-  iter_node = the_node->child[RBT_LEFT];
-  if (!iter_node) return NULL;
-  while (iter_node->child[RBT_RIGHT]) {
-    iter_node = iter_node->child[RBT_RIGHT];
-  } 
-  return iter_node;
+  return _RBTree_Next_unprotected( rbtree, node, RBT_LEFT );
 }
 
-/** @brief Find the nodes in-order successor
+/**
+ * @copydoc _RBTree_Predecessor_unprotected()
  *
- *  This function returns a pointer to the in-order successor  
- *  of @a the_node if it exists, and NULL if not. 
+ * The function disables the interrupts protect the operation.
+ */
+RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Predecessor(
+  const RBTree_Control *rbtree,
+  const RBTree_Node *node
+)
+{
+  return _RBTree_Next( rbtree, node, RBT_LEFT );
+}
+
+/**
+ * @brief Returns the successor of a node.
+ *
+ * @param[in] rbtree The red-black tree.
+ * @param[in] node The node.
+ *
+ * @retval NULL The successor does not exist.
+ * @retval otherwise The successor node.
+ */
+RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Successor_unprotected(
+  const RBTree_Control *rbtree,
+  const RBTree_Node *node
+)
+{
+  return _RBTree_Next_unprotected( rbtree, node, RBT_RIGHT );
+}
+
+/**
+ * @copydoc _RBTree_Successor_unprotected()
+ *
+ * The function disables the interrupts protect the operation.
  */
 RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Successor(
-    RBTree_Node *the_node
-    )
+  const RBTree_Control *rbtree,
+  const RBTree_Node *node
+)
 {
-  RBTree_Node* iter_node;
-  if (!the_node) return NULL;
-  iter_node = the_node->child[RBT_RIGHT];
-  if (!iter_node) return NULL;
-  while (iter_node->child[RBT_LEFT]) {
-    iter_node = iter_node->child[RBT_LEFT];
-  } 
-  return iter_node;
+  return _RBTree_Next( rbtree, node, RBT_RIGHT );
 }
 
 /** @brief Get the First Node (unprotected)
@@ -416,9 +468,9 @@ RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Get_unprotected(
  *  @retval NULL if @a the_rbtree is empty.
  */
 RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Peek_unprotected(
-    RBTree_Control *the_rbtree,
-    RBTree_Direction dir
-    )
+  const RBTree_Control *the_rbtree,
+  RBTree_Direction dir
+)
 {
   return(the_rbtree->first[dir]);
 }
@@ -435,10 +487,10 @@ RTEMS_INLINE_ROUTINE void _RBTree_Rotate(
 {
   RBTree_Node *c;
   if (the_node == NULL) return;
-  if (the_node->child[(1-dir)] == NULL) return;
+  if (the_node->child[_RBTree_Opposite_direction(dir)] == NULL) return;
 
-  c = the_node->child[(1-dir)];
-  the_node->child[(1-dir)] = c->child[dir];
+  c = the_node->child[_RBTree_Opposite_direction(dir)];
+  the_node->child[_RBTree_Opposite_direction(dir)] = c->child[dir];
 
   if (c->child[dir])
     c->child[dir]->parent = the_node;
@@ -454,7 +506,7 @@ RTEMS_INLINE_ROUTINE void _RBTree_Rotate(
 /** @brief Determines whether the tree is unique
  */
 RTEMS_INLINE_ROUTINE bool _RBTree_Is_unique(
-    RBTree_Control *the_rbtree
+  const RBTree_Control *the_rbtree
 )
 {
   return( the_rbtree && the_rbtree->is_unique );

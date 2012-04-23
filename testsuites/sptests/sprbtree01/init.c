@@ -28,16 +28,14 @@ typedef struct {
 } test_node;
 
 static int test_compare_function (
-  rtems_rbtree_node* n1,
-  rtems_rbtree_node* n2
+  const rtems_rbtree_node *n1,
+  const rtems_rbtree_node *n2
 )
 {
   int key1 = rtems_rbtree_container_of( n1, test_node, Node )->key;
   int key2 = rtems_rbtree_container_of( n2, test_node, Node )->key;
 
-  if (key1 > key2) return 1;
-  else if (key1 < key2) return -1;
-  else return 0;
+  return key1 - key2;
 }
 
 /* 
@@ -104,8 +102,7 @@ rtems_task Init(
   puts( "\n\n*** TEST OF RTEMS RBTREE API ***" );
 
   puts( "Init - Initialize rbtree empty" );
-  rtems_rbtree_initialize_empty( &rbtree1, &test_compare_function,
-                                 RTEMS_RBTREE_UNIQUE );
+  rtems_rbtree_initialize_empty( &rbtree1, &test_compare_function, true );
 
   if ( !rtems_rbtree_is_unique( &rbtree1 ) )
     puts( "INIT - FAILED IS UNIQUE CHECK" );
@@ -442,14 +439,14 @@ rtems_task Init(
   }
 
   puts( "INIT - Verify rtems_rbtree_predecessor/successor");
-  p = rtems_rbtree_predecessor(p);
-  if(p && rtems_rbtree_container_of(p,test_node,Node)->id > 30) {
+  p = rtems_rbtree_predecessor(&rbtree1, p);
+  if(p && rtems_rbtree_container_of(p,test_node,Node)->id != 29) {
     puts ("INIT - ERROR ON RBTREE ID MISMATCH");
     rtems_test_exit(0);
   }
   p = rtems_rbtree_find(&rbtree1, &search_node.Node);
-  p = rtems_rbtree_successor(p);
-  if(p && rtems_rbtree_container_of(p,test_node,Node)->id < 30) {
+  p = rtems_rbtree_successor(&rbtree1, p);
+  if(p && rtems_rbtree_container_of(p,test_node,Node)->id != 31) {
     puts ("INIT - ERROR ON RBTREE ID MISMATCH");
     rtems_test_exit(0);
   }
@@ -544,7 +541,7 @@ rtems_task Init(
   }
   rtems_rbtree_initialize( &rbtree1, &test_compare_function,
                            &node_array[0].Node, 100,
-                           sizeof(test_node), RTEMS_RBTREE_UNIQUE );
+                           sizeof(test_node), true );
 
   puts( "INIT - Removing 100 nodes" );
 
@@ -572,8 +569,7 @@ rtems_task Init(
 
   /* Initialize the tree for duplicate keys */
   puts( "Init - Initialize duplicate rbtree empty" );
-  rtems_rbtree_initialize_empty( &rbtree1, &test_compare_function,
-                                 RTEMS_RBTREE_DUPLICATE );
+  rtems_rbtree_initialize_empty( &rbtree1, &test_compare_function, false );
 
   if ( rtems_rbtree_is_unique( &rbtree1 ) )
     puts( "INIT - FAILED IS UNIQUE CHECK" );

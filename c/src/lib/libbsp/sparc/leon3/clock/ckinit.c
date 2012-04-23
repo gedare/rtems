@@ -16,12 +16,11 @@
  *  The license and distribution terms for this file may be
  *  found in the file LICENSE in this distribution or at
  *  http://www.rtems.com/license/LICENSE.
- *
- *  $Id$
  */
 
 #include <bsp.h>
 #include <bspopts.h>
+#include <ambapp.h>
 
 #if SIMSPARC_FAST_IDLE==1
 #define CLOCK_DRIVER_USE_FAST_IDLE
@@ -54,20 +53,21 @@ static int clkirq;
       } \
     } while(0)
 #else
-  #define Adjust_clkirq_for_node()
+  #define Adjust_clkirq_for_node() do { clkirq += LEON3_CLOCK_INDEX; } while(0)
 #endif
 
 #define Clock_driver_support_find_timer() \
   do { \
-    int cnt; \
-    amba_apb_device dev; \
+    struct ambapp_dev *adev; \
     \
-    /* Find LEON3 GP Timer */ \
-    cnt = amba_find_apbslv(&amba_conf,VENDOR_GAISLER,GAISLER_GPTIMER,&dev); \
-    if ( cnt > 0 ){ \
+    /* Find first LEON3 GP Timer */ \
+    adev = (void *)ambapp_for_each(&ambapp_plb, (OPTIONS_ALL|OPTIONS_APB_SLVS),\
+              VENDOR_GAISLER, GAISLER_GPTIMER, ambapp_find_by_idx, NULL); \
+    if (adev) { \
       /* Found APB GPTIMER Timer */ \
-      LEON3_Timer_Regs = (volatile LEON3_Timer_Regs_Map *) dev.start; \
-      clkirq = (LEON3_Timer_Regs->status & 0xfc) >> 3; \
+      LEON3_Timer_Regs = (volatile LEON3_Timer_Regs_Map *) \
+                         DEV_TO_APB(adev)->start; \
+      clkirq = (LEON3_Timer_Regs->status & 0xf8) >> 3; \
       \
       Adjust_clkirq_for_node(); \
     } \
@@ -102,10 +102,10 @@ uint32_t bsp_clock_nanoseconds_since_last_tick(void)
   if ( !LEON3_Timer_Regs )
     return 0;
 
-  clicks = LEON3_Timer_Regs->timer[0].value;
+  clicks = LEON3_Timer_Regs->timer[LEON3_CLOCK_INDEX].value;
 
   if ( LEON_Is_interrupt_pending( clkirq ) ) {
-    clicks = LEON3_Timer_Regs->timer[0].value;
+    clicks = LEON3_Timer_Regs->timer[LEON3_CLOCK_INDEX].value;
     usecs = (2*rtems_configuration_get_microseconds_per_tick() - clicks);
   } else {
     usecs = (rtems_configuration_get_microseconds_per_tick() - clicks);

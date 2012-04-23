@@ -43,6 +43,9 @@ AM_CONDITIONAL(NETTESTS,test "$rtems_cv_RTEMS_NETWORKING" = "yes")
 
 # Explicitly list all Makefiles here
 AC_CONFIG_FILES([Makefile
+rbheap01/Makefile
+syscall01/Makefile
+flashdisk01/Makefile
 block01/Makefile
 block02/Makefile
 block03/Makefile
@@ -53,6 +56,7 @@ block07/Makefile
 block08/Makefile
 block09/Makefile
 block10/Makefile
+block11/Makefile
 bspcmdline01/Makefile
 cpuuse/Makefile
 devfs01/Makefile

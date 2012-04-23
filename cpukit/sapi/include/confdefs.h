@@ -428,9 +428,7 @@ rtems_fs_init_functions_t    rtems_fs_init_helper =
    *  the bsp overwrides this.  In which case the value is set
    *  to BSP_MAXIMUM_DEVICES.
    */
-  #if defined(CONFIGURE_APPLICATION_DISABLE_FILESYSTEM)
-    #define CONFIGURE_MEMORY_FOR_DEVFS  0
-  #elif defined(CONFIGURE_FILESYSTEM_DEVFS)
+  #ifdef CONFIGURE_FILESYSTEM_DEVFS
     #ifndef CONFIGURE_MAXIMUM_DEVICES
       #if defined(BSP_MAXIMUM_DEVICES)
         #define CONFIGURE_MAXIMUM_DEVICES BSP_MAXIMUM_DEVICES
@@ -439,12 +437,6 @@ rtems_fs_init_functions_t    rtems_fs_init_helper =
       #endif
     #endif
     #include <rtems/devfs.h>
-    uint32_t rtems_device_table_size = CONFIGURE_MAXIMUM_DEVICES;
-    #define CONFIGURE_MEMORY_FOR_DEVFS \
-      _Configure_Object_RAM(CONFIGURE_MAXIMUM_DEVICES, \
-         sizeof (rtems_device_name_t))
-  #else
-    #define CONFIGURE_MEMORY_FOR_DEVFS  0
   #endif
 
 #ifndef RTEMS_SCHEDSIM
@@ -503,22 +495,31 @@ rtems_fs_init_functions_t    rtems_fs_init_helper =
   #endif
 
   #ifndef CONFIGURE_HAS_OWN_MOUNT_TABLE
-    const rtems_filesystem_mount_table_t configuration_mount_table = {
+    #if defined(CONFIGURE_USE_DEVFS_AS_BASE_FILESYSTEM)
+      static devFS_node devFS_root_filesystem_nodes [CONFIGURE_MAXIMUM_DEVICES];
+      static const devFS_data devFS_root_filesystem_data = {
+        devFS_root_filesystem_nodes,
+        CONFIGURE_MAXIMUM_DEVICES
+      };
+    #endif
+    const rtems_filesystem_mount_configuration
+      rtems_filesystem_root_configuration = {
+      NULL,
+      NULL,
       #if defined(CONFIGURE_USE_DEVFS_AS_BASE_FILESYSTEM)
         RTEMS_FILESYSTEM_TYPE_DEVFS,
       #elif defined(CONFIGURE_USE_MINIIMFS_AS_BASE_FILESYSTEM)
         RTEMS_FILESYSTEM_TYPE_MINIIMFS,
-      #else  /* using IMFS as base filesystem */
+      #else
         RTEMS_FILESYSTEM_TYPE_IMFS,
       #endif
       RTEMS_FILESYSTEM_READ_WRITE,
-      NULL,
-      NULL
+      #if defined(CONFIGURE_USE_DEVFS_AS_BASE_FILESYSTEM)
+        &devFS_root_filesystem_data
+      #else
+        NULL
+      #endif
     };
-
-    const rtems_filesystem_mount_table_t
-        *rtems_filesystem_mount_table = &configuration_mount_table;
-    const int rtems_filesystem_mount_table_size = 1;
   #endif
 
 #endif
@@ -953,7 +954,7 @@ rtems_fs_init_functions_t    rtems_fs_init_helper =
  *  for memory usage.
  */
 #define _Configure_Max_Objects(_max) \
-  ((_max) & ~RTEMS_UNLIMITED_OBJECTS)
+  rtems_resource_maximum_per_allocation(_max)
 
 /**
  *  This macro accounts for how memory for a set of configured objects is
@@ -1343,6 +1344,112 @@ rtems_fs_init_functions_t    rtems_fs_init_helper =
 #endif
 
 
+/**
+ * This macro specifies that the user wants to use unlimited objects for any
+ * classic or posix objects that have not already been given resource limits.
+ */
+#if defined(CONFIGURE_UNLIMITED_OBJECTS)
+  #if !defined(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+  /**
+   * This macro specifies a default allocation size for when auto-extending
+   * unlimited objects if none was given by the user.
+   */
+    #define CONFIGURE_UNLIMITED_ALLOCATION_SIZE 8
+  #endif
+  #if !defined(CONFIGURE_MAXIMUM_TASKS)
+    #define CONFIGURE_MAXIMUM_TASKS \
+      rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+  #endif
+  #if !defined(CONFIGURE_MAXIMUM_TIMERS)
+    #define CONFIGURE_MAXIMUM_TIMERS \
+      rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+  #endif
+  #if !defined(CONFIGURE_MAXIMUM_SEMAPHORES)
+    #define CONFIGURE_MAXIMUM_SEMAPHORES \
+      rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+  #endif
+  #if !defined(CONFIGURE_MAXIMUM_MESSAGE_QUEUES)
+    #define CONFIGURE_MAXIMUM_MESSAGE_QUEUES \
+      rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+  #endif
+  #if !defined(CONFIGURE_MAXIMUM_PARTITIONS)
+    #define CONFIGURE_MAXIMUM_PARTITIONS \
+      rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+  #endif
+  #if !defined(CONFIGURE_MAXIMUM_REGIONS)
+    #define CONFIGURE_MAXIMUM_REGIONS \
+      rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+  #endif
+  #if !defined(CONFIGURE_MAXIMUM_PORTS)
+    #define CONFIGURE_MAXIMUM_PORTS \
+      rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+  #endif
+  #if !defined(CONFIGURE_MAXIMUM_PERIODS)
+    #define CONFIGURE_MAXIMUM_PERIODS \
+      rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+  #endif
+  #if !defined(CONFIGURE_MAXIMUM_BARRIERS)
+    #define CONFIGURE_MAXIMUM_BARRIERS \
+      rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+  #endif
+
+  #ifdef RTEMS_POSIX_API
+    #if !defined(CONFIGURE_MAXIMUM_POSIX_THREADS)
+      #define CONFIGURE_MAXIMUM_POSIX_THREADS \
+        rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+    #endif
+    #if !defined(CONFIGURE_MAXIMUM_POSIX_MUTEXES)
+      #define CONFIGURE_MAXIMUM_POSIX_MUTEXES \
+        rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+    #endif
+    #if !defined(CONFIGURE_MAXIMUM_POSIX_CONDITION_VARIABLES)
+      #define CONFIGURE_MAXIMUM_POSIX_CONDITION_VARIABLES \
+        rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+    #endif
+/*
+    #if !defined(CONFIGURE_MAXIMUM_POSIX_KEYS)
+      #define CONFIGURE_MAXIMUM_POSIX_KEYS \
+        rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+    #endif
+*/
+    #if !defined(CONFIGURE_MAXIMUM_POSIX_TIMERS)
+      #define CONFIGURE_MAXIMUM_POSIX_TIMERS \
+        rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+    #endif
+/*
+    #if !defined(CONFIGURE_MAXIMUM_POSIX_QUEUED_SIGNALS)
+      #define CONFIGURE_MAXIMUM_POSIX_QUEUED_SIGNALS \
+        rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+    #endif
+*/
+    #if !defined(CONFIGURE_MAXIMUM_POSIX_MESSAGE_QUEUES)
+      #define CONFIGURE_MAXIMUM_POSIX_MESSAGE_QUEUES \
+        rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+    #endif
+    #if !defined(CONFIGURE_MAXIMUM_POSIX_MESSAGE_QUEUE_DESCRIPTORS)
+      #define CONFIGURE_MAXIMUM_POSIX_MESSAGE_QUEUE_DESCRIPTORS \
+        rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+    #endif
+    #if !defined(CONFIGURE_MAXIMUM_POSIX_SEMAPHORES)
+      #define CONFIGURE_MAXIMUM_POSIX_SEMAPHORES \
+        rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+    #endif
+    #if !defined(CONFIGURE_MAXIMUM_POSIX_BARRIERS)
+      #define CONFIGURE_MAXIMUM_POSIX_BARRIERS \
+        rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+    #endif
+    #if !defined(CONFIGURE_MAXIMUM_POSIX_RWLOCKS)
+      #define CONFIGURE_MAXIMUM_POSIX_RWLOCKS \
+        rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+    #endif
+    #if !defined(CONFIGURE_MAXIMUM_POSIX_SPINLOCKS)
+      #define CONFIGURE_MAXIMUM_POSIX_SPINLOCKS \
+        rtems_resource_unlimited(CONFIGURE_UNLIMITED_ALLOCATION_SIZE)
+    #endif
+  #endif /* RTEMS_POSIX_API */
+#endif /* CONFIGURE_UNLIMITED_OBJECTS */
+
+
 /*
  *  Default Configuration Table.
  */
@@ -1547,7 +1654,7 @@ rtems_fs_init_functions_t    rtems_fs_init_helper =
    */
   #define _Configure_POSIX_Named_Object_RAM(_number, _size) \
     _Configure_Object_RAM( (_number), _size ) + \
-    ((_number) * _Configure_From_workspace(NAME_MAX) )
+    (_Configure_Max_Objects(_number) * _Configure_From_workspace(NAME_MAX) )
 
   #ifndef CONFIGURE_MAXIMUM_POSIX_THREADS
     #define CONFIGURE_MAXIMUM_POSIX_THREADS      0
@@ -2019,7 +2126,6 @@ rtems_fs_init_functions_t    rtems_fs_init_helper =
 #define CONFIGURE_EXECUTIVE_RAM_SIZE \
 (( \
    CONFIGURE_MEMORY_FOR_SYSTEM_OVERHEAD + \
-   CONFIGURE_MEMORY_FOR_DEVFS + \
    CONFIGURE_MEMORY_FOR_TASKS( \
      CONFIGURE_TOTAL_TASKS_AND_THREADS, CONFIGURE_TOTAL_TASKS_AND_THREADS) + \
    CONFIGURE_MEMORY_FOR_CLASSIC + \

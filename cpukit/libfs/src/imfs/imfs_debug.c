@@ -12,21 +12,14 @@
  */
 
 #if HAVE_CONFIG_H
-#include "config.h"
+  #include "config.h"
 #endif
 
-#include <string.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <unistd.h>   /* for close */
-#include <inttypes.h>
-
-#include <stdio.h>
-#include <sys/stat.h>
-
 #include "imfs.h"
-#include <rtems/libio_.h>
+
+#include <inttypes.h>
+#include <unistd.h>
+#include <stdio.h>
 
 /*
  *  IMFS_print_jnode
@@ -40,7 +33,7 @@ static void IMFS_print_jnode(
   IMFS_assert( the_jnode );
 
   fprintf(stdout, "%s", the_jnode->name );
-  switch( the_jnode->type ) {
+  switch( IMFS_type( the_jnode ) ) {
     case IMFS_DIRECTORY:
       fprintf(stdout, "/" );
       break;
@@ -85,7 +78,7 @@ static void IMFS_print_jnode(
       return;
 
     default:
-      fprintf(stdout, " bad type %d\n", the_jnode->type );
+      fprintf(stdout, " bad type %d\n", IMFS_type( the_jnode ) );
       return;
   }
   puts("");
@@ -110,7 +103,7 @@ static void IMFS_dump_directory(
 
   IMFS_assert( the_directory );
   IMFS_assert( level >= 0 );
-  IMFS_assert( the_directory->type == IMFS_DIRECTORY );
+  IMFS_assert( IMFS_is_directory( the_directory ) );
 
   the_chain = &the_directory->info.directory.Entries;
 
@@ -123,7 +116,7 @@ static void IMFS_dump_directory(
     for ( i=0 ; i<=level ; i++ )
       fprintf(stdout, "...." );
     IMFS_print_jnode( the_jnode );
-    if ( the_jnode->type == IMFS_DIRECTORY )
+    if ( IMFS_is_directory( the_jnode ) )
       IMFS_dump_directory( the_jnode, level + 1 );
   }
 }
@@ -142,7 +135,7 @@ void IMFS_dump( void )
 {
   fprintf(stdout, "*************** Dump of Entire IMFS ***************\n" );
   fprintf(stdout, "/\n" );
-  IMFS_dump_directory( rtems_filesystem_root.node_access, 0 );
+  IMFS_dump_directory( rtems_filesystem_root->location.node_access, 0 );
   fprintf(stdout, "***************      End of Dump       ***************\n" );
 }
 

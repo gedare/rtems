@@ -23,6 +23,7 @@ include_HEADERS += include/coverhd.h
 include_bsp_HEADERS = include/tqm.h include/8xx_immap.h \
     include/irq.h \
     ../../shared/include/irq-generic.h \
+    ../../shared/include/irq-info.h \
     spi/spi.h
 
 EXTRA_DIST =
@@ -42,9 +43,13 @@ noinst_LIBRARIES += libbsp.a
 libbsp_a_SOURCES =
 
 # irq
-libbsp_a_SOURCES += irq/irq.c \
-	../../shared/src/irq-generic.c \
-	../../shared/src/irq-legacy.c
+libbsp_a_SOURCES += ../../shared/src/irq-default-handler.c
+libbsp_a_SOURCES += ../../shared/src/irq-generic.c
+libbsp_a_SOURCES += ../../shared/src/irq-info.c
+libbsp_a_SOURCES += ../../shared/src/irq-legacy.c
+libbsp_a_SOURCES += ../../shared/src/irq-server.c
+libbsp_a_SOURCES += ../../shared/src/irq-shell.c
+libbsp_a_SOURCES += irq/irq.c
 
 # clock
 libbsp_a_SOURCES += ../shared/clock/clock.c

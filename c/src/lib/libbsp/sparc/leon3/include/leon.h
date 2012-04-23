@@ -46,73 +46,6 @@ extern "C" {
   ( (_trap) >= 0x11 && \
     (_trap) <= 0x1F )
 
-/*
- *  Structure for LEON memory mapped registers.
- *
- *  Source: Section 6.1 - On-chip registers
- *
- *  NOTE:  There is only one of these structures per CPU, its base address
- *         is 0x80000000, and the variable LEON_REG is placed there by the
- *         linkcmds file.
- */
-
-/* Leon uses dynamic register mapping using amba configuration records,
- * LEON_Register_Map is obsolete
- */
-/*
-  typedef struct {
-	volatile unsigned int Memory_Config_1;
-	volatile unsigned int Memory_Config_2;
-	volatile unsigned int Edac_Control;
-	volatile unsigned int Failed_Address;
-	volatile unsigned int Memory_Status;
-	volatile unsigned int Cache_Control;
-	volatile unsigned int Power_Down;
-	volatile unsigned int Write_Protection_1;
-	volatile unsigned int Write_Protection_2;
-	volatile unsigned int Leon_Configuration;
-	volatile unsigned int dummy2;
-	volatile unsigned int dummy3;
-	volatile unsigned int dummy4;
-	volatile unsigned int dummy5;
-	volatile unsigned int dummy6;
-	volatile unsigned int dummy7;
-	volatile unsigned int Timer_Counter_1;
-	volatile unsigned int Timer_Reload_1;
-	volatile unsigned int Timer_Control_1;
-	volatile unsigned int Watchdog;
-	volatile unsigned int Timer_Counter_2;
-	volatile unsigned int Timer_Reload_2;
-	volatile unsigned int Timer_Control_2;
-	volatile unsigned int dummy8;
-	volatile unsigned int Scaler_Counter;
-	volatile unsigned int Scaler_Reload;
-	volatile unsigned int dummy9;
-	volatile unsigned int dummy10;
-	volatile unsigned int UART_Channel_1;
-	volatile unsigned int UART_Status_1;
-	volatile unsigned int UART_Control_1;
-	volatile unsigned int UART_Scaler_1;
-	volatile unsigned int UART_Channel_2;
-	volatile unsigned int UART_Status_2;
-	volatile unsigned int UART_Control_2;
-	volatile unsigned int UART_Scaler_2;
-	volatile unsigned int Interrupt_Mask;
-	volatile unsigned int Interrupt_Pending;
-	volatile unsigned int Interrupt_Force;
-	volatile unsigned int Interrupt_Clear;
-	volatile unsigned int PIO_Data;
-	volatile unsigned int PIO_Direction;
-	volatile unsigned int PIO_Interrupt;
-} LEON_Register_Map;
-*/
-
-typedef struct {
-  volatile unsigned int data;
-  volatile unsigned int status;
-  volatile unsigned int ctrl;
-} LEON3_UART_Regs_Map;
-
 typedef struct {
   volatile unsigned int value;
   volatile unsigned int reload;
@@ -193,7 +126,6 @@ typedef struct {
 #define LEON_REG_UART_STATUS_FE   0x00000040 /* RX Framing Error */
 #define LEON_REG_UART_STATUS_ERR  0x00000078 /* Error Mask */
 
-
 /*
  *  The following defines the bits in the LEON UART Status Registers.
  */
@@ -209,9 +141,26 @@ typedef struct {
 
 extern volatile LEON3_IrqCtrl_Regs_Map *LEON3_IrqCtrl_Regs;  /* LEON3 Interrupt Controller */
 extern volatile LEON3_Timer_Regs_Map *LEON3_Timer_Regs; /* LEON3 GP Timer */
-extern volatile LEON3_UART_Regs_Map *LEON3_Console_Uart[LEON3_APBUARTS];
 
+/* LEON3 CPU Index of boot CPU */
 extern int LEON3_Cpu_Index;
+
+/* The external IRQ number, -1 if not external interrupts */
+extern int LEON3_IrqCtrl_EIrq;
+
+static __inline__ int bsp_irq_fixup(int irq)
+{
+       int eirq;
+
+       if (LEON3_IrqCtrl_EIrq != 0 && irq == LEON3_IrqCtrl_EIrq) {
+               /* Get interrupt number from IRQ controller */
+               eirq = LEON3_IrqCtrl_Regs->intid[LEON3_Cpu_Index] & 0x1f;
+               if (eirq & 0x10)
+                       irq = eirq;
+       }
+
+       return irq;
+}
 
 /* Macros used for manipulating bits in LEON3 GP Timer Control Register */
 
@@ -256,7 +205,6 @@ extern int LEON3_Cpu_Index;
      (LEON3_IrqCtrl_Regs->mask[LEON3_Cpu_Index] & (1 << (_source))); \
    } while (0)
 
-
 #define LEON_Mask_interrupt( _source ) \
   do { \
     uint32_t _level; \
@@ -294,6 +242,17 @@ extern int LEON3_Cpu_Index;
     sparc_enable_interrupts( _level ); \
   } while (0)
 
+/* Make all SPARC BSPs have common macros for interrupt handling */
+#define BSP_Clear_interrupt(_source) LEON_Clear_interrupt(_source)
+#define BSP_Force_interrupt(_source) LEON_Force_interrupt(_source)
+#define BSP_Is_interrupt_pending(_source) LEON_Is_interrupt_pending(_source)
+#define BSP_Is_interrupt_masked(_source) LEON_Is_interrupt_masked(_source)
+#define BSP_Unmask_interrupt(_source) LEON_Unmask_interrupt(_source)
+#define BSP_Mask_interrupt(_source) LEON_Mask_interrupt(_source)
+#define BSP_Disable_interrupt(_source, _previous) \
+        LEON_Disable_interrupt(_source, _prev)
+#define BSP_Restore_interrupt(_source, _previous) \
+        LEON_Restore_interrupt(_source, _previous)
 
 /*
  *  Each timer control register is organized as follows:
@@ -325,6 +284,14 @@ extern int LEON3_Cpu_Index;
 
 #define LEON_REG_TIMER_COUNTER_DEFINED_MASK       0x00000003
 #define LEON_REG_TIMER_COUNTER_CURRENT_MODE_MASK  0x00000003
+
+/* Load 32-bit word by forcing a cache-miss */
+static inline unsigned int leon_r32_no_cache(uintptr_t addr)
+{
+	unsigned int tmp;
+	asm volatile (" lda [%1] 1, %0\n" : "=r"(tmp) : "r"(addr));
+	return tmp;
+}
 
 #endif /* !ASM */
 

@@ -15,11 +15,11 @@
  *
  */
 
-#if defined(__sparc__) || defined(HAS_SMC91111)
+#if defined(HAS_SMC91111)
   #define SMC91111_SUPPORTED
 #endif
 
-#if defined(SMC91111_SUPPORTED)
+#if defined(HAS_SMC91111)
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -61,12 +61,6 @@
 
 #ifdef BSP_FEATURE_IRQ_EXTENSION
   #include <rtems/irq-extension.h>
-#else
-  #if defined(__m68k__)
-    extern m68k_isr_entry set_vector( rtems_isr_entry, rtems_vector_number, int );
-  #else
-    extern rtems_isr_entry set_vector( rtems_isr_entry, rtems_vector_number, int );
-  #endif
 #endif
 
 struct lan91cxx_priv_data smc91111;
@@ -92,9 +86,9 @@ static void lan91cxx_phy_configure(struct lan91cxx_priv_data *cpd);
 #define max(l,r) ((l) > (r) ? (l) : (r))
 
 /* \ ------------- Interrupt ------------- \ */
-rtems_isr lan91cxx_interrupt_handler(rtems_vector_number v)
+void lan91cxx_interrupt_handler(void *arg)
 {
-	struct lan91cxx_priv_data *cpd = &smc91111;
+	struct lan91cxx_priv_data *cpd = arg;
 	unsigned short irq, event;
 	unsigned short oldbase;
 	unsigned short oldpointer;
@@ -895,42 +889,6 @@ int _rtems_smc91111_driver_attach (struct rtems_bsdnet_ifconfig *config,
 	int mtu;
 	DEBUG_FUNCTION();
 
-#if 0
- 	/* activate io area */
- 	switch (sparc_leon23_get_psr_version()) {
- 	case 0:
- 	case 2:
- 		db_printf("Activating Leon2 io port\n");
- 		/*configure pio */
- 		*((volatile unsigned int *)0x80000000) |= 0x10f80000;
- 		*((volatile unsigned int *)0x800000A8) |=
- 		    (0xe0 | chip->vector) << (8 * (chip->pio - 4));
- 		break;
- 	default:
- 		{
- 			unsigned long irq_pio, irq_mctrl, addr_pio, addr_mctrl;
- 			if ((addr_pio = amba_find_apbslv_addr(VENDOR_GAISLER,
- 						   GAISLER_PIOPORT, &irq_pio))
- 			    && (addr_mctrl =
- 				amba_find_apbslv_addr(VENDOR_ESA, ESA_MCTRL, &irq_mctrl))) {
- 				LEON3_IOPORT_Regs_Map *io =
- 				    (LEON3_IOPORT_Regs_Map *) addr_pio;
- 				db_printf
- 				    ("Activating Leon3 io port for smsc_lan91cxx (pio:%x mctrl:%x)\n",
- 				     (unsigned int)addr_pio,
- 				     (unsigned int)addr_mctrl);
- 				*((volatile unsigned int *)addr_mctrl) |= 0x10f80000;	/*mctrl ctrl 1 */
- 				io->irqmask |= (1 << chip->pio);
- 				io->irqpol |= (1 << chip->pio);
- 				io->irqedge |= (1 << chip->pio);
- 				io->iodir &= ~(1 << chip->pio);
- 			} else {
- 				return 0;
- 			}
- 		}
- 	}
-#endif
-
 	/* parse driver name */
 	if ((unitNumber = rtems_bsdnet_parse_driver_name(config, &unitName)) < 0) {
 		db_printf("Unitnumber < 0: %d\n", unitNumber);
@@ -1065,7 +1023,7 @@ static void smc91111_stop(struct lan91cxx_priv_data *cpd)
 int lan91cxx_hardware_init(struct lan91cxx_priv_data *cpd)
 {
 	unsigned short val;
-	int i;
+	int i, rc;
 
 	DEBUG_FUNCTION();
 
@@ -1089,8 +1047,11 @@ int lan91cxx_hardware_init(struct lan91cxx_priv_data *cpd)
 		}
 	}
 #else
-	db_printf("Install lan91cxx irqvector at %d\n", cpd->config.vector);
-	set_vector(lan91cxx_interrupt_handler, cpd->config.vector, 1);
+	db_printf("Install lan91cxx isr at vec/irq %d\n", cpd->config.vector);
+	rc = rtems_interrupt_handler_install(cpd->config.vector, "smc91cxx",
+		RTEMS_INTERRUPT_SHARED, lan91cxx_interrupt_handler, cpd);
+	if (rc != RTEMS_SUCCESSFUL)
+		return 0;
 #endif
 
 	/* Reset chip */

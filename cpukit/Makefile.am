@@ -165,6 +165,9 @@ include_rtems_HEADERS += libmisc/fb/mw_uid.h
 include_rtems_HEADERS += libmisc/mouse/mouse_parser.h
 include_rtems_HEADERS += libmisc/mouse/serial_mouse.h
 
+## libqos
+include_rtems_HEADERS += libqos/qreslib.h
+
 ## shell
 if LIBSHELL
 include_rtems_HEADERS += libmisc/shell/shell.h

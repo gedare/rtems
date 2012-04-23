@@ -12,9 +12,9 @@
  */
 
 #include <rtems.h>
-
-#define GRETH_SUPPORTED
 #include <bsp.h>
+
+#ifdef GRETH_SUPPORTED
 
 #include <inttypes.h>
 #include <errno.h>
@@ -42,19 +42,15 @@
 #undef free
 #endif
 
-#if defined(__m68k__)
-extern m68k_isr_entry set_vector( rtems_isr_entry, rtems_vector_number, int );
-#elif defined(__lm32__)
-extern lm32_isr_entry set_vector( rtems_isr_entry, rtems_vector_number, int );
-#else
-extern rtems_isr_entry set_vector( rtems_isr_entry, rtems_vector_number, int );
-#endif
-
-
 /* #define GRETH_DEBUG */
 
 #ifdef CPU_U32_FIX
 extern void ipalign(struct mbuf *m);
+#endif
+
+/* Used when reading from memory written by GRETH DMA unit */
+#ifndef GRETH_MEM_LOAD
+#define GRETH_MEM_LOAD(addr) (*(volatile unsigned int *)(addr))
 #endif
 
 /*
@@ -92,6 +88,10 @@ extern void ipalign(struct mbuf *m);
 #ifndef GRETH_AUTONEGO_TIMEOUT_MS
 #define GRETH_AUTONEGO_TIMEOUT_MS 4000
 #endif
+const struct timespec greth_tan = {
+   GRETH_AUTONEGO_TIMEOUT_MS/1000,
+   GRETH_AUTONEGO_TIMEOUT_MS*1000000
+};
 
 /* For optimizing the autonegotiation time */
 #define GRETH_AUTONEGO_PRINT_TIME
@@ -142,7 +142,7 @@ struct greth_softc
    int gb;
    int gbit_mac;
    int auto_neg;
-   unsigned int auto_neg_time;
+   struct timespec auto_neg_time;
 
    /*
     * Statistics
@@ -180,22 +180,22 @@ static char *almalloc(int sz)
 
 /* GRETH interrupt handler */
 
-rtems_isr
-greth_interrupt_handler (rtems_vector_number v)
+void greth_interrupt_handler (void *arg)
 {
         uint32_t status;
         uint32_t ctrl;
         rtems_event_set events = 0;
+        struct greth_softc *greth = arg;
 
         /* read and clear interrupt cause */
-        status = greth.regs->status;
-        greth.regs->status = status;
-        ctrl = greth.regs->ctrl;
+        status = greth->regs->status;
+        greth->regs->status = status;
+        ctrl = greth->regs->ctrl;
 
         /* Frame received? */
         if ((ctrl & GRETH_CTRL_RXIRQ) && (status & (GRETH_STATUS_RXERR | GRETH_STATUS_RXIRQ)))
         {
-                greth.rxInterrupts++;
+                greth->rxInterrupts++;
                 /* Stop RX-Error and RX-Packet interrupts */
                 ctrl &= ~GRETH_CTRL_RXIRQ;
                 events |= INTERRUPT_EVENT;
@@ -203,17 +203,17 @@ greth_interrupt_handler (rtems_vector_number v)
         
         if ( (ctrl & GRETH_CTRL_TXIRQ) && (status & (GRETH_STATUS_TXERR | GRETH_STATUS_TXIRQ)) )
         {
-                greth.txInterrupts++;
+                greth->txInterrupts++;
                 ctrl &= ~GRETH_CTRL_TXIRQ;
                 events |= GRETH_TX_WAIT_EVENT;
         }
-        
+
         /* Clear interrupt sources */
-        greth.regs->ctrl = ctrl;
-        
+        greth->regs->ctrl = ctrl;
+
         /* Send the event(s) */
         if ( events )
-            rtems_event_send (greth.daemonTid, events);
+                rtems_event_send (greth->daemonTid, events);
 }
 
 static uint32_t read_mii(uint32_t phy_addr, uint32_t reg_addr)
@@ -259,8 +259,9 @@ static void print_init_info(struct greth_softc *sc)
                 printf("Half Duplex\n");
         }
 #ifdef GRETH_AUTONEGO_PRINT_TIME
-        if ( sc->auto_neg ){
-          printf("Autonegotiation Time: %dms\n",sc->auto_neg_time);
+        if ( sc->auto_neg ) {
+          printf("Autonegotiation Time: %dms\n", sc->auto_neg_time.tv_sec*1000 +
+                 sc->auto_neg_time.tv_nsec/1000000);
         }
 #endif
 }
@@ -279,8 +280,7 @@ greth_initialize_hardware (struct greth_softc *sc)
     int phystatus;
     int tmp1;
     int tmp2;
-    unsigned int msecs;
-    struct timeval tstart, tnow;
+    struct timespec tstart, tnow;
 
     greth_regs *regs;
 
@@ -315,33 +315,17 @@ greth_initialize_hardware (struct greth_softc *sc)
     sc->fd = 0;
     sc->sp = 0;
     sc->auto_neg = 0;
-    sc->auto_neg_time = 0;
+    _Timespec_Set_to_zero(&sc->auto_neg_time);
     if ((phyctrl >> 12) & 1) {
             /*wait for auto negotiation to complete*/
-            msecs = 0;
             sc->auto_neg = 1;
-            if ( rtems_clock_get_tod_timeval(&tstart) == RTEMS_NOT_DEFINED){
-                /* Not inited, set to epoch */
-                rtems_time_of_day time;
-                time.year   = 1988;
-                time.month  = 1;
-                time.day    = 1;
-                time.hour   = 0;
-                time.minute = 0;
-                time.second = 0;
-                time.ticks  = 0;
-                rtems_clock_set(&time);
-
-                tstart.tv_sec = 0;
-                tstart.tv_usec = 0;
-                rtems_clock_get_tod_timeval(&tstart);
-            }
+            if (rtems_clock_get_uptime(&tstart) != RTEMS_SUCCESSFUL)
+                    printk("rtems_clock_get_uptime failed\n");
             while (!(((phystatus = read_mii(phyaddr, 1)) >> 5) & 1)) {
-                    if ( rtems_clock_get_tod_timeval(&tnow) != RTEMS_SUCCESSFUL )
-                      printk("rtems_clock_get_tod_timeval failed\n\r");
-                    msecs = (tnow.tv_sec-tstart.tv_sec)*1000+(tnow.tv_usec-tstart.tv_usec)/1000;
-                    if ( msecs > GRETH_AUTONEGO_TIMEOUT_MS ){
-                            sc->auto_neg_time = msecs;
+                    if (rtems_clock_get_uptime(&tnow) != RTEMS_SUCCESSFUL)
+                            printk("rtems_clock_get_uptime failed\n");
+                    _Timespec_Subtract(&tstart, &tnow, &sc->auto_neg_time);
+                    if (_Timespec_Greater_than(&sc->auto_neg_time, &greth_tan)) {
                             sc->auto_neg = -1; /* Failed */
                             tmp1 = read_mii(phyaddr, 0);
                             sc->gb = ((phyctrl >> 6) & 1) && !((phyctrl >> 13) & 1);
@@ -349,8 +333,9 @@ greth_initialize_hardware (struct greth_softc *sc)
                             sc->fd = (phyctrl >> 8) & 1;
                             goto auto_neg_done;
                     }
+                    /* Wait about 30ms, time is PHY dependent */
+                    rtems_task_wake_after(rtems_clock_get_ticks_per_second()/32);
             }
-            sc->auto_neg_time = msecs;
             sc->phydev.adv = read_mii(phyaddr, 4);
             sc->phydev.part = read_mii(phyaddr, 5);
             if ((phystatus >> 8) & 1) {
@@ -491,13 +476,53 @@ auto_neg_done:
     /* clear all pending interrupts */
     regs->status = 0xffffffff;
     
-    /* install interrupt vector */
-    set_vector(greth_interrupt_handler, sc->vector, 1);
+    /* install interrupt handler */
+    rtems_interrupt_handler_install(sc->vector, "greth", RTEMS_INTERRUPT_SHARED,
+                                    greth_interrupt_handler, sc);
 
     regs->ctrl |= GRETH_CTRL_RXEN | (sc->fd << 4) | GRETH_CTRL_RXIRQ | (sc->sp << 7) | (sc->gb << 8);
 
     print_init_info(sc);
 }
+
+#ifdef CPU_U32_FIX
+
+/*
+ * Routine to align the received packet so that the ip header
+ * is on a 32-bit boundary. Necessary for cpu's that do not
+ * allow unaligned loads and stores and when the 32-bit DMA
+ * mode is used.
+ *
+ * Transfers are done on word basis to avoid possibly slow byte
+ * and half-word writes.
+ */
+
+void ipalign(struct mbuf *m)
+{
+  unsigned int *first, *last, data;
+  unsigned int tmp;
+
+  if ((((int) m->m_data) & 2) && (m->m_len)) {
+    last = (unsigned int *) ((((int) m->m_data) + m->m_len + 8) & ~3);
+    first = (unsigned int *) (((int) m->m_data) & ~3);
+    tmp = GRETH_MEM_LOAD(first);
+    tmp = tmp << 16;
+    first++;
+    do {
+      /* When snooping is not available the LDA instruction must be used
+       * to avoid the cache to return an illegal value.
+       * Load with forced cache miss
+       */
+      data = GRETH_MEM_LOAD(first);
+      *first = tmp | (data >> 16);
+      tmp = data << 16;
+      first++;
+    } while (first <= last);
+
+    m->m_data = (caddr_t)(((int) m->m_data) + 2);
+  }
+}
+#endif
 
 void
 greth_Daemon (void *arg)
@@ -510,6 +535,7 @@ greth_Daemon (void *arg)
     rtems_event_set events;
     rtems_interrupt_level level;
     int first;
+    unsigned int tmp;
 
     for (;;)
       {
@@ -539,7 +565,7 @@ greth_Daemon (void *arg)
     /* Scan for Received packets */
 again:
     while (!((len_status =
-		    dp->rxdesc[dp->rx_ptr].ctrl) & GRETH_RXD_ENABLE))
+		    GRETH_MEM_LOAD(&dp->rxdesc[dp->rx_ptr].ctrl)) & GRETH_RXD_ENABLE))
 	    {
                     bad = 0;
                     if (len_status & GRETH_RXD_TOOLONG)
@@ -583,10 +609,18 @@ again:
                                     len - sizeof (struct ether_header);
 
                             eh = mtod (m, struct ether_header *);
+
                             m->m_data += sizeof (struct ether_header);
 #ifdef CPU_U32_FIX
-                            if(!(dp->gbit_mac))
+                            if(!dp->gbit_mac) {
+                                    /* OVERRIDE CACHED ETHERNET HEADER FOR NON-SNOOPING SYSTEMS */
+                                    tmp = GRETH_MEM_LOAD((uintptr_t)eh);
+                                    tmp = GRETH_MEM_LOAD(4+(uintptr_t)eh);
+                                    tmp = GRETH_MEM_LOAD(8+(uintptr_t)eh);
+                                    tmp = GRETH_MEM_LOAD(12+(uintptr_t)eh);
+
                                     ipalign(m);	/* Align packet on 32-bit boundary */
+                            }
 #endif
 
                             ether_input (ifp, eh, m);
@@ -641,7 +675,7 @@ sendpacket (struct ifnet *ifp, struct mbuf *m)
     /*
      * Is there a free descriptor available?
      */
-    if ( dp->txdesc[dp->tx_ptr].ctrl & GRETH_TXD_ENABLE ){
+    if (GRETH_MEM_LOAD(&dp->txdesc[dp->tx_ptr].ctrl) & GRETH_TXD_ENABLE){
             /* No. */
             inside = 0;
             return 1;
@@ -651,7 +685,7 @@ sendpacket (struct ifnet *ifp, struct mbuf *m)
     n = m;
 
     len = 0;
-    temp = (unsigned char *) dp->txdesc[dp->tx_ptr].addr;
+    temp = (unsigned char *) GRETH_MEM_LOAD(&dp->txdesc[dp->tx_ptr].addr);
 #ifdef GRETH_DEBUG
     printf("TXD: 0x%08x : BUF: 0x%08x\n", (int) m->m_data, (int) temp);
 #endif
@@ -814,7 +848,7 @@ int greth_process_tx_gbit(struct greth_softc *sc)
      */
     for (;;){
         /* Reap Sent packets */
-        while((sc->tx_cnt > 0) && !(sc->txdesc[sc->tx_dptr].ctrl) && !(sc->txdesc[sc->tx_dptr].ctrl & GRETH_TXD_ENABLE)) {
+        while((sc->tx_cnt > 0) && !(GRETH_MEM_LOAD(&sc->txdesc[sc->tx_dptr].ctrl) & GRETH_TXD_ENABLE)) {
             m_free(sc->txmbuf[sc->tx_dptr]);
             sc->tx_dptr = (sc->tx_dptr + 1) % sc->txbufs;
             sc->tx_cnt--;
@@ -1146,3 +1180,4 @@ rtems_greth_driver_attach (struct rtems_bsdnet_ifconfig *config,
     return 1;
 };
 
+#endif

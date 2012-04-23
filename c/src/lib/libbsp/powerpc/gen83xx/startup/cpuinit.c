@@ -149,7 +149,7 @@ void cpu_init( void)
   clear_mmu_regs();
 
   /* Clear caches */
-  PPC_CLEAR_SPECIAL_PURPOSE_REGISTER_BITS( HID0, HID0_ILOCK | HID0_DLOCK);
+  PPC_CLEAR_SPECIAL_PURPOSE_REGISTER_BITS( HID0, HID0_ILOCK | HID0_DLOCK | HID0_ICE | HID0_DCE);
   PPC_SET_SPECIAL_PURPOSE_REGISTER_BITS( HID0, HID0_ICFI | HID0_DCI);
   PPC_CLEAR_SPECIAL_PURPOSE_REGISTER_BITS( HID0, HID0_ICFI | HID0_DCI);
 
@@ -251,7 +251,11 @@ void cpu_init( void)
     #else /* HAS_UBOOT */
       (uint32_t) IMMRBAR,
     #endif /* HAS_UBOOT */
-    1024 * 1024,
+    #if MPC83XX_CHIP_TYPE / 10 == 830
+      2 * 1024 * 1024,
+    #else
+      1024 * 1024,
+    #endif
     false,
     true,
     false,

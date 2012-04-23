@@ -12,31 +12,30 @@
  */
 
 #if HAVE_CONFIG_H
-#include "config.h"
+  #include "config.h"
 #endif
 
-#include <sys/stat.h>
-#include <errno.h>
-
-#include <rtems.h>
-#include <rtems/libio.h>
+#include <unistd.h>
 
 #include <rtems/libio_.h>
-#include <rtems/seterr.h>
 
-int fchown(
-  int   fd,
-  uid_t owner,
-  gid_t group
-)
+int fchown( int fd, uid_t owner, gid_t group )
 {
+  int rv = 0;
   rtems_libio_t *iop;
 
   rtems_libio_check_fd( fd );
   iop = rtems_libio_iop( fd );
   rtems_libio_check_is_open(iop);
 
-  rtems_libio_check_permissions( iop, LIBIO_FLAGS_WRITE );
+  if (iop->pathinfo.mt_entry->writeable) {
+    rtems_filesystem_instance_lock( &iop->pathinfo );
+    rv = (*iop->pathinfo.ops->chown_h)( &iop->pathinfo, owner, group );
+    rtems_filesystem_instance_unlock( &iop->pathinfo );
+  } else {
+    errno = EROFS;
+    rv = -1;
+  }
 
-  return (*iop->pathinfo.ops->chown_h)( &iop->pathinfo, owner, group );
+  return rv;
 }

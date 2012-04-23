@@ -109,8 +109,8 @@ typedef enum {
  * the order in a red-black tree.
  */
 typedef int (*RBTree_Compare_function)(
-    RBTree_Node *node1,
-    RBTree_Node *node2
+  const RBTree_Node *node1,
+  const RBTree_Node *node2
 );
 
 /**
@@ -232,7 +232,7 @@ RBTree_Node *_RBTree_Get(
  *  @note It disables interrupts to ensure the atomicity of the get operation.
  */
 RBTree_Node *_RBTree_Peek(
-  RBTree_Control *the_rbtree,
+  const RBTree_Control *the_rbtree,
   RBTree_Direction dir
 );
 
@@ -319,6 +319,66 @@ void _RBTree_Extract_unprotected(
 void _RBTree_Extract(
   RBTree_Control *the_rbtree,
   RBTree_Node    *the_node
+);
+
+/**
+ * @brief Returns the in-order next node of a node.
+ *
+ * @param[in] rbtree The red-black tree.
+ * @param[in] node The node.
+ * @param[in] dir The direction.
+ *
+ * @retval NULL The in-order next node does not exist.
+ * @retval otherwise The next node.
+ */
+RBTree_Node *_RBTree_Next_unprotected(
+  const RBTree_Control *rbtree,
+  const RBTree_Node *node,
+  RBTree_Direction dir
+);
+
+/**
+ * @copydoc _RBTree_Next_unprotected()
+ *
+ * The function disables the interrupts protect the operation.
+ */
+RBTree_Node *_RBTree_Next(
+  const RBTree_Control *rbtree,
+  const RBTree_Node *node,
+  RBTree_Direction dir
+);
+
+/**
+ * @brief Red-black tree visitor.
+ *
+ * @param[in] node The node.
+ * @param[in] dir The direction.
+ * @param[in] visitor_arg The visitor argument.
+ *
+ * @retval true Stop the iteration.
+ * @retval false Continue the iteration.
+ *
+ * @see _RBTree_Iterate_unprotected().
+ */
+typedef bool (*RBTree_Visitor)(
+  const RBTree_Node *node,
+  RBTree_Direction dir,
+  void *visitor_arg
+);
+
+/**
+ * @brief Red-black tree iteration.
+ *
+ * @param[in] rbtree The red-black tree.
+ * @param[in] dir The direction.
+ * @param[in] visitor The visitor.
+ * @param[in] visitor_arg The visitor argument.
+ */
+void _RBTree_Iterate_unprotected(
+  const RBTree_Control *rbtree,
+  RBTree_Direction dir,
+  RBTree_Visitor visitor,
+  void *visitor_arg
 );
 
 #ifndef __RTEMS_APPLICATION__

@@ -18,32 +18,44 @@
  */
 
 #if HAVE_CONFIG_H
-#include "config.h"
+  #include "config.h"
 #endif
-
-#include <rtems/libio_.h>
 
 #include "imfs.h"
 
 const rtems_filesystem_operations_table IMFS_ops = {
-  .evalpath_h = IMFS_eval_path,
-  .evalformake_h = IMFS_evaluate_for_make,
+  .lock_h = rtems_filesystem_default_lock,
+  .unlock_h = rtems_filesystem_default_unlock,
+  .eval_path_h = IMFS_eval_path,
   .link_h = IMFS_link,
-  .unlink_h = IMFS_unlink,
+  .are_nodes_equal_h = rtems_filesystem_default_are_nodes_equal,
   .node_type_h = IMFS_node_type,
   .mknod_h = IMFS_mknod,
+  .rmnod_h = IMFS_rmnod,
+  .fchmod_h = IMFS_fchmod,
   .chown_h = IMFS_chown,
-  .freenod_h = rtems_filesystem_default_freenode,
+  .clonenod_h = IMFS_node_clone,
+  .freenod_h = IMFS_node_free,
   .mount_h = IMFS_mount,
   .fsmount_me_h = IMFS_initialize,
   .unmount_h = IMFS_unmount,
   .fsunmount_me_h = IMFS_fsunmount,
   .utime_h = IMFS_utime,
-  .eval_link_h = IMFS_evaluate_link,
   .symlink_h = IMFS_symlink,
   .readlink_h = IMFS_readlink,
   .rename_h = IMFS_rename,
   .statvfs_h = rtems_filesystem_default_statvfs
+};
+
+static const IMFS_node_control *const
+  IMFS_node_controls [IMFS_TYPE_COUNT] = {
+  [IMFS_DIRECTORY] = &IMFS_node_control_directory,
+  [IMFS_DEVICE] = &IMFS_node_control_device,
+  [IMFS_HARD_LINK] = &IMFS_node_control_hard_link,
+  [IMFS_SYM_LINK] = &IMFS_node_control_sym_link,
+  [IMFS_MEMORY_FILE] = &IMFS_node_control_memfile,
+  [IMFS_LINEAR_FILE] = &IMFS_node_control_linfile,
+  [IMFS_FIFO] = &IMFS_node_control_default
 };
 
 int IMFS_initialize(
@@ -54,8 +66,6 @@ int IMFS_initialize(
   return IMFS_initialize_support(
     mt_entry,
     &IMFS_ops,
-    &IMFS_memfile_handlers,
-    &IMFS_directory_handlers,
-    &rtems_filesystem_handlers_default  /* for fifos */
+    IMFS_node_controls
   );
 }

@@ -11,12 +11,8 @@
  */
 
 #if HAVE_CONFIG_H
-#include "config.h"
+  #include "config.h"
 #endif
-
-#include <stdlib.h>
-#include <rtems/libio_.h>
-#include <rtems/seterr.h>
 
 #include "imfs.h"
 
@@ -35,8 +31,8 @@ do {  \
 static int IMFS_fifo_open(
   rtems_libio_t *iop,
   const char    *pathname,
-  uint32_t       flag,
-  uint32_t       mode
+  int            oflag,
+  mode_t         mode
 )
 {
   IMFS_jnode_t *jnode = iop->pathinfo.node_access;
@@ -53,9 +49,6 @@ static int IMFS_fifo_close(
   IMFS_jnode_t *jnode = iop->pathinfo.node_access;
 
   pipe_release(&JNODE2PIPE(jnode), iop);
-
-  iop->flags &= ~LIBIO_FLAGS_OPEN;
-  IMFS_check_node_remove(jnode);
 
   IMFS_FIFO_RETURN(err);
 }
@@ -126,11 +119,7 @@ static off_t IMFS_fifo_lseek(
   IMFS_FIFO_RETURN(err);
 }
 
-/*
- *  Handler table for IMFS FIFO nodes
- */
-
-const rtems_filesystem_file_handlers_r IMFS_fifo_handlers = {
+static const rtems_filesystem_file_handlers_r IMFS_fifo_handlers = {
   IMFS_fifo_open,
   IMFS_fifo_close,
   IMFS_fifo_read,
@@ -138,10 +127,16 @@ const rtems_filesystem_file_handlers_r IMFS_fifo_handlers = {
   IMFS_fifo_ioctl,
   IMFS_fifo_lseek,
   IMFS_stat,
-  IMFS_fchmod,
   rtems_filesystem_default_ftruncate,
-  rtems_filesystem_default_fsync,
-  rtems_filesystem_default_fdatasync,
-  rtems_filesystem_default_fcntl,
-  IMFS_rmnod,
+  rtems_filesystem_default_fsync_or_fdatasync,
+  rtems_filesystem_default_fsync_or_fdatasync,
+  rtems_filesystem_default_fcntl
+};
+
+const IMFS_node_control IMFS_node_control_fifo = {
+  .imfs_type = IMFS_FIFO,
+  .handlers = &IMFS_fifo_handlers,
+  .node_initialize = IMFS_node_initialize_default,
+  .node_remove = IMFS_node_remove_default,
+  .node_destroy = IMFS_node_destroy_default
 };

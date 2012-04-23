@@ -12,21 +12,12 @@
  */
 
 #if HAVE_CONFIG_H
-#include "config.h"
+  #include "config.h"
 #endif
-
-#include <sys/types.h>         /* for mkdir */
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdlib.h>
 
 #include "imfs.h"
-#include <rtems/libio_.h>
-#include <rtems/seterr.h>
 
-#if defined(IMFS_DEBUG)
-#include <stdio.h>
-#endif
+#include <stdlib.h>
 
 /*
  *  IMFS_determine_bytes_per_block
@@ -59,61 +50,115 @@ static int IMFS_determine_bytes_per_block(
   return 0;
 }
 
-
-/*
- *  IMFS_initialize
- */
 int IMFS_initialize_support(
-  rtems_filesystem_mount_table_entry_t        *temp_mt_entry,
-   const rtems_filesystem_operations_table    *op_table,
-   const rtems_filesystem_file_handlers_r     *memfile_handlers,
-   const rtems_filesystem_file_handlers_r     *directory_handlers,
-   const rtems_filesystem_file_handlers_r     *fifo_handlers
+  rtems_filesystem_mount_table_entry_t *mt_entry,
+  const rtems_filesystem_operations_table *op_table,
+  const IMFS_node_control *const node_controls [IMFS_TYPE_COUNT]
 )
 {
-  static int                             imfs_instance;
-  IMFS_fs_info_t                        *fs_info;
-  IMFS_jnode_t                          *jnode;
+  static int imfs_instance;
 
-  /*
-   * determine/check value for imfs_memfile_bytes_per_block
-   */
-  IMFS_determine_bytes_per_block(&imfs_memfile_bytes_per_block,
-				 imfs_rq_memfile_bytes_per_block,
-				 IMFS_MEMFILE_DEFAULT_BYTES_PER_BLOCK);
+  int rv = 0;
+  IMFS_fs_info_t *fs_info = calloc( 1, sizeof( *fs_info ) );
 
-  /*
-   *  Create the root node
-   *
-   *  NOTE: UNIX root is 755 and owned by root/root (0/0).
-   */
-  temp_mt_entry->mt_fs_root.node_access      = IMFS_create_root_node();
-  temp_mt_entry->mt_fs_root.handlers         = directory_handlers;
-  temp_mt_entry->mt_fs_root.ops              = op_table;
-  temp_mt_entry->pathconf_limits_and_options = IMFS_LIMITS_AND_OPTIONS;
+  if ( fs_info != NULL ) {
+    IMFS_jnode_t *root_node;
 
-  /*
-   * Create custom file system data.
-   */
-  fs_info = calloc( 1, sizeof( IMFS_fs_info_t ) );
-  if ( !fs_info ) {
-    free(temp_mt_entry->mt_fs_root.node_access);
-    rtems_set_errno_and_return_minus_one(ENOMEM);
+    fs_info->instance = imfs_instance++;
+    memcpy(
+      fs_info->node_controls,
+      node_controls,
+      sizeof( fs_info->node_controls )
+    );
+
+    root_node = IMFS_allocate_node(
+      fs_info,
+      fs_info->node_controls [IMFS_DIRECTORY],
+      "",
+      0,
+      (S_IFDIR | 0755),
+      NULL
+    );
+    if ( root_node != NULL ) {
+      mt_entry->fs_info = fs_info;
+      mt_entry->pathconf_limits_and_options = IMFS_LIMITS_AND_OPTIONS;
+      mt_entry->mt_fs_root->location.node_access = root_node;
+      mt_entry->mt_fs_root->location.ops = op_table;
+      IMFS_Set_handlers( &mt_entry->mt_fs_root->location );
+    } else {
+      errno = ENOMEM;
+      rv = -1;
+    }
+  } else {
+    errno = ENOMEM;
+    rv = -1;
   }
-  temp_mt_entry->fs_info = fs_info;
 
-  /*
-   * Set st_ino for the root to 1.
-   */
+  if ( rv == 0 ) {
+    IMFS_determine_bytes_per_block(
+      &imfs_memfile_bytes_per_block,
+      imfs_rq_memfile_bytes_per_block,
+      IMFS_MEMFILE_DEFAULT_BYTES_PER_BLOCK
+    );
+  }
 
-  fs_info->instance              = imfs_instance++;
-  fs_info->ino_count             = 1;
-  fs_info->memfile_handlers      = memfile_handlers;
-  fs_info->directory_handlers    = directory_handlers;
-  fs_info->fifo_handlers         = fifo_handlers;
+  return rv;
+}
 
-  jnode = temp_mt_entry->mt_fs_root.node_access;
-  jnode->st_ino = fs_info->ino_count;
+int IMFS_node_clone( rtems_filesystem_location_info_t *loc )
+{
+  IMFS_jnode_t *node = loc->node_access;
+
+  ++node->reference_count;
 
   return 0;
 }
+
+void IMFS_node_destroy( IMFS_jnode_t *node )
+{
+  IMFS_assert( node->reference_count == 0 );
+
+  node = (*node->control->node_destroy)( node );
+
+  free( node );
+}
+
+void IMFS_node_free( const rtems_filesystem_location_info_t *loc )
+{
+  IMFS_jnode_t *node = loc->node_access;
+
+  if ( node->reference_count == 1 ) {
+    IMFS_node_destroy( node );
+  } else {
+    --node->reference_count;
+  }
+}
+
+IMFS_jnode_t *IMFS_node_initialize_default(
+  IMFS_jnode_t *node,
+  const IMFS_types_union *info
+)
+{
+  return node;
+}
+
+IMFS_jnode_t *IMFS_node_remove_default(
+  IMFS_jnode_t *node,
+  const IMFS_jnode_t *root_node
+)
+{
+  return node;
+}
+
+IMFS_jnode_t *IMFS_node_destroy_default( IMFS_jnode_t *node )
+{
+  return node;
+}
+
+const IMFS_node_control IMFS_node_control_default = {
+  .imfs_type = IMFS_INVALID_NODE,
+  .handlers = &rtems_filesystem_handlers_default,
+  .node_initialize = IMFS_node_initialize_default,
+  .node_remove = IMFS_node_remove_default,
+  .node_destroy = IMFS_node_destroy_default
+};

@@ -34,7 +34,10 @@
 /* Configuration parameters for console driver, ... */
 unsigned int BSP_bus_frequency;
 
-/* Configuration parameters for clock driver, ... */
+/* Configuration parameter for clock driver */
+uint32_t bsp_time_base_frequency;
+
+/* Legacy */
 uint32_t bsp_clicks_per_usec;
 
 /* Default decrementer exception handler */
@@ -96,11 +99,11 @@ void bsp_start( void)
    * Enable instruction and data caches. Do not force writethrough mode.
    */
 
-#if BSP_INSTRUCTION_CACHE_ENABLED
+#ifdef BSP_INSTRUCTION_CACHE_ENABLED
   rtems_cache_enable_instruction();
 #endif
 
-#if BSP_DATA_CACHE_ENABLED
+#ifdef BSP_DATA_CACHE_ENABLED
   rtems_cache_enable_data();
 #endif
 
@@ -113,14 +116,14 @@ void bsp_start( void)
 
 #ifdef HAS_UBOOT
   BSP_bus_frequency = bsp_uboot_board_info.bi_busfreq;
-  bsp_clicks_per_usec = bsp_uboot_board_info.bi_busfreq / 4000000;
 #else /* HAS_UBOOT */
   BSP_bus_frequency = BSP_CLKIN_FRQ * BSP_SYSPLL_MF / BSP_SYSPLL_CKID;
-  bsp_clicks_per_usec = BSP_bus_frequency / 4000000;
 #endif /* HAS_UBOOT */
+  bsp_time_base_frequency = BSP_bus_frequency / 4;
+  bsp_clicks_per_usec = bsp_time_base_frequency / 1000000;
 
   /* Initialize some console parameters */
-  for (i = 0; i < Console_Port_Count; ++i) {
+  for (i = 0; i < Console_Configuration_Count; ++i) {
     Console_Configuration_Ports [i].ulClock = BSP_bus_frequency;
 
     #ifdef HAS_UBOOT
@@ -130,6 +133,9 @@ void bsp_start( void)
   }
 
   /* Initialize exception handler */
+#ifndef BSP_DATA_CACHE_ENABLED
+  ppc_exc_cache_wb_check = 0;
+#endif
   sc = ppc_exc_initialize(
     PPC_INTERRUPT_DISABLE_MASK_DEFAULT,
     interrupt_stack_start,

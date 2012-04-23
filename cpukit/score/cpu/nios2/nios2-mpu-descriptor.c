@@ -60,19 +60,6 @@ static bool _Nios2_Is_valid_base_and_end(
   return ok;
 }
 
-static bool _Nios2_Is_valid_index(
-  const Nios2_MPU_Configuration *config,
-  bool data,
-  int index
-)
-{
-  int count = data ?
-    config->data_region_count
-      : config->instruction_region_count;
-
-  return 0 <= index && index < count;
-}
-
 static bool _Nios2_Is_valid_permission(
   bool data,
   int perm
@@ -101,7 +88,7 @@ bool _Nios2_MPU_Setup_region_registers(
     &mask_or_limit
   );
   bool ok = is_valid_base_and_end
-    && _Nios2_Is_valid_index( config, desc->data, desc->index )
+    && _Nios2_MPU_Is_valid_index( config, desc->index, desc->data )
     && _Nios2_Is_valid_permission( desc->data, desc->perm )
     && !(!desc->data && desc->cacheable)
     && !(desc->read && desc->write);
@@ -115,6 +102,38 @@ bool _Nios2_MPU_Setup_region_registers(
       | ((desc->perm << NIOS2_MPUACC_PERM_OFFSET) & NIOS2_MPUACC_PERM_MASK)
       | (desc->read ? NIOS2_MPUACC_RD : 0)
       | (desc->write ? NIOS2_MPUACC_WR : 0);
+  }
+
+  return ok;
+}
+
+bool _Nios2_MPU_Get_region_descriptor(
+  const Nios2_MPU_Configuration *config,
+  int index,
+  bool data,
+  Nios2_MPU_Region_descriptor *desc
+)
+{
+  bool ok = _Nios2_MPU_Is_valid_index( config, index, data );
+
+  if ( ok ) {
+    uint32_t mpubase;
+    uint32_t mpuacc;
+
+    _Nios2_MPU_Get_region_registers( index, data, &mpubase, &mpuacc );
+
+    desc->index = index;
+    desc->base = (void *) (mpubase & NIOS2_MPUBASE_BASE_MASK);
+    if ( config->region_uses_limit ) {
+      desc->end = (void *) (mpuacc & NIOS2_MPUACC_LIMIT_MASK);
+    } else {
+      desc->end = (void *) ((mpuacc & NIOS2_MPUACC_MASK_MASK) + 1);
+    }
+    desc->perm = (mpuacc & NIOS2_MPUACC_PERM_MASK) >> NIOS2_MPUACC_PERM_OFFSET;
+    desc->data = data;
+    desc->cacheable = (mpuacc & NIOS2_MPUACC_C) != 0;
+    desc->read = (mpuacc & NIOS2_MPUACC_RD) != 0;
+    desc->write = (mpuacc & NIOS2_MPUACC_WR) != 0;
   }
 
   return ok;

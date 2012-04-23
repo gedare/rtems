@@ -18,18 +18,13 @@
  */
 
 #if HAVE_CONFIG_H
-#include "config.h"
+  #include "config.h"
 #endif
+
+#include "imfs.h"
 
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
-
-#include <rtems.h>
-#include <rtems/libio.h>
-#include "imfs.h"
-#include <rtems/libio_.h>
-#include <rtems/seterr.h>
 
 #define MEMFILE_STATIC
 
@@ -86,8 +81,8 @@ void memfile_free_block(
 int memfile_open(
   rtems_libio_t *iop,
   const char    *pathname,
-  uint32_t       flag,
-  uint32_t       mode
+  int            oflag,
+  mode_t         mode
 )
 {
   IMFS_jnode_t  *the_jnode;
@@ -98,11 +93,11 @@ int memfile_open(
    * Perform 'copy on write' for linear files
    */
   if ((iop->flags & (LIBIO_FLAGS_WRITE | LIBIO_FLAGS_APPEND))
-   && (the_jnode->type == IMFS_LINEAR_FILE)) {
+   && (IMFS_type( the_jnode ) == IMFS_LINEAR_FILE)) {
     uint32_t   count = the_jnode->info.linearfile.size;
     const unsigned char *buffer = the_jnode->info.linearfile.direct;
 
-    the_jnode->type = IMFS_MEMORY_FILE;
+    the_jnode->control = &IMFS_node_control_memfile;
     the_jnode->info.file.size            = 0;
     the_jnode->info.file.indirect        = 0;
     the_jnode->info.file.doubly_indirect = 0;
@@ -115,28 +110,6 @@ int memfile_open(
     iop->offset = the_jnode->info.file.size;
 
   iop->size = the_jnode->info.file.size;
-  return 0;
-}
-
-/*
- *  memfile_close
- *
- *  This routine processes the close() system call.  Note that there is
- *  nothing to flush or memory to free at this point.
- */
-int memfile_close(
-  rtems_libio_t *iop
-)
-{
-  IMFS_jnode_t   *the_jnode;
-
-  the_jnode = iop->pathinfo.node_access;
-
-  if (iop->flags & LIBIO_FLAGS_APPEND)
-    iop->offset = the_jnode->info.file.size;
-
-  IMFS_check_node_remove( the_jnode );
-
   return 0;
 }
 
@@ -211,7 +184,7 @@ off_t memfile_lseek(
 
   the_jnode = iop->pathinfo.node_access;
 
-  if (the_jnode->type == IMFS_LINEAR_FILE) {
+  if (IMFS_type( the_jnode ) == IMFS_LINEAR_FILE) {
     if (iop->offset > the_jnode->info.linearfile.size)
       iop->offset = the_jnode->info.linearfile.size;
   }
@@ -286,7 +259,7 @@ MEMFILE_STATIC int IMFS_memfile_extend(
    *  Perform internal consistency checks
    */
   IMFS_assert( the_jnode );
-    IMFS_assert( the_jnode->type == IMFS_MEMORY_FILE );
+    IMFS_assert( IMFS_type( the_jnode ) == IMFS_MEMORY_FILE );
 
   /*
    *  Verify new file size is supported
@@ -342,7 +315,7 @@ MEMFILE_STATIC int IMFS_memfile_addblock(
   block_p *block_entry_ptr;
 
   IMFS_assert( the_jnode );
-  IMFS_assert( the_jnode->type == IMFS_MEMORY_FILE );
+  IMFS_assert( IMFS_type( the_jnode ) == IMFS_MEMORY_FILE );
 
   /*
    * Obtain the pointer for the specified block number
@@ -447,7 +420,7 @@ static void memfile_free_blocks_in_table(
  *         Regardless until the IMFS implementation is proven, it
  *         is better to stick to simple, easy to understand algorithms.
  */
-int IMFS_memfile_remove(
+IMFS_jnode_t *IMFS_memfile_remove(
  IMFS_jnode_t  *the_jnode
 )
 {
@@ -461,7 +434,7 @@ int IMFS_memfile_remove(
    *  Perform internal consistency checks
    */
   IMFS_assert( the_jnode );
-  IMFS_assert( the_jnode->type == IMFS_MEMORY_FILE );
+  IMFS_assert( IMFS_type( the_jnode ) == IMFS_MEMORY_FILE );
 
   /*
    *  Eventually this could be set smarter at each call to
@@ -509,7 +482,7 @@ int IMFS_memfile_remove(
         (block_p **)&info->triply_indirect, to_free );
   }
 
-  return 0;
+  return the_jnode;
 }
 
 /*
@@ -545,8 +518,8 @@ MEMFILE_STATIC ssize_t IMFS_memfile_read(
    *  Perform internal consistency checks
    */
   IMFS_assert( the_jnode );
-  IMFS_assert( the_jnode->type == IMFS_MEMORY_FILE ||
-       the_jnode->type == IMFS_LINEAR_FILE );
+  IMFS_assert( IMFS_type( the_jnode ) == IMFS_MEMORY_FILE ||
+    IMFS_type( the_jnode ) == IMFS_LINEAR_FILE );
   IMFS_assert( dest );
 
   /*
@@ -555,7 +528,7 @@ MEMFILE_STATIC ssize_t IMFS_memfile_read(
    */
   my_length = length;
 
-  if (the_jnode->type == IMFS_LINEAR_FILE) {
+  if ( IMFS_type( the_jnode ) == IMFS_LINEAR_FILE ) {
     unsigned char  *file_ptr;
 
     file_ptr = (unsigned char *)the_jnode->info.linearfile.direct;
@@ -669,7 +642,7 @@ MEMFILE_STATIC ssize_t IMFS_memfile_write(
    */
   IMFS_assert( source );
   IMFS_assert( the_jnode );
-  IMFS_assert( the_jnode->type == IMFS_MEMORY_FILE );
+  IMFS_assert( IMFS_type( the_jnode ) == IMFS_MEMORY_FILE );
 
   my_length = length;
   /*
@@ -814,7 +787,7 @@ block_p *IMFS_memfile_get_block_pointer(
    *  Perform internal consistency checks
    */
   IMFS_assert( the_jnode );
-  IMFS_assert( the_jnode->type == IMFS_MEMORY_FILE );
+  IMFS_assert( IMFS_type( the_jnode ) == IMFS_MEMORY_FILE );
 
   info = &the_jnode->info.file;
   my_block = block;

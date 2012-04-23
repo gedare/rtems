@@ -31,30 +31,29 @@ int rtems_leon_greth_driver_attach(
   int attach
 )
 {
-  int device_found = 0;
   unsigned int base_addr = 0; /* avoid warnings */
   unsigned int eth_irq = 0;   /* avoid warnings */
-	amba_apb_device apbgreth;
+  struct ambapp_dev *adev;
+  struct ambapp_apb_info *apb;
 
   /* Scan for MAC AHB slave interface */
-	device_found = amba_find_apbslv(&amba_conf,VENDOR_GAISLER,GAISLER_ETHMAC,&apbgreth);
-  if (device_found == 1)
-  {
-		base_addr = apbgreth.start;
-		eth_irq = apbgreth.irq + 0x10;
+  adev = (void *)ambapp_for_each(&ambapp_plb, (OPTIONS_ALL|OPTIONS_APB_SLVS),
+                                 VENDOR_GAISLER, GAISLER_ETHMAC,
+                                 ambapp_find_by_idx, NULL);
+  if (adev) {
+    apb = DEV_TO_APB(adev);
+    base_addr = apb->start;
+    eth_irq = apb->irq;
 
     /* clear control register and reset NIC */
     *(volatile int *) base_addr = 0;
     *(volatile int *) base_addr = GRETH_CTRL_RST;
     *(volatile int *) base_addr = 0;
     leon_greth_configuration.base_address = base_addr;
-    leon_greth_configuration.vector = eth_irq;
+    leon_greth_configuration.vector = eth_irq; /* on LEON vector is IRQ no. */
     leon_greth_configuration.txd_count = TDA_COUNT;
     leon_greth_configuration.rxd_count = RDA_COUNT;
-    if (rtems_greth_driver_attach( config, &leon_greth_configuration )) {
-      LEON_Clear_interrupt(leon_greth_configuration.vector);
-      LEON_Unmask_interrupt(leon_greth_configuration.vector);
-    }
+    rtems_greth_driver_attach(config, &leon_greth_configuration);
   }
   return 0;
 }
