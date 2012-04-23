@@ -125,7 +125,7 @@ void rbtree_initialize( rtems_task_argument tid, int size ) {
   rtems_rbtree_initialize_empty(
       &the_rbtree[tid],
       &rbtree_compare,
-      RTEMS_RBTREE_DUPLICATE
+      false
   );
 
 #if 0
