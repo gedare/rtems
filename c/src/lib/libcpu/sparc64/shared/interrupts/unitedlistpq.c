@@ -140,8 +140,6 @@ uint64_t sparc64_unitedlistpq_extract(int queue_idx, uint64_t kv)
   pq_node *node = search_helper(queue_idx, kv);
   Chain_Control *spill_pq = &queues[queue_idx];
 
-  node = search_helper(queue_idx, kv);
-
   if ( node ) {
     if ( _Chain_Is_first((Chain_Node*)node) ) {
       _Chain_Get_first_unprotected(spill_pq);
