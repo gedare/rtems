@@ -14,12 +14,13 @@
 
 /* Extra workspace for spill structure in KB
  * Spill structure:
- *  pq_node: 2 ptrs and 2 uint32 and 1 bool: 200b = 25B
+ *  pq_node: 2 ptrs and 2 uint32 : 192b = 24B
+ *  and for search: 1 bool and 2 more pointers: 160b = 20B
  *  Max nodes: PQ_MAX_SIZE - QUEUE_SIZE
  *
  * Upper bound on space: PQ_MAX_SIZE * sizeof(pq_node)
  */
 #include "../shared/params.h"
-#define CONFIGURE_MEMORY_OVERHEAD (16+(NUM_APERIODIC_TASKS*PQ_MAX_SIZE * 28)/1000)
+#define CONFIGURE_MEMORY_OVERHEAD (16+(NUM_APERIODIC_TASKS*PQ_MAX_SIZE * 48)/1000)
 
 #include <rtems/confdefs.h>

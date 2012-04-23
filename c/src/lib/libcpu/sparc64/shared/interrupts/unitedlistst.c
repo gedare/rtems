@@ -7,6 +7,8 @@ static Freelist_Control free_nodes[NUM_QUEUES];
 
 typedef struct {
   Chain_Node Node;
+  Chain_Node *forward;
+  Chain_Node *backward;
   uint32_t key;
   uint32_t val;
   bool is_valid;
@@ -150,8 +152,10 @@ Chain_Node* sparc64_unitedlistst_spill_node(
   // FIFO behavior for spilled nodes with equal keys. To get global stability
   // we would need to ensure that (1) the key comparison is <= and (2) the
   // last node to be spilled has no ties left in the hwpq.
-  while (!_Chain_Is_head(spill_pq, iter) && key < ((pq_node*)iter)->key) 
+  while (!_Chain_Is_head(spill_pq, iter) && key < ((pq_node*)iter)->key) { 
     iter = _Chain_Previous(iter);
+    // FIXME: use binary search? update search pointers?
+  }
 
   new_node = freelist_get_node(&free_nodes[queue_idx]);
   if (!new_node) {
