@@ -35,6 +35,10 @@ $(PROJECT_INCLUDE)/libcpu/unitedlistpq.h: shared/interrupts/unitedlistpq.h $(PRO
 	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/libcpu/unitedlistpq.h
 PREINSTALL_FILES += $(PROJECT_INCLUDE)/libcpu/unitedlistpq.h
 
+$(PROJECT_INCLUDE)/libcpu/unitedlistst.h: shared/interrupts/unitedlistst.h $(PROJECT_INCLUDE)/libcpu/$(dirstamp)
+	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/libcpu/unitedlistst.h
+PREINSTALL_FILES += $(PROJECT_INCLUDE)/libcpu/unitedlistst.h
+
 $(PROJECT_INCLUDE)/libcpu/hwpqlib.h: shared/interrupts/hwpqlib.h $(PROJECT_INCLUDE)/libcpu/$(dirstamp)
 	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/libcpu/hwpqlib.h
 PREINSTALL_FILES += $(PROJECT_INCLUDE)/libcpu/hwpqlib.h

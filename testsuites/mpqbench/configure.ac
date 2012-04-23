@@ -63,6 +63,7 @@ AC_CONFIG_FILES([Makefile
 mhwpq/Makefile
 mhwpqsplitheap/Makefile
 mhwpqunitedlist/Makefile
+mhwpqunitedsearch/Makefile
 miheap/Makefile
 mrbtree/Makefile
 msplay/Makefile

@@ -20,6 +20,7 @@ include_libcpu_HEADERS = ../shared/include/cache.h
 include_libcpu_HEADERS += shared/interrupts/spillpq.h
 include_libcpu_HEADERS += shared/interrupts/splitheappq.h
 include_libcpu_HEADERS += shared/interrupts/unitedlistpq.h
+include_libcpu_HEADERS += shared/interrupts/unitedlistst.h
 include_libcpu_HEADERS += shared/interrupts/hwpqlib.h
 
 noinst_PROGRAMS += shared/shared-score.rel
@@ -45,6 +46,7 @@ shared_interrupts_rel_SOURCES += shared/interrupts/spillpq.c
 shared_interrupts_rel_SOURCES += shared/interrupts/spillpq.h
 shared_interrupts_rel_SOURCES += shared/interrupts/gabdebug.h
 shared_interrupts_rel_SOURCES += shared/interrupts/unitedlistpq.c
+shared_interrupts_rel_SOURCES += shared/interrupts/unitedlistst.c
 shared_interrupts_rel_SOURCES += shared/interrupts/splitheappq.c
 shared_interrupts_rel_CPPFLAGS = $(AM_CPPFLAGS) -I$(srcdir)/shared/interrupts
 shared_interrupts_rel_LDFLAGS = $(RTEMS_RELLDFLAGS)
