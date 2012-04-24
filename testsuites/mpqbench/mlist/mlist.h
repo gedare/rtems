@@ -6,7 +6,6 @@
 #define __MLIST_H_
 
 #include "../shared/pqbench.h"
-#define NUM_NODES (PQ_MAX_SIZE)
 
 #include <rtems.h>
 #include "rtems/chain.h"
