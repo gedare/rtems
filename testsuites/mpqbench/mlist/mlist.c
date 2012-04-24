@@ -71,10 +71,7 @@ void list_initialize( rtems_task_argument tid, int size ) {
     while(1);
   }
 
-  rtems_chain_initialize_empty ( &freenodes[tid] );
-  for ( i = 0; i < size; i++ ) {
-    rtems_chain_append_unprotected(&freenodes[tid], &the_nodes[tid][i].link);
-  }
+  rtems_chain_initialize(&freenodes[tid], the_nodes[tid], size, sizeof(node));
 
   initialize_helper(tid, size);
 }

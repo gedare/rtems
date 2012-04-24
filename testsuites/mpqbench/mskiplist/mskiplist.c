@@ -33,6 +33,7 @@ static void insert_helper(rtems_task_argument tid, node *new_node)
 {
   rtems_chain_node *iter;
   rtems_chain_control *list;
+  int current_height = MAX_HEIGHT-1; /* start at the top */
  
   // FIXME: implement skiplist search with insertion
   list = &the_skiplist[tid][0];
@@ -93,10 +94,7 @@ void skiplist_initialize( rtems_task_argument tid, int size ) {
     while(1);
   }
 
-  rtems_chain_initialize_empty ( &freenodes[tid] );
-  for ( i = 0; i < size; i++ ) {
-    rtems_chain_append_unprotected(&freenodes[tid], &the_nodes[tid][i].link);
-  }
+  rtems_chain_initialize(&freenodes[tid], the_nodes[tid], size, sizeof(node));
 
   initialize_helper(tid, size);
 }
