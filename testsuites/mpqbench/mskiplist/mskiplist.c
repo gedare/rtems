@@ -7,7 +7,7 @@
 #include "../shared/params.h"
 
 /* data structure */
-static rtems_chain_control the_skiplist[NUM_APERIODIC_TASKS][MAX_HEIGHT];
+static skiplist the_skiplist[NUM_APERIODIC_TASKS];
 /* data */
 static node* the_nodes[NUM_APERIODIC_TASKS];
 /* free storage */
@@ -25,7 +25,7 @@ static void free_node(rtems_task_argument tid, node *n) {
 static void initialize_helper(rtems_task_argument tid, int size) {
   int i;
   for ( i = 0; i < MAX_HEIGHT; i++ ) {
-    rtems_chain_initialize_empty ( &the_skiplist[tid][i] );
+    rtems_chain_initialize_empty ( &the_skiplist[tid].lists[i] );
   }
 }
 
@@ -36,7 +36,7 @@ static void insert_helper(rtems_task_argument tid, node *new_node)
   int current_height = MAX_HEIGHT-1; /* start at the top */
  
   // FIXME: implement skiplist search with insertion
-  list = &the_skiplist[tid][0];
+  list = &the_skiplist[tid].lists[0];
   iter = rtems_chain_first(list); // unprotected
   while ( !rtems_chain_is_tail(list, iter) ) {
     node *n = (node*)iter;
@@ -58,7 +58,7 @@ static node* search_helper(rtems_task_argument tid, int key)
   rtems_chain_control *list;
  
   // FIXME: implement skiplist search
-  list = &the_skiplist[tid][0];
+  list = &the_skiplist[tid].lists[0];
   iter = rtems_chain_first(list); // unprotected
   while ( !rtems_chain_is_tail(list, iter) ) {
     node *n = (node*)iter;
@@ -75,7 +75,7 @@ static inline void extract_helper(rtems_task_argument tid, node *n)
   // FIXME: update all lists pointing to the node... or mark node for deletion
   // and deal with it later.
   if (rtems_chain_is_first(n)) {
-    rtems_chain_get_unprotected(&the_skiplist[tid][0]);
+    rtems_chain_get_unprotected(&the_skiplist[tid].lists[0]);
   } else {
     rtems_chain_extract_unprotected(n);
   }
@@ -109,7 +109,7 @@ void skiplist_insert(rtems_task_argument tid, uint64_t kv ) {
 uint64_t skiplist_min( rtems_task_argument tid ) {
   node *n;
 
-  n = rtems_chain_first(&the_skiplist[tid][0]); // unprotected
+  n = rtems_chain_first(&the_skiplist[tid].lists[0]); // unprotected
   if (n) {
     return PQ_NODE_TO_KV(&n->data);
   }
@@ -119,7 +119,7 @@ uint64_t skiplist_min( rtems_task_argument tid ) {
 uint64_t skiplist_pop_min( rtems_task_argument tid ) {
   uint64_t kv;
   node *n;
-  n = rtems_chain_get_unprotected(&the_skiplist[tid][0]);
+  n = rtems_chain_get_unprotected(&the_skiplist[tid].lists[0]);
   if (n) {
     kv = PQ_NODE_TO_KV(&n->data);
     free_node(tid, n);
@@ -131,7 +131,7 @@ uint64_t skiplist_pop_min( rtems_task_argument tid ) {
 
 uint64_t skiplist_search( rtems_task_argument tid, int k ) {
   node* n = search_helper(tid, k);
-  if (!rtems_chain_is_tail(&the_skiplist[tid][0], n)) {
+  if (!rtems_chain_is_tail(&the_skiplist[tid].lists[0], n)) {
     return PQ_NODE_TO_KV(&n->data);
   }
   return (uint64_t)-1;
@@ -140,7 +140,7 @@ uint64_t skiplist_search( rtems_task_argument tid, int k ) {
 uint64_t skiplist_extract( rtems_task_argument tid, int k ) {
   node* n = search_helper(tid, k);
   uint64_t kv;
-  if (!rtems_chain_is_tail(&the_skiplist[tid][0], n) && n->data.key == k) {
+  if (!rtems_chain_is_tail(&the_skiplist[tid].lists[0], n) && n->data.key == k) {
     kv = PQ_NODE_TO_KV(&n->data);
     extract_helper(tid, n);
   } else {

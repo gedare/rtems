@@ -23,6 +23,12 @@ typedef struct {
   pq_node data;
 } node;
 
+typedef struct {
+  rtems_chain_control lists[MAX_HEIGHT];
+
+  int height;
+} skiplist;
+
 // container-of magic
 #define PQ_NODE_TO_NODE(hn) \
   ((node*)((uintptr_t)hn - ((uintptr_t)(&((node *)0)->data))))
