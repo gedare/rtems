@@ -4,7 +4,7 @@
 
 ACLOCAL_AMFLAGS = -I ../aclocal
 
-SUBDIRS = miheap msplay \
+SUBDIRS = miheap msplay mlist \
 					mhwpqsplitheap mhwpqunitedlist mhwpq \
 					mrbtree \
 					mhwpqunitedsearch
