@@ -29,9 +29,25 @@ static void initialize_helper(rtems_task_argument tid, int size) {
   }
 }
 
-static inline void insert_helper(rtems_task_argument tid, node *before, node *n)
+static void insert_helper(rtems_task_argument tid, node *new_node)
 {
-  rtems_chain_insert_unprotected(before, n);
+  rtems_chain_node *iter;
+  rtems_chain_control *list;
+ 
+  // FIXME: implement skiplist search with insertion
+  list = &the_skiplist[tid][0];
+  iter = rtems_chain_first(list); // unprotected
+  while ( !rtems_chain_is_tail(list, iter) ) {
+    node *n = (node*)iter;
+    if (n->data.key >= new_node->data.key) {
+      break;
+    }
+    iter = rtems_chain_next(iter);
+  }
+  if ( !rtems_chain_is_first(iter) )
+    iter = rtems_chain_previous(iter);
+
+  rtems_chain_insert_unprotected(iter, new_node);
 }
 
 /* Returns node with same key, first key greater, or tail of list */
@@ -87,17 +103,9 @@ void skiplist_initialize( rtems_task_argument tid, int size ) {
 
 void skiplist_insert(rtems_task_argument tid, uint64_t kv ) {
   node *new_node = alloc_node(tid);
-  node *target;
-  int key = kv_key(kv);
-
-  target = search_helper(tid, key);
-
-  if ( !rtems_chain_is_first(target) )
-    target = rtems_chain_previous(target);
-
   new_node->data.key = kv_key(kv);
   new_node->data.val = kv_value(kv);
-  insert_helper(tid, target, new_node);
+  insert_helper(tid, new_node);
 }
 
 uint64_t skiplist_min( rtems_task_argument tid ) {
