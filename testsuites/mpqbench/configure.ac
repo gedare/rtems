@@ -67,6 +67,7 @@ mhwpqunitedsearch/Makefile
 miheap/Makefile
 mlist/Makefile
 mrbtree/Makefile
+mskiplist/Makefile
 msplay/Makefile
 mstlheap/Makefile
 ])
