@@ -203,16 +203,16 @@ sparc64_unitedlistst_fill_node(
   pq_node *p;
 
   p = (pq_node*)_Chain_Get_first_unprotected(spill_pq);
-  while ( p && !p->is_valid ) /* kill the invalids */
+  freelist_put_node(&free_nodes[queue_idx], p);
+  while ( p && !p->is_valid ) { /* kill the invalids */
     p = (pq_node*)_Chain_Get_first_unprotected(spill_pq);
-
+    freelist_put_node(&free_nodes[queue_idx], p);
+  }
 
   DPRINTK("%d\tfill node: %x\tprio: %d\n", queue_idx, p->val, p->key);
 
   // add node to hw pq 
   HWDS_FILL(queue_idx, p->key, p->val, exception); 
-
-  freelist_put_node(&free_nodes[queue_idx], p);
 
   if (exception) {
     DPRINTK("%d\tSpilling while filling\n", queue_idx);

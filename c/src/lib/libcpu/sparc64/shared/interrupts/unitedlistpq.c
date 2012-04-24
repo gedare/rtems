@@ -139,6 +139,7 @@ uint64_t sparc64_unitedlistpq_extract(int queue_idx, uint64_t kv)
       _Chain_Extract_unprotected((Chain_Node*)node);
     }
     rv = pq_node_to_kv(node);
+    freelist_put_node(&free_nodes[queue_idx], node);
   } else {
     DPRINTK("%d\tFailed software extract: %d\t%X\n",queue_idx, key,val);
     rv = (uint64_t)-1;
