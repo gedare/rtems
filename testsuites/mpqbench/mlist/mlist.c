@@ -22,10 +22,17 @@ static void free_node(rtems_task_argument tid, node *n) {
   rtems_chain_append_unprotected( &freenodes[tid], n );
 }
 
-/*
- * Returns either the pq_node with key = kv_key(kv), the first node with
- * a greater key, or the tail of the list in case no node has a greater key
- */
+static inline void initialize_helper(rtems_task_argument tid, int size)
+{
+  rtems_chain_initialize_empty ( &the_list[tid] );
+}
+
+static inline void insert_helper(rtems_task_argument tid, node *before, node *n)
+{
+  rtems_chain_insert_unprotected(before, n);
+}
+
+/* Returns node with same key, first key greater, or tail of list */
 static node* search_helper(rtems_task_argument tid, int key)
 {
   rtems_chain_node *iter;
@@ -43,6 +50,15 @@ static node* search_helper(rtems_task_argument tid, int key)
   return (node*)iter;
 }
 
+static inline void extract_helper(rtems_task_argument tid, node *n) {
+  if (rtems_chain_is_first(n)) {
+    rtems_chain_get_unprotected(&the_list[tid]);
+  } else {
+    rtems_chain_extract_unprotected(n);
+  }
+  free_node(tid, n);
+}
+
 /**
  * benchmark interface
  */
@@ -55,27 +71,27 @@ void list_initialize( rtems_task_argument tid, int size ) {
     while(1);
   }
 
-  rtems_chain_initialize_empty ( &the_list[tid] );
-
   rtems_chain_initialize_empty ( &freenodes[tid] );
   for ( i = 0; i < size; i++ ) {
     rtems_chain_append_unprotected(&freenodes[tid], &the_nodes[tid][i].link);
   }
+
+  initialize_helper(tid, size);
 }
 
 void list_insert(rtems_task_argument tid, uint64_t kv ) {
   node *new_node = alloc_node(tid);
-  rtems_chain_node *target;
+  node *target;
   int key = kv_key(kv);
 
-  target = (rtems_chain_node*)search_helper(tid, key);
+  target = search_helper(tid, key);
 
   if ( !rtems_chain_is_first(target) )
     target = rtems_chain_previous(target);
 
   new_node->data.key = kv_key(kv);
   new_node->data.val = kv_value(kv);
-  rtems_chain_insert_unprotected(target, new_node);
+  insert_helper(tid, target, new_node);
 }
 
 uint64_t list_min( rtems_task_argument tid ) {
@@ -114,12 +130,7 @@ uint64_t list_extract( rtems_task_argument tid, int k ) {
   uint64_t kv;
   if (!rtems_chain_is_tail(&the_list[tid], n) && n->data.key == k) {
     kv = PQ_NODE_TO_KV(&n->data);
-    if (rtems_chain_is_first(n)) {
-      rtems_chain_get_unprotected(&the_list[tid]);
-    } else {
-      rtems_chain_extract_unprotected(n);
-    }
-    free_node(tid, n);
+    extract_helper(tid, n);
   } else {
     kv = (uint64_t)-1;
   }
