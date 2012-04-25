@@ -23,7 +23,7 @@ static void free_node(rtems_task_argument tid, node *n) {
 }
 
 static inline unsigned long seed() {
-  return 0xdeadbeefUL; /* fixme: randomize? */
+  return 0xdeadbeefUL; // FIXME: randomize
 }
 static void initialize_helper(rtems_task_argument tid, int size) {
   int i;
@@ -86,7 +86,7 @@ static void insert_helper(rtems_task_argument tid, node *new_node)
   }
 
   //assert(list == &sl->lists[0]);
-  new_level = randomLevel(); //FIXME: implement
+  new_level = randomLevel();
   if ( new_level > upper_level ) {
     for (i = upper_level + 1; i <= new_level; i++) {
       list = &sl->lists[i];
@@ -102,20 +102,41 @@ static void insert_helper(rtems_task_argument tid, node *new_node)
 /* Returns node with same key, first key greater, or tail of list */
 static node* search_helper(rtems_task_argument tid, int key)
 {
-  rtems_chain_node *iter;
+  rtems_chain_node *x;
+  rtems_chain_node *x_forward;
+  node *x_node;
   rtems_chain_control *list;
- 
-  // FIXME: implement skiplist search
-  list = &the_skiplist[tid].lists[0];
-  iter = rtems_chain_first(list); // unprotected
-  while ( !rtems_chain_is_tail(list, iter) ) {
-    node *n = (node*)iter;
-    if (n->data.key >= key) {
-      return n;
+  skiplist *sl = &the_skiplist[tid];  /* list */
+  int upper_level = sl->level;        /* list->level */
+  int i;
+
+  list = &sl->lists[upper_level]; /* top */
+  x = rtems_chain_head(list); /* left */
+  // search left-right top-bottom
+  for ( i = upper_level; i >= 0; i-- ) {
+    list = &sl->lists[i];
+    x_forward = rtems_chain_next(x);
+    /* Find the rightmost node of level i that is left of the insert point */
+    while (!rtems_chain_is_tail(list, x) &&
+           !rtems_chain_is_tail(list, x_forward) &&
+           LINK_TO_NODE(x_forward, i)->data.key < key) {
+      x = x_forward;
+      x_forward = rtems_chain_next(x);
     }
-    iter = rtems_chain_next(iter);
+
+    /* move down to next level if it exists */
+    if ( i ) {
+      if ( !rtems_chain_is_head(list, x)) {
+        x_node = LINK_TO_NODE(x, i);
+        x = &(x_node->link[i-1]);
+      } else {
+        x = rtems_chain_head(&sl->lists[i-1]);
+      }
+    }
   }
-  return (node*)iter;
+
+  x = x_forward;
+  return LINK_TO_NODE(x, 0);
 }
 
 static inline uint64_t extract_helper(rtems_task_argument tid, int key)
@@ -127,7 +148,6 @@ static inline uint64_t extract_helper(rtems_task_argument tid, int key)
   rtems_chain_control *list;
   skiplist *sl = &the_skiplist[tid];  /* list */
   int upper_level = sl->level;        /* list->level */
-  int new_level = 0;
   int i;
   uint64_t kv;
   rtems_chain_node *update[MAXLEVEL];
