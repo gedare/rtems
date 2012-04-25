@@ -51,11 +51,7 @@ static node* search_helper(rtems_task_argument tid, int key)
 }
 
 static inline void extract_helper(rtems_task_argument tid, node *n) {
-  if (rtems_chain_is_first(n)) {
-    rtems_chain_get_unprotected(&the_list[tid]);
-  } else {
-    rtems_chain_extract_unprotected(n);
-  }
+  rtems_chain_extract_unprotected(n);
   free_node(tid, n);
 }
 
@@ -82,9 +78,7 @@ void list_insert(rtems_task_argument tid, uint64_t kv ) {
   int key = kv_key(kv);
 
   target = search_helper(tid, key);
-
-  if ( !rtems_chain_is_first(target) )
-    target = rtems_chain_previous(target);
+  target = rtems_chain_previous(target);
 
   new_node->data.key = kv_key(kv);
   new_node->data.val = kv_value(kv);
