@@ -8,7 +8,7 @@
 #include "../shared/pqbench.h"
 
 // FIXME: Derive from parameters? Possible to support dynamic?
-#define MAX_HEIGHT (5)
+#define MAXLEVEL (5)
 
 #include <rtems.h>
 #include "rtems/chain.h"
@@ -19,19 +19,22 @@ typedef struct {
 } pq_node;
 
 typedef struct {
-  rtems_chain_node link[MAX_HEIGHT];
+  rtems_chain_node link[MAXLEVEL];
   pq_node data;
 } node;
 
 typedef struct {
-  rtems_chain_control lists[MAX_HEIGHT];
+  rtems_chain_control lists[MAXLEVEL];
 
-  int height;
+  int level;
 } skiplist;
 
 // container-of magic
 #define PQ_NODE_TO_NODE(hn) \
   ((node*)((uintptr_t)hn - ((uintptr_t)(&((node *)0)->data))))
+
+#define LINK_TO_NODE(cn, index) \
+  ((node*)((uintptr_t)cn - ((uintptr_t)(&(((node *)0)->link[index])))))
 
 #define PQ_NODE_TO_KV(n) ((((uint64_t)(n)->key) << 32UL) | (uint64_t)(n)->val)
 

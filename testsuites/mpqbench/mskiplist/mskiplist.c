@@ -22,33 +22,81 @@ static void free_node(rtems_task_argument tid, node *n) {
   rtems_chain_append_unprotected( &freenodes[tid], n );
 }
 
+static inline unsigned long seed() {
+  return 0xdeadbeefUL; /* fixme: randomize? */
+}
 static void initialize_helper(rtems_task_argument tid, int size) {
   int i;
-  for ( i = 0; i < MAX_HEIGHT; i++ ) {
-    rtems_chain_initialize_empty ( &the_skiplist[tid].lists[i] );
+  skiplist *sl = &the_skiplist[tid];
+
+  for ( i = 0; i < MAXLEVEL; i++ ) {
+    rtems_chain_initialize_empty ( &sl->lists[i] );
   }
+  sl->level = 0; /* start at the bottom */
+
+  srand48(seed());
 }
 
+static inline int randomLevel()
+{
+  int level = 0;
+  while (drand48() < 0.5 && level < MAXLEVEL-1) // FIXME: hard-coded p
+    level++;
+  return level;
+}
+
+/* implements skip list insert according to pugh */
 static void insert_helper(rtems_task_argument tid, node *new_node)
 {
-  rtems_chain_node *iter;
+  rtems_chain_node *x;
+  rtems_chain_node *x_forward;
+  node *x_node;
   rtems_chain_control *list;
-  int current_height = MAX_HEIGHT-1; /* start at the top */
- 
-  // FIXME: implement skiplist search with insertion
-  list = &the_skiplist[tid].lists[0];
-  iter = rtems_chain_first(list); // unprotected
-  while ( !rtems_chain_is_tail(list, iter) ) {
-    node *n = (node*)iter;
-    if (n->data.key >= new_node->data.key) {
-      break;
-    }
-    iter = rtems_chain_next(iter);
-  }
-  if ( !rtems_chain_is_first(iter) )
-    iter = rtems_chain_previous(iter);
+  skiplist *sl = &the_skiplist[tid];  /* list */
+  int upper_level = sl->level;        /* list->level */
+  int new_level = 0;
+  int key = new_node->data.key;       /* searchKey */
+  int i;
+  rtems_chain_node *update[MAXLEVEL];
 
-  rtems_chain_insert_unprotected(iter, new_node);
+  list = &sl->lists[upper_level]; /* top */
+  x = rtems_chain_head(list); /* left */
+  // search left-right top-bottom
+  for ( i = upper_level; i >= 0; i-- ) {
+    list = &sl->lists[i];
+    x_forward = rtems_chain_next(x);
+    /* Find the rightmost node of level i that is left of the insert point */
+    while (!rtems_chain_is_tail(list, x) &&
+           !rtems_chain_is_tail(list, x_forward) &&
+           LINK_TO_NODE(x_forward, i)->data.key < key) {
+      x = x_forward;
+      x_forward = rtems_chain_next(x);
+    }
+    update[i] = x;
+
+    /* move down to next level if it exists */
+    if ( i ) {
+      if ( !rtems_chain_is_head(list, x)) {
+        x_node = LINK_TO_NODE(x, i);
+        x = &(x_node->link[i-1]);
+      } else {
+        x = rtems_chain_head(&sl->lists[i-1]);
+      }
+    }
+  }
+
+  //assert(list == &sl->lists[0]);
+  new_level = randomLevel(); //FIXME: implement
+  if ( new_level > upper_level ) {
+    for (i = upper_level + 1; i <= new_level; i++) {
+      list = &sl->lists[i];
+      update[i] = rtems_chain_head(list);
+    }
+    sl->level = new_level;
+  }
+  for ( i = 0; i <= new_level; i++ ) {
+    rtems_chain_insert_unprotected(update[i], &new_node->link[i]);
+  }
 }
 
 /* Returns node with same key, first key greater, or tail of list */
@@ -74,11 +122,7 @@ static inline void extract_helper(rtems_task_argument tid, node *n)
 {
   // FIXME: update all lists pointing to the node... or mark node for deletion
   // and deal with it later.
-  if (rtems_chain_is_first(n)) {
-    rtems_chain_get_unprotected(&the_skiplist[tid].lists[0]);
-  } else {
-    rtems_chain_extract_unprotected(n);
-  }
+  rtems_chain_extract_unprotected(n);
   free_node(tid, n);
 }
 
