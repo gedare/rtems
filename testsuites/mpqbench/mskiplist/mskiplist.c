@@ -249,7 +249,7 @@ uint64_t skiplist_pop_min( rtems_task_argument tid ) {
 
 uint64_t skiplist_search( rtems_task_argument tid, int k ) {
   node* n = search_helper(tid, k);
-  if (!rtems_chain_is_tail(&the_skiplist[tid].lists[0], n)) {
+  if(!rtems_chain_is_tail(&the_skiplist[tid].lists[0], n) && n->data.key == k) {
     return PQ_NODE_TO_KV(&n->data);
   }
   return (uint64_t)-1;
