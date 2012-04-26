@@ -38,6 +38,7 @@ static void free_block(rtems_task_argument tid, bptree_block *n) {
 
 static void print_block(bptree_block *b) {
   int i;
+  printf("Parent: %X\tNodes: ", b->parent);
   for ( i = 0; i < b->num_nodes; i++ ) {
     printf("%d\t",b->nodes[i]->data.key);
   }
@@ -47,7 +48,7 @@ static void print_block(bptree_block *b) {
 static void print_tree(bptree_block *b) {
   int i = 0;
   if (!b->is_leaf) {
-    printf("Interior node with %d children\n", b->num_nodes+1);
+    printf("Interior node %X with %d children\n", b, b->num_nodes+1);
     for ( i = 0; i <= b->num_nodes; i++ ) {
       print_tree(b->children[i]);
     }
@@ -108,20 +109,22 @@ bptree_add_to_node(bptree_block *b, bptree_block *left, bptree_block *right)
 {
   int i;
   int left_index = bptree_index_in_block(b, left->nodes[0]->data.key);
+  printf("bptree_add_to_node\n");
 
   // FIXME: Make sure this is right... I don't like the minor math
-  for ( i = b->num_nodes; i > left_index+1; i-- ) {
+  for ( i = b->num_nodes; i > left_index; i-- ) {
     b->nodes[i] = b->nodes[i-1];
     b->children[i+1] = b->children[i];
   }
-  b->nodes[left_index+1] = right->nodes[0];
-  b->children[left_index+2] = right;
+  b->nodes[left_index] = right->nodes[0];
+  b->children[left_index+1] = right;
   b->num_nodes++;
 }
 
 static inline void bptree_add_to_leaf(bptree_block *b, node *n, int index)
 {
   int i;
+  printf("bptree_add_to_leaf\n");
   for ( i = b->num_nodes; i > index; i-- ) {
     b->nodes[i] = b->nodes[i-1];
   }
@@ -133,7 +136,8 @@ static inline void
 bptree_add_root(bptree *tree, bptree_block *left, bptree_block *right)
 {
   bptree_block *new_root;
-  new_root = alloc_block(&freeblocks[tree->id]);
+  printf("bptree_add_root\n");
+  new_root = alloc_block(tree->id);
   new_root->is_leaf = false;
   new_root->parent = NULL;
   new_root->children[0] = left;
@@ -153,6 +157,8 @@ static inline void
 bptree_add_to_parent(bptree *tree, bptree_block *left, bptree_block *right)
 {
   bptree_block *p = left->parent;
+  printf("bptree_add_to_parent\n");
+  printf("left: %X\tparent: %X\n", left, p);
   right->parent = p;
   if ( !p ) {
     bptree_add_root(tree, left, right);
@@ -173,9 +179,10 @@ bptree_split(bptree *tree, bptree_block *left, bptree_block *n)
   int r_index;
   int num_to_right;
 
-  right = alloc_block(&freeblocks[tree->id]);
+  right = alloc_block(tree->id);
   right->is_leaf = false;
 
+  printf("bptree_split\n");
   n_index = bptree_index_in_block(left, n->nodes[0]->data.key);
 
   /* put right half of left into right */
@@ -231,9 +238,10 @@ static void bptree_split_leaf(bptree *tree, bptree_block *left_leaf, node *n)
   int r_index;
   int num_to_right;
 
-  right_leaf = alloc_block(&freeblocks[tree->id]);
+  right_leaf = alloc_block(tree->id);
   right_leaf->is_leaf = true;
 
+  printf("bptree_split_leaf\n");
   n_index = bptree_index_in_block(left_leaf, n->data.key);
 
   /* put right half of left_leaf into the right_leaf */
@@ -336,8 +344,6 @@ static inline uint64_t extract_helper(rtems_task_argument tid, int k) {
  * benchmark interface
  */
 void bptree_initialize( rtems_task_argument tid, int size ) {
-  int i;
-
   the_nodes[tid] = (node*)malloc(sizeof(node)*size);
   if ( ! the_nodes[tid] ) {
     printk("failed to alloc nodes\n");
