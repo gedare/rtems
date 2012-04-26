@@ -160,7 +160,7 @@ bptree_add_to_parent(bptree *tree, bptree_block *left, bptree_block *right)
 {
   bptree_block *p = left->parent;
   printf("bptree_add_to_parent\n");
-  printf("left: %X\tparent: %X\n", left, p);
+  printf("left: %X\tright%X\tparent: %X\n", left, right, p);
   if ( !p ) {
     bptree_add_root(tree, left, right);
   } else if (bptree_block_is_full(p)) {
@@ -207,7 +207,7 @@ bptree_split(bptree *tree, bptree_block *left, bptree_block *n)
       right->children[r_index + 1] = left->children[l_index+1];
       right->children[r_index + 1]->parent = right;
     }
-    right->children[0] = left->children[split_index];
+    right->children[0] = left->children[split_index+1];
     right->children[0]->parent = right;
   } else {
     for ( ; l_index >= split_index-1; l_index--, r_index-- ) {
@@ -215,7 +215,7 @@ bptree_split(bptree *tree, bptree_block *left, bptree_block *n)
       right->children[r_index + 1] = left->children[l_index+1];
       right->children[r_index + 1]->parent = right;
     }
-    right->children[0] = left->children[split_index];
+    right->children[0] = left->children[split_index+1];
     right->children[0]->parent = right;
 
     for ( ; l_index > n_index; l_index-- ) {
@@ -224,6 +224,7 @@ bptree_split(bptree *tree, bptree_block *left, bptree_block *n)
     }
     left->nodes[l_index] = n->nodes[0];
     left->children[l_index+1] = n;
+    n->parent = left;
   }
   right->num_nodes = num_to_right;
   left->num_nodes = left->num_nodes + 1 - num_to_right;
