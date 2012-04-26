@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-//#define GAB_PRINT
+#define GAB_PRINT
 #define GAB_DEBUG
 #define GAB_CHECK
 

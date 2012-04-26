@@ -60,6 +60,7 @@ AM_CONDITIONAL(LIBCHIP,[test "$RTEMS_BSP_FAMILY" != "posix"])
 
 # Explicitly list all Makefiles here
 AC_CONFIG_FILES([Makefile
+mbptree/Makefile
 mhwpq/Makefile
 mhwpqsplitheap/Makefile
 mhwpqunitedlist/Makefile
