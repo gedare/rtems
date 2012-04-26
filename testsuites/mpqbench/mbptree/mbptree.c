@@ -38,7 +38,7 @@ static void free_block(rtems_task_argument tid, bptree_block *n) {
 
 static void print_block(bptree_block *b) {
   int i;
-  printf("Parent: %X\tNodes: ", b->parent);
+  printf("%X\tParent: %X\tNodes: ", b, b->parent);
   for ( i = 0; i < b->num_nodes; i++ ) {
     printf("%d\t",b->nodes[i]->data.key);
   }
@@ -48,7 +48,8 @@ static void print_block(bptree_block *b) {
 static void print_tree(bptree_block *b) {
   int i = 0;
   if (!b->is_leaf) {
-    printf("Interior node %X with %d children\n", b, b->num_nodes+1);
+    printf("Interior node ");
+    print_block(b);
     for ( i = 0; i <= b->num_nodes; i++ ) {
       print_tree(b->children[i]);
     }
@@ -119,6 +120,7 @@ bptree_add_to_node(bptree_block *b, bptree_block *left, bptree_block *right)
   b->nodes[left_index] = right->nodes[0];
   b->children[left_index+1] = right;
   b->num_nodes++;
+  right->parent = b;
 }
 
 static inline void bptree_add_to_leaf(bptree_block *b, node *n, int index)
@@ -150,7 +152,7 @@ bptree_add_root(bptree *tree, bptree_block *left, bptree_block *right)
 }
 
 static void
-bptree_split(bptree *tree, bptree_block *left, bptree_block *n);
+bptree_split(bptree *tree, bptree_block *l, bptree_block *n);
 
 /* assume left already exists, adding right and updating child links */
 static inline void
@@ -159,11 +161,10 @@ bptree_add_to_parent(bptree *tree, bptree_block *left, bptree_block *right)
   bptree_block *p = left->parent;
   printf("bptree_add_to_parent\n");
   printf("left: %X\tparent: %X\n", left, p);
-  right->parent = p;
   if ( !p ) {
     bptree_add_root(tree, left, right);
   } else if (bptree_block_is_full(p)) {
-    bptree_split(tree, left, right); // calls bptree_add_to_parent
+    bptree_split(tree, p, right); // calls bptree_add_to_parent
   } else {
    bptree_add_to_node(p, left, right); 
   }
@@ -195,21 +196,27 @@ bptree_split(bptree *tree, bptree_block *left, bptree_block *n)
     for ( ; l_index >= n_index; l_index--, r_index-- ) {
       right->nodes[r_index] = left->nodes[l_index];
       right->children[r_index + 1] = left->children[l_index+1];
+      right->children[r_index + 1]->parent = right;
     }
     right->nodes[r_index] = n->nodes[0];
     right->children[r_index+1] = n;
+    right->children[r_index + 1]->parent = right;
     r_index--;
     for ( ; l_index >= split_index; l_index--, r_index-- ) {
       right->nodes[r_index] = left->nodes[l_index];
       right->children[r_index + 1] = left->children[l_index+1];
+      right->children[r_index + 1]->parent = right;
     }
     right->children[0] = left->children[split_index];
+    right->children[0]->parent = right;
   } else {
     for ( ; l_index >= split_index-1; l_index--, r_index-- ) {
       right->nodes[r_index] = left->nodes[l_index];
       right->children[r_index + 1] = left->children[l_index+1];
+      right->children[r_index + 1]->parent = right;
     }
     right->children[0] = left->children[split_index];
+    right->children[0]->parent = right;
 
     for ( ; l_index > n_index; l_index-- ) {
       left->nodes[l_index] = left->nodes[l_index-1];
@@ -220,10 +227,10 @@ bptree_split(bptree *tree, bptree_block *left, bptree_block *n)
   }
   right->num_nodes = num_to_right;
   left->num_nodes = left->num_nodes + 1 - num_to_right;
+  right->parent = left->parent;
   
   /* update parent's links to children */
   bptree_add_to_parent(tree, left, right);
-  left->parent->is_leaf = false;
 }
 
 
