@@ -22,6 +22,9 @@ static rtems_chain_control freeblocks[NUM_APERIODIC_TASKS];
 /* helpers */
 static node *alloc_node(rtems_task_argument tid) {
   node *n = (node*)rtems_chain_get_unprotected( &freenodes[tid] );
+  if (!n) {
+    printf("%d\tFAILED ALLOCATION OF NODE\n", tid);
+  }
   return n;
 }
 static void free_node(rtems_task_argument tid, node *n) {
@@ -30,6 +33,9 @@ static void free_node(rtems_task_argument tid, node *n) {
 
 static bptree_block *alloc_block(rtems_task_argument tid) {
   bptree_block *n=(bptree_block*)rtems_chain_get_unprotected(&freeblocks[tid]);
+  if (!n) {
+    printf("%d\tFAILED ALLOCATION OF BLOCK\n", tid);
+  }
   return n;
 }
 static void free_block(rtems_task_argument tid, bptree_block *n) {
@@ -441,6 +447,8 @@ void bptree_initialize( rtems_task_argument tid, int size ) {
 
 void bptree_insert(rtems_task_argument tid, uint64_t kv ) {
   node *new_node = alloc_node(tid);
+  if (!new_node)
+    return;
   new_node->data.key = kv_key(kv);
   new_node->data.val = kv_value(kv);
   insert_helper(tid, new_node);
