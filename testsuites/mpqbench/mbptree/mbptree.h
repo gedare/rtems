@@ -29,8 +29,8 @@ typedef struct _bptree_block bptree_block;
 
 struct _bptree_block {
   rtems_chain_node link;
-  node *nodes[NODES_PER_BLOCK];  /* FIXME: array or linked list? */
-  bptree_block *children[CHILDREN_PER_BLOCK];
+  node *nodes[NODES_PER_BLOCK+1];  /* FIXME: array or linked list? */
+  bptree_block *children[CHILDREN_PER_BLOCK+1];
   bptree_block *parent;
   int num_nodes;
   bool is_leaf;

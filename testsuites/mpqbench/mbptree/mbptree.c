@@ -65,6 +65,10 @@ static void print_tree(bptree_block *b) {
   }
 }
 
+static inline bool bptree_block_is_overfull(bptree_block *block)
+{
+  return (block->num_nodes == 1+NODES_PER_BLOCK);
+}
 static inline bool bptree_block_is_full(bptree_block *block)
 {
   return (block->num_nodes == NODES_PER_BLOCK);
@@ -89,8 +93,7 @@ static inline node* bptree_node_in_block(bptree_block *block, int key)
 {
   int i;
 
-  printk("Search: %X\t%d\n", block, key);
-  printk("\tnum_nodes: %d\n", block->num_nodes);
+//  printk("Search: %X\t%d\n", block, key);
 
   /* FIXME: binary search? */
   for ( i = 0; i < block->num_nodes; i++ ) {
@@ -117,9 +120,8 @@ bptree_add_to_node(bptree_block *b, bptree_block *left, bptree_block *right)
 {
   int i;
   int left_index = bptree_index_in_block(b, left->nodes[0]->data.key);
-  printf("bptree_add_to_node\n");
+  //printf("bptree_add_to_node\n");
 
-  // FIXME: Make sure this is right... I don't like the minor math
   for ( i = b->num_nodes; i > left_index; i-- ) {
     b->nodes[i] = b->nodes[i-1];
     b->children[i+1] = b->children[i];
@@ -133,7 +135,7 @@ bptree_add_to_node(bptree_block *b, bptree_block *left, bptree_block *right)
 static inline void bptree_add_to_leaf(bptree_block *b, node *n, int index)
 {
   int i;
-  printf("bptree_add_to_leaf\n");
+  //printf("bptree_add_to_leaf\n");
   for ( i = b->num_nodes; i > index; i-- ) {
     b->nodes[i] = b->nodes[i-1];
   }
@@ -141,11 +143,11 @@ static inline void bptree_add_to_leaf(bptree_block *b, node *n, int index)
   b->num_nodes++;
 }
 
-static inline void
+static inline bptree_block*
 bptree_add_root(bptree *tree, bptree_block *left, bptree_block *right)
 {
   bptree_block *new_root;
-  printf("bptree_add_root\n");
+  //printf("bptree_add_root\n");
   new_root = alloc_block(tree->id);
   new_root->is_leaf = false;
   new_root->parent = NULL;
@@ -156,6 +158,7 @@ bptree_add_root(bptree *tree, bptree_block *left, bptree_block *right)
   left->parent = new_root;
   right->parent = new_root;
   tree->root = new_root;
+  return new_root;
 }
 
 static void
@@ -299,6 +302,53 @@ static void bptree_split_leaf(bptree *tree, bptree_block *left_leaf, node *n)
   left_leaf->parent->is_leaf = false;
 }
 
+
+static bptree_block*
+bptree_split_hm(bptree *tree, bptree_block *v)
+{
+  bptree_block *x = v->parent;
+  bptree_block *right;
+  int l_index, r_index, split_index;
+  int num_to_right;
+
+  //printf("bptree_split_hm\n");
+  right = alloc_block(tree->id);
+  right->is_leaf = v->is_leaf;
+
+  //printf("x: %X\n", x);
+
+  /* put right-half of left into right */
+  split_index = (v->num_nodes+1)/2 - 1; // the median including n
+  //printf("split_index: %d\n", split_index);
+  l_index = v->num_nodes - 1;
+  //printf("l_index: %d\n", l_index);
+  /* split always goes to the right */
+  num_to_right = v->num_nodes - split_index;
+  //printf("num_to_right: %d\n", num_to_right);
+  r_index = num_to_right-1;
+  //printf("r_index: %d\n", r_index);
+
+  for ( ; l_index >= split_index; l_index--, r_index-- ) {
+    right->nodes[r_index] = v->nodes[l_index];
+    right->children[r_index + 1] = v->children[l_index+1];
+    right->children[r_index + 1]->parent = right;
+  }
+  //printf("r_index: %d\n", r_index);
+  right->children[0] = NULL; // FIXME: is this correct?
+  
+  // what about right->children[0] and right->nodes[0]??
+
+  right->num_nodes = num_to_right;
+  v->num_nodes = v->num_nodes - num_to_right;
+
+  if (!x) {
+    x = bptree_add_root(tree, v, right);
+  } else {
+    bptree_add_to_node(x, v, right);
+  }
+  return x;
+}
+
 static inline void initialize_helper(rtems_task_argument tid, int size)
 {
   the_blocks[tid] = (node*)malloc(sizeof(bptree_block)*size);
@@ -325,6 +375,17 @@ static inline void initialize_helper(rtems_task_argument tid, int size)
 static inline void insert_helper(rtems_task_argument tid, node *new_node)
 {
   bptree *tree = &the_tree[tid];
+
+#if 1
+  // Huddleston-Mehlhorn
+  bptree_block *v = bptree_find_block(tree, new_node->data.key);
+  bptree_add_to_leaf(v, new_node, bptree_index_in_block(v,new_node->data.key));
+  while (bptree_block_is_overfull(v)) {
+    v = bptree_split_hm(tree, v);
+  }
+#endif
+
+#if 0
   bptree_block *b;
   b = bptree_find_block(tree, new_node->data.key);
 
@@ -333,6 +394,7 @@ static inline void insert_helper(rtems_task_argument tid, node *new_node)
   } else {
     bptree_add_to_leaf(b,new_node,bptree_index_in_block(b,new_node->data.key));
   }
+#endif
   //print_tree(tree->root);
 }
 
