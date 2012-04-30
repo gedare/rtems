@@ -11,6 +11,7 @@
 #include "rtems/chain.h"
 
 #define NODES_PER_BLOCK (4)
+#define MIN_NODES ( (NODES_PER_BLOCK + 1) / 2 )
 #define CHILDREN_PER_BLOCK (NODES_PER_BLOCK + 1)
 #define MIN_CHILDREN ( (CHILDREN_PER_BLOCK+1)/2 )
 #define MAX_CHILDREN CHILDREN_PER_BLOCK
@@ -29,7 +30,7 @@ typedef struct _bptree_block bptree_block;
 
 struct _bptree_block {
   rtems_chain_node link;
-  node *nodes[NODES_PER_BLOCK+1];  /* FIXME: array or linked list? */
+  node *nodes[NODES_PER_BLOCK+1];  /* FIXME: unionize nodes&children add keys */
   bptree_block *children[CHILDREN_PER_BLOCK+1];
   bptree_block *parent;
   int num_nodes;
@@ -39,6 +40,8 @@ struct _bptree_block {
 typedef struct {
   bptree_block *root;
   int id;
+  int t;  /* sharing threshold: 0 <= t <= b+1-2a */
+  int s;  /* sharing amount: 1 <= s <= t+1 */
 } bptree;
 
 // container-of magic

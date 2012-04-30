@@ -408,7 +408,10 @@ static inline void insert_helper(rtems_task_argument tid, node *new_node)
 static inline node* min_helper( rtems_task_argument tid ) {
   bptree_block *iter = the_tree[tid].root;
   while (!iter->is_leaf) {
-    iter = iter->children[0];
+    if (iter->children[0])
+      iter = iter->children[0];
+    else
+      iter = iter->children[1];
   }
   return iter->nodes[0];
 }
@@ -420,12 +423,201 @@ static inline node* search_helper(rtems_task_argument tid, int key)
   return bptree_node_in_block(the_block, key);
  }
 
-static inline uint64_t extract_helper(rtems_task_argument tid, int k) {
-  uint64_t kv;
+static node* bptree_remove_from_leaf(bptree_block *leaf, int key)
+{
+  int i;
+  node *n;
 
-  //rtems_chain_extract_unprotected(n);
-  //free_node(tid, n);
-  kv = (uint64_t)-1;
+  /* TODO: binary search? */
+  for ( i = 0; i < leaf->num_nodes; i++ ) {
+    if ( key <= leaf->nodes[i]->data.key ) {
+      break;
+    }
+  }
+  n = leaf->nodes[i];
+  for ( ; i < leaf->num_nodes; i++ ) {
+    leaf->nodes[i] = leaf->nodes[i+1];
+  }
+  leaf->num_nodes--;
+  return n;
+}
+
+static inline bool bptree_block_is_underfull(bptree_block *block)
+{
+  return (block->num_nodes == MIN_NODES - 1);
+}
+
+static inline bool bptree_block_can_fuse(bptree *tree, bptree_block *y)
+{
+  return (y->num_nodes <= MIN_NODES + tree->t);
+}
+
+static void fuse_blocks(bptree_block *left, bptree_block *right)
+{
+  int i;
+  int right_nodes = right->num_nodes;
+  for ( i = left->num_nodes + right_nodes - 1; i >= right_nodes; i-- ) {
+    left->nodes[i] = left->nodes[i - 1 - right_nodes];
+    left->children[i + 1] = left->children[i - right_nodes];
+  }
+  for ( ; i >= 0; i-- ) {
+    left->nodes[i] = right->nodes[i];
+    left->children[i+1] = right->children[i+1];
+    left->children[i+1]->parent = left;
+  }
+  left->children[0] = right->children[0];
+  left->num_nodes += right_nodes;
+}
+
+static void delete_from_block(bptree_block *p, bptree_block *d)
+{
+  int i, d_index;
+  d_index = bptree_index_in_block(p, d->nodes[0]->data.key);
+  for ( i = d_index; i < p->num_nodes; i++ ) {
+    p->nodes[i] = p->nodes[i+1];
+    p->children[i] = p->children[i+1];
+  }
+  p->children[p->num_nodes - 1] = p->children[p->num_nodes];
+  p->num_nodes--;
+}
+
+static bptree_block*
+bptree_block_fuse(bptree* tree, bptree_block *v, bptree_block *y, int y_side)
+{
+  // does not matter whether v or y is kept/deleted. choose to keep the left
+  // and delete the right sibling. work probably could be saved by choosing
+  // to keep the larger and deleting the smaller, but with more code
+  if ( y_side < 0 ) {
+    bptree_block *tmp = v;
+    v = y;
+    y = tmp;
+  }
+
+  fuse_blocks(v, y);
+  delete_from_block(y->parent, y);
+  free_block(tree->id, y);
+  return v;
+}
+
+static void
+bptree_block_share(bptree* tree, bptree_block *v, bptree_block *y, int y_side)
+{
+  int y_nodes = y->num_nodes;
+  int v_nodes = v->num_nodes;
+  int s_nodes = tree->s;
+  int i;
+
+  // unlike fusing, sharing must move nodes from y into v.
+  if ( y_side < 0 ) { // y is to left of v
+    // make room at start of v
+    for ( i = v->num_nodes + s_nodes - 1; i >= s_nodes; i-- ) {
+      v->nodes[i] = v->nodes[i - 1 - s_nodes];
+      v->children[i + 1] = v->children[i - s_nodes];
+    }
+    // move end of y into start of v
+    for ( i = 1; i <= s_nodes; i++ ) {
+      v->nodes[s_nodes-i] = y->nodes[y_nodes-i];
+      v->children[s_nodes - i + 1] = y->children[y_nodes - i + 1];
+    }
+    v->children[0] = y->children[y_nodes - s_nodes];
+
+  } else {  // y is to right of v
+    // move start of y to end of v
+    for ( i = 0; i < s_nodes; i++ ) {
+      v->nodes[v_nodes - i] = y->nodes[i];
+      v->children[v_nodes - i + 1] = y->children[i + 1];
+    }
+
+    // shift y
+    for ( ; i < y_nodes; i++ ) {
+      y->nodes[i - s_nodes] = y->nodes[i];
+      y->children[i - s_nodes] = y->children[i];
+    }
+    y->children[y_nodes - s_nodes] = y->children[y_nodes];
+  }
+  v->num_nodes += s_nodes;
+  y->num_nodes -= s_nodes;
+}
+
+static void bptree_block_delete_root(bptree *tree, bptree_block *r)
+{
+  bptree_block *c;
+
+  if (r->children[0]) {
+    c = r->children[0];
+  } else {
+    c = r->children[1];
+  }
+
+  tree->root = c;
+  free_block(tree->id, r);
+}
+
+// retval: -1 if y is left of v, 1 if y is right of v, 0 if no sibling.
+// writes to y
+static int bptree_block_sibling(bptree_block *v, bptree_block **y)
+{
+  int v_index, y_index;
+
+  if (!v->parent) {
+    *y = 0;
+    return 0;
+  }
+
+  v_index = bptree_index_in_block(v->parent, v->nodes[0]->data.key);
+  if ( v_index > 0 ) {
+    y_index = v_index - 1;
+  } else {
+    y_index = v_index + 1;
+  }
+
+  if ( y_index >= v->parent->num_nodes ) {
+    *y = 0;
+    return 0;
+  }
+
+  *y = v->parent->children[y_index];
+  return y_index - v_index;
+}
+
+static void continue_extract(bptree *tree, bptree_block *v)
+{
+  bptree_block *y;
+  int y_side;
+  y_side = bptree_block_sibling(v, &y); // sibling exists
+
+  while (bptree_block_is_underfull(v) && bptree_block_can_fuse(tree, y)) {
+    v = bptree_block_fuse(tree, v, y, y_side);
+    v = v->parent;
+    y_side = bptree_block_sibling(v, &y);
+    if (!y) {
+      // v is the root
+      if (v->num_nodes == 0) {
+        bptree_block_delete_root(tree, v);
+      }
+      return;
+    }
+  }
+
+  if (bptree_block_is_underfull(v)) {
+    bptree_block_share(tree, v, y, y_side);
+  }
+}
+
+static inline uint64_t extract_helper(rtems_task_argument tid, int key) {
+  uint64_t kv;
+  bptree *tree = &the_tree[tid];
+  bptree_block *v = bptree_find_block(tree, key);
+  node *w = bptree_remove_from_leaf(v, key); // FIXME: need tree?
+  if ( w ) {
+    kv = PQ_NODE_TO_KV(&w->data);
+    free_node(tid, w);
+    if ( v->parent && bptree_block_is_underfull(v) ) {
+      continue_extract(tree, v);
+    }
+  } else {
+    kv = (uint64_t)-1;
+  }
 
   return kv;
 }
@@ -485,6 +677,7 @@ uint64_t bptree_search( rtems_task_argument tid, int k ) {
   if ( n && n->data.key == k ) {
     return PQ_NODE_TO_KV(&n->data);
   }
+  print_tree(the_tree[tid].root);
   return (uint64_t)-1;
 }
 
