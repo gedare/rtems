@@ -44,14 +44,16 @@ static void free_block(rtems_task_argument tid, bptree_block *n) {
 
 static void print_block(bptree_block *b) {
   int i;
-  printf("%X\tParent: %X\tNodes: ", b, b->parent);
-  for ( i = 0; i < b->num_nodes; i++ ) {
-    printf("%d\t",b->nodes[i]->data.key);
-  }
+  printf("%X\tParent: %X\tKey: %d\n", b, b->parent, b->key);
   if (!b->is_leaf) {
-    printf("\n\tChildren: ");
+    printf("\tChildren: ");
     for ( i = 0; i <= b->num_nodes; i++ ) {
-      printf("%X (%d)\t",b->children[i], b->children[i]->nodes[0]->data.key);
+      printf("%X (%d)\t",b->children[i], b->children[i]->key);
+    }
+  } else {
+    printf("\tNodes: ");
+    for ( i = 0; i < b->num_nodes; i++ ) {
+      printf("%X (%d)\t",b->nodes[i], b->nodes[i]->data.key);
     }
   }
   printf("\n");
@@ -71,23 +73,21 @@ static void print_tree(bptree_block *b) {
   }
 }
 
-static inline bool bptree_block_is_overfull(bptree_block *block)
+static bool bptree_block_is_overfull(bptree_block *block)
 {
   return (block->num_nodes == 1+NODES_PER_BLOCK);
 }
-static inline bool bptree_block_is_full(bptree_block *block)
-{
-  return (block->num_nodes == NODES_PER_BLOCK);
-}
 
 /* returns index of key, first key greater, or number of nodes */
-static inline int bptree_index_in_block(bptree_block *block, int key)
+static int bptree_index_in_block(bptree_block *block, int key)
 {
   int i;
 
   /* TODO: binary search? */
+//  assert(block);
+//  assert(block->num_nodes);
   for ( i = 0; i < block->num_nodes; i++ ) {
-    if ( key < block->nodes[i]->data.key ) {
+    if ( key < block->children[i]->key ) {
       return i;
     }
   }
@@ -95,17 +95,14 @@ static inline int bptree_index_in_block(bptree_block *block, int key)
   return block->num_nodes;
 }
 
-static inline node* bptree_node_in_block(bptree_block *block, int key)
+static node* bptree_node_in_leaf(bptree_block *leaf, int key)
 {
   int i;
 
-//  printk("Search: %X\t%d\n", block, key);
-
   /* FIXME: binary search? */
-  for ( i = 0; i < block->num_nodes; i++ ) {
-//    printk("nodes[%d]->data.key == %d\n", i, block->nodes[i]->data.key);
-    if ( key <= block->nodes[i]->data.key ) {
-      return block->nodes[i];
+  for ( i = 0; i < leaf->num_nodes; i++ ) {
+    if ( key <= leaf->nodes[i]->data.key ) {
+      return leaf->nodes[i];
     }
   }
 //  return rtems_chain_next(nodes[i]);
@@ -121,231 +118,87 @@ static bptree_block* bptree_find_block(bptree *tree, int key)
   return iter;
 }
 
-static inline void
+static void
 bptree_add_to_node(bptree_block *b, bptree_block *left, bptree_block *right)
 {
   int i;
-  int left_index = bptree_index_in_block(b, left->nodes[0]->data.key);
-  //printf("bptree_add_to_node\n");
+  int left_index;
+ 
+  left_index = bptree_index_in_block(b, left->key);
 
+  // shift and add
   for ( i = b->num_nodes; i > left_index; i-- ) {
-    b->nodes[i] = b->nodes[i-1];
-    b->children[i+1] = b->children[i];
+    b->children[i] = b->children[i-1];
   }
-  b->nodes[left_index] = right->nodes[0];
   b->children[left_index+1] = right;
-  b->num_nodes++;
   right->parent = b;
+  b->num_nodes++;
 }
 
-static inline void bptree_add_to_leaf(bptree_block *b, node *n, int index)
+static void bptree_add_to_leaf(bptree_block *b, node *n)
 {
   int i;
-  //printf("bptree_add_to_leaf\n");
-  for ( i = b->num_nodes; i > index; i-- ) {
+  for (i = b->num_nodes; i > 0 && b->nodes[i-1]->data.key > n->data.key; i--) {
     b->nodes[i] = b->nodes[i-1];
   }
-  b->nodes[index] = n;
+  b->nodes[i] = n;
+  b->key = b->nodes[0]->data.key;
   b->num_nodes++;
 }
 
-static inline bptree_block*
+static bptree_block*
 bptree_add_root(bptree *tree, bptree_block *left, bptree_block *right)
 {
   bptree_block *new_root;
-  //printf("bptree_add_root\n");
   new_root = alloc_block(tree->id);
   new_root->is_leaf = false;
   new_root->parent = NULL;
   new_root->children[0] = left;
   new_root->children[1] = right;
   new_root->num_nodes = 1;
-  new_root->nodes[0] = right->nodes[0];
+  new_root->key = left->key;
   left->parent = new_root;
   right->parent = new_root;
   tree->root = new_root;
   return new_root;
 }
 
-static void
-bptree_split(bptree *tree, bptree_block *l, bptree_block *n);
-
-/* assume left already exists, adding right and updating child links */
-static inline void
-bptree_add_to_parent(bptree *tree, bptree_block *left, bptree_block *right)
-{
-  bptree_block *p = left->parent;
-  printf("bptree_add_to_parent\n");
-  if ( !p ) {
-    bptree_add_root(tree, left, right);
-  } else if (bptree_block_is_full(p)) {
-    bptree_split(tree, p, right); // calls bptree_add_to_parent
-  } else {
-   bptree_add_to_node(p, left, right); 
-  }
-}
-
-static void
-bptree_split(bptree *tree, bptree_block *left, bptree_block *n)
-{
-  bptree_block *right;
-  int split_index;
-  int n_index;
-  int l_index;
-  int r_index;
-  int num_to_right;
-
-  right = alloc_block(tree->id);
-  right->is_leaf = false;
-
-  printf("bptree_split\n");
-  n_index = bptree_index_in_block(left, n->nodes[0]->data.key);
-  printf("%d\n",n_index);
-  /* put right half of left into right */
-  split_index = (left->num_nodes+3)/2 - 1; // the median including n
-//  printf("split_index: %d\n", split_index);
-  l_index = left->num_nodes - 1;
-  /* split always goes to the right */
-  num_to_right = left->num_nodes - split_index + 1;
-//  printf("num_to_right: %d\n", num_to_right);
-  r_index = num_to_right-1;
-  if ( n_index >= split_index ) {
-    printf("a\n");
-    for ( ; l_index >= n_index; l_index--, r_index-- ) {
-      right->nodes[r_index] = left->nodes[l_index];
-      right->children[r_index + 1] = left->children[l_index+1];
-      right->children[r_index + 1]->parent = right;
-    }
-    right->nodes[r_index] = n->nodes[0];
-    right->children[r_index+1] = n;
-    right->children[r_index + 1]->parent = right;
-    r_index--;
-    for ( ; l_index >= split_index; l_index--, r_index-- ) {
-      right->nodes[r_index] = left->nodes[l_index];
-      right->children[r_index + 1] = left->children[l_index+1];
-      right->children[r_index + 1]->parent = right;
-    }
-    // l_index+1 == split_index
-    right->children[0] = NULL; // FIXME: is this correct?
-//    right->children[r_index+1] = left->children[l_index+1];
-//    right->children[r_index+1]->parent = right;
-  } else {
-    printf("b\n");
-    for ( ; l_index >= split_index-1; l_index--, r_index-- ) {
-      right->nodes[r_index] = left->nodes[l_index];
-      right->children[r_index + 1] = left->children[l_index+1];
-      right->children[r_index + 1]->parent = right;
-    }
-    right->children[r_index+1] = left->children[l_index+1];
-    right->children[r_index+1]->parent = right;
-    for ( ; l_index >= n_index; l_index-- ) {
-      printf("%d\n", l_index);
-      left->nodes[l_index+1] = left->nodes[l_index];
-      left->children[l_index+2] = left->children[l_index+1];
-    }
-    left->nodes[n_index] = n->nodes[0];
-    left->children[n_index+1] = n;
-    n->parent = left;
-  }
-  right->num_nodes = num_to_right;
-  left->num_nodes = left->num_nodes + 1 - num_to_right;
-  right->parent = left->parent;
-
-  /* update parent's links to children */
-  bptree_add_to_parent(tree, left, right);
-}
-
-
-/* similar to bptree_split, but keep separate for now. This version is
- * simplified by using the node directly and not updating children links */
-static void bptree_split_leaf(bptree *tree, bptree_block *left_leaf, node *n)
-{
-  bptree_block *right_leaf;
-  int split_index;
-  int n_index;
-  int l_index;
-  int r_index;
-  int num_to_right;
-
-  right_leaf = alloc_block(tree->id);
-  right_leaf->is_leaf = true;
-
-  printf("bptree_split_leaf\n");
-  n_index = bptree_index_in_block(left_leaf, n->data.key);
-
-  /* put right half of left_leaf into the right_leaf */
-  split_index = (left_leaf->num_nodes+3)/2 - 1; // the median including n
-  l_index = left_leaf->num_nodes - 1;
-  /* split always goes to the right */
-  num_to_right = left_leaf->num_nodes - split_index + 1;
-  r_index = num_to_right-1;
-  if ( n_index >= split_index ) { // n goes to right of split
-    printf("a\n");
-    for ( ; l_index >= n_index; l_index--, r_index-- ) {
-      right_leaf->nodes[r_index] = left_leaf->nodes[l_index];
-    }
-    right_leaf->nodes[r_index] = n;
-    r_index--;
-    for ( ; l_index >= split_index; l_index--, r_index-- ) {
-      right_leaf->nodes[r_index] = left_leaf->nodes[l_index];
-    }
-  } else {
-    printf("b\n");
-    /* go past split_index so that split always goes to the right */
-    for ( ; l_index >= split_index-1; l_index--, r_index-- ) {
-      right_leaf->nodes[r_index] = left_leaf->nodes[l_index];
-    }
-    for ( ; l_index >= n_index; l_index-- ) {
-      left_leaf->nodes[l_index+1] = left_leaf->nodes[l_index];
-    }
-    left_leaf->nodes[n_index] = n;
-  }
-  right_leaf->num_nodes = num_to_right;
-  left_leaf->num_nodes = left_leaf->num_nodes + 1 - num_to_right;
-  
-  /* update parent's links to children */
-  bptree_add_to_parent(tree, left_leaf, right_leaf);
-  left_leaf->parent->is_leaf = false;
-}
-
-
 static bptree_block*
-bptree_split_hm(bptree *tree, bptree_block *v)
+bptree_split(bptree *tree, bptree_block *v)
 {
   bptree_block *x = v->parent;
   bptree_block *right;
   int l_index, r_index, split_index;
   int num_to_right;
+  bool leaf = v->is_leaf;
 
-  //printf("bptree_split_hm\n");
   right = alloc_block(tree->id);
-  right->is_leaf = v->is_leaf;
-
-  //printf("x: %X\n", x);
+  right->is_leaf = leaf;
 
   /* put right-half of left into right */
-  split_index = (v->num_nodes+1)/2 - 1; // the median including n
-  //printf("split_index: %d\n", split_index);
-  l_index = v->num_nodes - 1;
-  //printf("l_index: %d\n", l_index);
+  split_index = (v->num_nodes+1)/2 - 1; // the median
+  l_index = v->num_nodes;
+
   /* split always goes to the right */
   num_to_right = v->num_nodes - split_index;
-  //printf("num_to_right: %d\n", num_to_right);
-  r_index = num_to_right-1;
-  //printf("r_index: %d\n", r_index);
+  r_index = num_to_right;
 
   for ( ; l_index >= split_index; l_index--, r_index-- ) {
-    right->nodes[r_index] = v->nodes[l_index];
-    right->children[r_index + 1] = v->children[l_index+1];
-    right->children[r_index + 1]->parent = right;
+    right->children[r_index] = v->children[l_index];
+    if (!leaf)
+      right->children[r_index]->parent = right;
   }
-  //printf("r_index: %d\n", r_index);
-  right->children[0] = NULL; // FIXME: is this correct?
-  
-  // what about right->children[0] and right->nodes[0]??
-
+  if (!leaf) {
+    right->key = right->children[0]->key;
+    if ( v->key > v->children[0]->key )
+      v->key = v->children[0]->key;
+  } else {
+    right->key = right->nodes[0]->data.key;
+    if ( v->key > v->nodes[0]->data.key )
+      v->key = v->nodes[0]->data.key;
+  }
   right->num_nodes = num_to_right;
-  v->num_nodes = v->num_nodes - num_to_right;
+  v->num_nodes = split_index;
 
   if (!x) {
     x = bptree_add_root(tree, v, right);
@@ -355,7 +208,7 @@ bptree_split_hm(bptree *tree, bptree_block *v)
   return x;
 }
 
-static inline void initialize_helper(rtems_task_argument tid, int size)
+static void initialize_helper(rtems_task_argument tid, int size)
 {
   the_blocks[tid] = (node*)malloc(sizeof(bptree_block)*size);
   if ( ! the_nodes[tid] ) {
@@ -374,38 +227,36 @@ static inline void initialize_helper(rtems_task_argument tid, int size)
   the_tree[tid].root = alloc_block(tid);
   the_tree[tid].root->parent = NULL;
   the_tree[tid].root->num_nodes = 0;
+  the_tree[tid].root->key = -1;
   the_tree[tid].root->is_leaf = true;
+  the_tree[tid].t = 0;
+  the_tree[tid].s = 1;
   the_tree[tid].id = tid;
+
 }
 
-static inline void insert_helper(rtems_task_argument tid, node *new_node)
+static void insert_helper(rtems_task_argument tid, node *new_node)
 {
   bptree *tree = &the_tree[tid];
-
-#if 1
-  // Huddleston-Mehlhorn
   bptree_block *v = bptree_find_block(tree, new_node->data.key);
-  bptree_add_to_leaf(v, new_node, bptree_index_in_block(v,new_node->data.key));
+  bptree_add_to_leaf(v, new_node);
   while (bptree_block_is_overfull(v)) {
-    v = bptree_split_hm(tree, v);
+    v = bptree_split(tree, v);
   }
-#endif
-
-#if 0
-  bptree_block *b;
-  b = bptree_find_block(tree, new_node->data.key);
-
-  if (bptree_block_is_full(b)) {
-    bptree_split_leaf(tree, b, new_node);
-  } else {
-    bptree_add_to_leaf(b,new_node,bptree_index_in_block(b,new_node->data.key));
+  if (v->is_leaf) {
+    if ( v->key > v->nodes[0]->data.key )
+      v->key = v->nodes[0]->data.key;
+    v = v->parent;
   }
-#endif
-  //print_tree(tree->root);
+  while ( v && v->children[0]->key < v->key ) {
+    v->key = v->children[0]->key;
+    v = v->parent;
+  }
+  print_tree(tree->root);
 }
 
 /* FIXME: keep a pointer to min (max) */
-static inline node* min_helper( rtems_task_argument tid ) {
+static node* min_helper( rtems_task_argument tid ) {
   bptree_block *iter = the_tree[tid].root;
   while (!iter->is_leaf) {
     if (iter->children[0])
@@ -417,10 +268,10 @@ static inline node* min_helper( rtems_task_argument tid ) {
 }
 
 /* Returns node with same key, first key greater, or tail of list */
-static inline node* search_helper(rtems_task_argument tid, int key)
+static node* search_helper(rtems_task_argument tid, int key)
 {
   bptree_block *the_block = bptree_find_block(&the_tree[tid], key);
-  return bptree_node_in_block(the_block, key);
+  return bptree_node_in_leaf(the_block, key);
  }
 
 static node* bptree_remove_from_leaf(bptree_block *leaf, int key)
@@ -439,45 +290,68 @@ static node* bptree_remove_from_leaf(bptree_block *leaf, int key)
     leaf->nodes[i] = leaf->nodes[i+1];
   }
   leaf->num_nodes--;
+  leaf->key = leaf->nodes[0]->data.key;
   return n;
 }
 
-static inline bool bptree_block_is_underfull(bptree_block *block)
+static bool bptree_block_is_underfull(bptree_block *block)
 {
   return (block->num_nodes == MIN_NODES - 1);
 }
 
-static inline bool bptree_block_can_fuse(bptree *tree, bptree_block *y)
+static bool bptree_block_can_fuse(bptree *tree, bptree_block *y)
 {
   return (y->num_nodes <= MIN_NODES + tree->t);
 }
 
-static void fuse_blocks(bptree_block *left, bptree_block *right)
+// add right_nodes of right block's children to left block
+static void
+fuse_blocks(bptree_block *left, bptree_block *right, int right_nodes)
 {
-  int i;
-  int right_nodes = right->num_nodes;
-  for ( i = left->num_nodes + right_nodes - 1; i >= right_nodes; i-- ) {
-    left->nodes[i] = left->nodes[i - 1 - right_nodes];
-    left->children[i + 1] = left->children[i - right_nodes];
+  int i, j;
+  int left_nodes = left->num_nodes;
+  bool leaf = left->is_leaf;
+
+  i = left_nodes;
+  if ( right->children[0] ) {
+    left->children[i+1] = right->children[0];
+    if ( !leaf )
+      left->children[i+1]->parent = left;
+    ++i;
   }
-  for ( ; i >= 0; i-- ) {
-    left->nodes[i] = right->nodes[i];
-    left->children[i+1] = right->children[i+1];
-    left->children[i+1]->parent = left;
+  for ( j = 1 ; j <= right_nodes; i++, j++ ) {
+    left->children[i+1] = right->children[j];
+    if ( !leaf )
+      left->children[i+1]->parent = left;
   }
-  left->children[0] = right->children[0];
-  left->num_nodes += right_nodes;
+
+  left->num_nodes = i - 1;
+  right->num_nodes -= right_nodes;
 }
 
 static void delete_from_block(bptree_block *p, bptree_block *d)
 {
   int i, d_index;
-  d_index = bptree_index_in_block(p, d->nodes[0]->data.key);
+  bool leaf = d->is_leaf;
+  d_index = bptree_index_in_block(p, d->key);
+  /*
+  if ( leaf ) {
+    d_index = bptree_index_in_block(p, d->key);
+  } else if ( d->children[0] ) {
+    d_index = bptree_index_in_block(p, d->children[0]->key);
+  } else {
+    d_index = bptree_index_in_block(p, d->children[1]->key);
+  }*/
+
   for ( i = d_index; i < p->num_nodes; i++ ) {
-    p->nodes[i] = p->nodes[i+1];
     p->children[i] = p->children[i+1];
   }
   p->children[p->num_nodes - 1] = p->children[p->num_nodes];
+
+  if (!d_index) {
+    p->key = p->children[0]->key; // FIXME: necessary / useful? 
+  }
+
   p->num_nodes--;
 }
 
@@ -493,7 +367,7 @@ bptree_block_fuse(bptree* tree, bptree_block *v, bptree_block *y, int y_side)
     y = tmp;
   }
 
-  fuse_blocks(v, y);
+  fuse_blocks(v, y, y->num_nodes);
   delete_from_block(y->parent, y);
   free_block(tree->id, y);
   return v;
@@ -506,37 +380,31 @@ bptree_block_share(bptree* tree, bptree_block *v, bptree_block *y, int y_side)
   int v_nodes = v->num_nodes;
   int s_nodes = tree->s;
   int i;
+  bool leaf = v->is_leaf;
 
-  // unlike fusing, sharing must move nodes from y into v.
-  if ( y_side < 0 ) { // y is to left of v
+  // unlike fusing, sharing must move children from y into v.
+  if ( y_side < 0 ) { 
+    // y is to left of v, move end of y into start of v
     // make room at start of v
-    for ( i = v->num_nodes + s_nodes - 1; i >= s_nodes; i-- ) {
-      v->nodes[i] = v->nodes[i - 1 - s_nodes];
-      v->children[i + 1] = v->children[i - s_nodes];
+    for ( i = v_nodes + s_nodes; i > s_nodes; i-- ) {
+      v->children[i] = v->children[i - s_nodes - 1];
     }
     // move end of y into start of v
-    for ( i = 1; i <= s_nodes; i++ ) {
-      v->nodes[s_nodes-i] = y->nodes[y_nodes-i];
-      v->children[s_nodes - i + 1] = y->children[y_nodes - i + 1];
-    }
-    v->children[0] = y->children[y_nodes - s_nodes];
-
-  } else {  // y is to right of v
-    // move start of y to end of v
     for ( i = 0; i < s_nodes; i++ ) {
-      v->nodes[v_nodes - i] = y->nodes[i];
-      v->children[v_nodes - i + 1] = y->children[i + 1];
+      v->children[s_nodes - 1 - i] = y->children[y_nodes - i];
+      if ( !leaf )
+        v->children[s_nodes - 1 - i]->parent = v;
+    }
+    if ( !leaf ) {
+      v->key = v->children[0]->key;
     }
 
-    // shift y
-    for ( ; i < y_nodes; i++ ) {
-      y->nodes[i - s_nodes] = y->nodes[i];
-      y->children[i - s_nodes] = y->children[i];
-    }
-    y->children[y_nodes - s_nodes] = y->children[y_nodes];
+    v->num_nodes += s_nodes;
+    y->num_nodes -= s_nodes;
+  } else {  // y is to right of v and can use similar logic as fusing
+    fuse_blocks(v, y, s_nodes);
+    y->key = y->children[0]->key;
   }
-  v->num_nodes += s_nodes;
-  y->num_nodes -= s_nodes;
 }
 
 static void bptree_block_delete_root(bptree *tree, bptree_block *r)
@@ -564,7 +432,7 @@ static int bptree_block_sibling(bptree_block *v, bptree_block **y)
     return 0;
   }
 
-  v_index = bptree_index_in_block(v->parent, v->nodes[0]->data.key);
+  v_index = bptree_index_in_block(v->parent, v->key);
   if ( v_index > 0 ) {
     y_index = v_index - 1;
   } else {
@@ -604,7 +472,7 @@ static void continue_extract(bptree *tree, bptree_block *v)
   }
 }
 
-static inline uint64_t extract_helper(rtems_task_argument tid, int key) {
+static uint64_t extract_helper(rtems_task_argument tid, int key) {
   uint64_t kv;
   bptree *tree = &the_tree[tid];
   bptree_block *v = bptree_find_block(tree, key);

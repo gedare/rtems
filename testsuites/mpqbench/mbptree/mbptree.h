@@ -30,8 +30,12 @@ typedef struct _bptree_block bptree_block;
 
 struct _bptree_block {
   rtems_chain_node link;
-  node *nodes[NODES_PER_BLOCK+1];  /* FIXME: unionize nodes&children add keys */
-  bptree_block *children[CHILDREN_PER_BLOCK+1];
+  union {
+    node *nodes[NODES_PER_BLOCK+1];
+    bptree_block *children[CHILDREN_PER_BLOCK+1];
+  };
+  int key;
+//  int keys[NODES_PER_BLOCK+1];
   bptree_block *parent;
   int num_nodes;
   bool is_leaf;
