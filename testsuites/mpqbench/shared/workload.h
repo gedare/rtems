@@ -9,7 +9,7 @@ void warmup( rtems_task_argument tid );
 void work( rtems_task_argument tid );
 
 // WARMUP must be defined for opal to work properly currently.
-#define WARMUP
+//#define WARMUP
 // Measurement directives...
 //#define DOMEASURE
 //#define MEASURE_CS

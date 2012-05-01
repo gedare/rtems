@@ -138,7 +138,7 @@ void rbtree_initialize( rtems_task_argument tid, int size ) {
 #endif
 }
 
-void rbtree_insert( rtems_task_argument tid,  uint64_t kv ) {
+void rbtree_insert( rtems_task_argument tid,  long kv ) {
   node *n = alloc_node(tid);
   pq_node *pn = &n->data;
   pn->key = kv_key(kv);
@@ -146,8 +146,8 @@ void rbtree_insert( rtems_task_argument tid,  uint64_t kv ) {
   rtems_rbtree_insert( &the_rbtree[tid], &n->rbt_node );
 }
 
-uint64_t rbtree_min( rtems_task_argument tid ) {
-  uint64_t kv;
+long rbtree_min( rtems_task_argument tid ) {
+  long kv;
   rtems_rbtree_node *rn;
   node *n;
   pq_node *p;
@@ -160,11 +160,11 @@ uint64_t rbtree_min( rtems_task_argument tid ) {
     kv = PQ_NODE_TO_KV(p);
     return kv;
   } 
-  return (uint64_t)-1; // FIXME: error handling
+  return (long)-1; // FIXME: error handling
 }
 
-uint64_t rbtree_pop_min( rtems_task_argument tid ) {
-  uint64_t kv;
+long rbtree_pop_min( rtems_task_argument tid ) {
+  long kv;
   rtems_rbtree_node *rn;
   node *n;
   pq_node *p;
@@ -177,19 +177,19 @@ uint64_t rbtree_pop_min( rtems_task_argument tid ) {
     kv = PQ_NODE_TO_KV(p);
     free_node(tid, n);
   } else {
-    kv = (uint64_t)-1;
+    kv = (long)-1;
   }
   return kv;
 }
 
-uint64_t rbtree_search( rtems_task_argument tid, int k )
+long rbtree_search( rtems_task_argument tid, int k )
 {
   rtems_rbtree_node *rn;
   node search_node;
 
   node *n;
   pq_node *p;
-  uint64_t kv;
+  long kv;
 
   search_node.data.key = k;
 
@@ -199,19 +199,19 @@ uint64_t rbtree_search( rtems_task_argument tid, int k )
     p = &n->data;
     kv = PQ_NODE_TO_KV(p);
   } else {
-    kv = (uint64_t)-1;
+    kv = (long)-1;
   }
   return kv;
 }
 
-uint64_t rbtree_extract( rtems_task_argument tid, int k )
+long rbtree_extract( rtems_task_argument tid, int k )
 {
   rtems_rbtree_node *rn;
   node search_node;
 
   node *n;
   pq_node *p;
-  uint64_t kv;
+  long kv;
 
   search_node.data.key = k;
 
@@ -223,7 +223,7 @@ uint64_t rbtree_extract( rtems_task_argument tid, int k )
     kv = PQ_NODE_TO_KV(p);
     free_node(tid, n);
   } else {
-    kv = (uint64_t)-1;
+    kv = (long)-1;
   }
   return kv;
 }

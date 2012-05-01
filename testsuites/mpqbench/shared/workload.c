@@ -7,28 +7,30 @@
 #include "params.h"
 #include "params.i"
 
+#ifdef WARMUP
 #include <libcpu/spillpq.h> // bad
+#endif
 
 #include <stdlib.h>
 
-#define ARG_TO_UINT64(n) ((((uint64_t)n->key) << 32UL) | (uint64_t)n->val)
+#define ARG_TO_UINT64(n) ((((long)n->key) << (sizeof(long)*4L)) | (long)n->val)
 
-inline uint64_t pq_add_to_key(uint64_t p, uint32_t i) {
-  return p+((uint64_t)i<<32UL);
+inline long pq_add_to_key(long p, uint32_t i) {
+  return p+((long)i<<(sizeof(long)*4L));
 }
 
-inline uint64_t pq_node_initialize( PQ_arg *a ) {
+inline long pq_node_initialize( PQ_arg *a ) {
   return ARG_TO_UINT64(a);
 }
 
 #if defined(GAB_PRINT) || defined(GAB_DEBUG)
-inline void pq_print_node( uint64_t p ) {
+inline void pq_print_node( long p ) {
   printf("%d\t%d\n", kv_key(p), kv_value(p));
 }
 #endif
 
 static int execute( rtems_task_argument tid, int current_op ) {
-  uint64_t n;
+  long n;
 
   switch (ops[current_op]) {
     case f:
@@ -136,7 +138,7 @@ static int execute( rtems_task_argument tid, int current_op ) {
 
 static int measure( rtems_task_argument tid, int current_op )
 {
-  uint64_t n;
+  long n;
   PQ_arg a;
 
   a.key = 1;
@@ -216,10 +218,10 @@ void initialize(rtems_task_argument tid ) {
 }
 
 static void drain_and_check(rtems_task_argument tid) {
-  uint64_t s = 0;
+  long s = 0;
 
-  uint64_t n;
-  while ((n = pq_pop(tid)) != (uint64_t)-1) { // FIXME: casting -1 :(
+  long n;
+  while ((n = pq_pop(tid)) != (long)-1) { // FIXME: casting -1 :(
     s = s + kv_key(n);
   }
   printf("%d\tChecksum: 0x%llX\n", tid, s);
@@ -241,7 +243,7 @@ void warmup( rtems_task_argument tid ) {
   // insert some minimum priority elements (to prime the hwpq) and
   // fill up the hwpq to full capacity for measuring exceptions
   if (spillpq_ops[tid]) {
-    uint64_t n;
+    long n;
     PQ_arg a;
     int s, c;
     HWDS_GET_SIZE_LIMIT(tid, s);
@@ -280,11 +282,14 @@ void work( rtems_task_argument tid  ) {
   measure(tid, PQ_WARMUP_OPS);
 #endif
 #endif
-
+#ifdef WARMUP
   MAGIC(1);
+#endif
   for ( i = 0; i < PQ_WORK_OPS; i++ ) {
     execute(tid, PQ_WARMUP_OPS + i);
+#ifdef WARMUP
     MAGIC(1);
+#endif
   }
 #if defined(GAB_CHECK)
   drain_and_check(tid);

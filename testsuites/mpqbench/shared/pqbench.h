@@ -16,8 +16,8 @@ extern "C" {
 #include "rtems/rtems/types.h"
 #include "params.h"
 
-#define kv_value(kv) ((uint32_t)kv)
-#define kv_key(kv)   (kv>>32)
+#define kv_value(kv) (kv & ~((~0U)<<(sizeof(long)*4U)))
+#define kv_key(kv)   (kv>>(sizeof(long)*4L))
 
 typedef enum {
   f,      /* first */
@@ -35,11 +35,11 @@ typedef struct {
 
 /* pqbench interface */
 extern void pq_initialize( rtems_task_argument tid, int size );
-extern void pq_insert( rtems_task_argument tid, uint64_t p );
-extern uint64_t pq_first( rtems_task_argument tid );
-extern uint64_t pq_pop( rtems_task_argument tid );
-extern uint64_t pq_search( rtems_task_argument tid, int key );
-extern uint64_t pq_extract( rtems_task_argument tid, int key );
+extern void pq_insert( rtems_task_argument tid, long p );
+extern long pq_first( rtems_task_argument tid );
+extern long pq_pop( rtems_task_argument tid );
+extern long pq_search( rtems_task_argument tid, int key );
+extern long pq_extract( rtems_task_argument tid, int key );
 
 #ifdef __cplusplus
 }

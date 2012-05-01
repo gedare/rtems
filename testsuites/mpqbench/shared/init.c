@@ -35,36 +35,6 @@
 #include "workload.h"
 #include "tasks.i"
 
-#include <bsp.h> /* bad */
-#include <boot/ofw.h> /* bad */
-
-/* an approximation */
-#define busy_wait( microseconds, inst_per_us ) \
-  do { \
-    register uint32_t         _delay=(microseconds); \
-    register uint32_t         _inst=(inst_per_us); \
-    register int              _tmp=0; \
-    asm volatile( "sub     %0, 6, %0; \
-        brz     %2, 2f; \
-      0: \
-        mov     %0, %1; \
-      1: \
-        nop; \
-        sub     %1, 6, %1; \
-        nop; \
-        nop; \
-        brgz  %1, 1b; \
-        nop; \
-        dec     %2; \
-        nop; \
-        nop; \
-        brnz    %2, 0b; \
-      2: nop " \
-      : "=r" (_inst), "=r" (_tmp), "=r" (_delay) \
-      : "0" (_inst), "1" (_tmp), "2" (_delay) ); \
-  } while (0) 
-
-
 static uint32_t  tasks_completed;
 static rtems_id  tasks_complete_sem;
 static rtems_id  final_barrier;
@@ -72,17 +42,6 @@ static uint32_t  Instructions_per_us;
 
 rtems_id   Task_id[ 1+NUM_TASKS ];
 rtems_name Task_name[ 1+NUM_TASKS ];
-
-static unsigned int get_Frequency(void)
-{
-	phandle root = ofw_find_device("/");
-	unsigned int freq;
-	if (ofw_get_property(root, "clock-frequency", &freq, sizeof(freq)) <= 0) {
-		return 150000000;
-	}
-
-	return freq;
-}
 
 rtems_task PQ_Cache_Task(rtems_task_argument argument)
 {
@@ -125,7 +84,7 @@ rtems_task PQ_Periodic_Task(rtems_task_argument argument)
     if (rtems_rate_monotonic_period(rmid, Periods[argument])==RTEMS_TIMEOUT) {
       puts("Error: deadline missed!\n");
     }
-    busy_wait( Execution_us[argument], Instructions_per_us );
+    //busy_wait( Execution_us[argument], Instructions_per_us );
   }
   /* Shouldn't reach here. */
 
@@ -166,7 +125,9 @@ rtems_task PQ_Workload_Task(rtems_task_argument argument)
   directive_failed( status, "rtems_semaphore_obtain" );
     tasks_completed++;
     if (NUM_APERIODIC_TASKS == tasks_completed) {
+#ifdef WARMUP
       MAGIC_BREAKPOINT;
+#endif
       puts( "*** END OF TEST ***" );
       rtems_test_exit(0);
     }
@@ -198,14 +159,6 @@ rtems_task Init(
   cacheTask_name = rtems_build_name( 'C', 'T', '0', '1' );
 #endif
 
-
-  freq = get_Frequency( );
-  Instructions_per_us = freq / 1000000;
-
-  if ( Instructions_per_us == 0 ) {
-    puts( "error: CPU frequency is too low" );
-    rtems_test_exit(0);
-  }
 
   if ( NUM_APERIODIC_TASKS == 0 ) {
     puts("error: Need at least 1 aperiodic task to ensure termination");
