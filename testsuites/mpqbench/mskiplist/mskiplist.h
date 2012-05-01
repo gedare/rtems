@@ -36,13 +36,13 @@ typedef struct {
 #define LINK_TO_NODE(cn, index) \
   ((node*)((uintptr_t)cn - ((uintptr_t)(&(((node *)0)->link[index])))))
 
-#define PQ_NODE_TO_KV(n) ((((uint64_t)(n)->key) << 32UL) | (uint64_t)(n)->val)
+#define PQ_NODE_TO_KV(n) ((((long)(n)->key) << (sizeof(long)*4L)) | (long)(n)->val)
 
 void skiplist_initialize( rtems_task_argument tid, int size );
-void skiplist_insert( rtems_task_argument tid, uint64_t kv );
-uint64_t skiplist_min( rtems_task_argument tid );
-uint64_t skiplist_pop_min( rtems_task_argument tid );
-uint64_t skiplist_search( rtems_task_argument tid, int key );
-uint64_t skiplist_extract( rtems_task_argument tid, int key );
+void skiplist_insert( rtems_task_argument tid, long kv );
+long skiplist_min( rtems_task_argument tid );
+long skiplist_pop_min( rtems_task_argument tid );
+long skiplist_search( rtems_task_argument tid, int key );
+long skiplist_extract( rtems_task_argument tid, int key );
 
 #endif

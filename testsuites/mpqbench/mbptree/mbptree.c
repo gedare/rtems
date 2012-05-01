@@ -472,8 +472,8 @@ static void continue_extract(bptree *tree, bptree_block *v)
   }
 }
 
-static uint64_t extract_helper(rtems_task_argument tid, int key) {
-  uint64_t kv;
+static long extract_helper(rtems_task_argument tid, int key) {
+  long kv;
   bptree *tree = &the_tree[tid];
   bptree_block *v = bptree_find_block(tree, key);
   node *w = bptree_remove_from_leaf(v, key); // FIXME: need tree?
@@ -484,7 +484,7 @@ static uint64_t extract_helper(rtems_task_argument tid, int key) {
       continue_extract(tree, v);
     }
   } else {
-    kv = (uint64_t)-1;
+    kv = (long)-1;
   }
 
   return kv;
@@ -505,7 +505,7 @@ void bptree_initialize( rtems_task_argument tid, int size ) {
   initialize_helper(tid, size);
 }
 
-void bptree_insert(rtems_task_argument tid, uint64_t kv ) {
+void bptree_insert(rtems_task_argument tid, long kv ) {
   node *new_node = alloc_node(tid);
   if (!new_node)
     return;
@@ -514,18 +514,18 @@ void bptree_insert(rtems_task_argument tid, uint64_t kv ) {
   insert_helper(tid, new_node);
 }
 
-uint64_t bptree_min( rtems_task_argument tid ) {
+long bptree_min( rtems_task_argument tid ) {
   node *n;
 
   n = min_helper(tid);
   if (n) {
     return PQ_NODE_TO_KV(&n->data);
   }
-  return (uint64_t)-1;
+  return (long)-1;
 }
 
-uint64_t bptree_pop_min( rtems_task_argument tid ) {
-  uint64_t kv;
+long bptree_pop_min( rtems_task_argument tid ) {
+  long kv;
   node *n;
   //  FIXME
 //  n = min_helper(tid);
@@ -534,23 +534,23 @@ uint64_t bptree_pop_min( rtems_task_argument tid ) {
     kv = PQ_NODE_TO_KV(&n->data);
     free_node(tid, n);
   } else {
-    kv = (uint64_t)-1;
+    kv = (long)-1;
   }
   return kv;
 }
 
-uint64_t bptree_search( rtems_task_argument tid, int k ) {
+long bptree_search( rtems_task_argument tid, int k ) {
   node* n = search_helper(tid, k);
 //  if (!rtems_chain_is_tail(&the_list[tid], n) && n->data.key == k) {
   if ( n && n->data.key == k ) {
     return PQ_NODE_TO_KV(&n->data);
   }
   print_tree(the_tree[tid].root);
-  return (uint64_t)-1;
+  return (long)-1;
 }
 
-uint64_t bptree_extract( rtems_task_argument tid, int k ) {
-  uint64_t kv = extract_helper(tid, k);
+long bptree_extract( rtems_task_argument tid, int k ) {
+  long kv = extract_helper(tid, k);
   return kv;
 }
 

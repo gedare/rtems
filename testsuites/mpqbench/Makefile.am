@@ -5,15 +5,16 @@
 ACLOCAL_AMFLAGS = -I ../aclocal
 
 SUBDIRS = miheap msplay mlist mskiplist mbptree \
-					mhwpqsplitheap mhwpqunitedlist mhwpq \
-					mrbtree \
-					mhwpqunitedsearch
+					mrbtree
 
+if sun4u
+SUBDIRS += mhwpqsplitheap mhwpqunitedlist mhwpq mhwpqunitedsearch
+endif
 if MPTESTS
 endif
 
 if CXXTESTS
-#SUBDIRS += mstlheap
+SUBDIRS += mstlheap
 endif
 
 if NETTESTS

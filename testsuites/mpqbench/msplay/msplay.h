@@ -56,7 +56,7 @@ typedef struct {
 // container-of magic
 #define PQ_NODE_TO_NODE(hn) \
   ((node*)((uintptr_t)hn - ((uintptr_t)(&((node *)0)->data))))
-#define PQ_NODE_TO_KV(n) ((((uint64_t)n->key) << 32UL) | (uint64_t)n->val)
+#define PQ_NODE_TO_KV(n) ((((long)n->key) << (sizeof(long)*4L)) | (long)n->val)
 
 #define ST_NODE_TO_NODE(sn) \
   ((node*)((uintptr_t)sn - ((uintptr_t)(&((node *)0)->st_node))))
@@ -68,10 +68,10 @@ typedef struct {
 //extern void free_node(node *h);
 
 extern void splay_initialize( rtems_task_argument tid, int size );
-extern void splay_insert( rtems_task_argument tid, uint64_t kv );
-extern uint64_t splay_min( rtems_task_argument tid );
-extern uint64_t splay_pop_min( rtems_task_argument tid );
-extern uint64_t splay_search( rtems_task_argument tid, int k );
-extern uint64_t splay_extract( rtems_task_argument tid, int k );
+extern void splay_insert( rtems_task_argument tid, long kv );
+extern long splay_min( rtems_task_argument tid );
+extern long splay_pop_min( rtems_task_argument tid );
+extern long splay_search( rtems_task_argument tid, int k );
+extern long splay_extract( rtems_task_argument tid, int k );
 
 #endif

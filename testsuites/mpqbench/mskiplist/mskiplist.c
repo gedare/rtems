@@ -139,7 +139,7 @@ static node* search_helper(rtems_task_argument tid, int key)
   return LINK_TO_NODE(x, 0);
 }
 
-static inline uint64_t extract_helper(rtems_task_argument tid, int key)
+static inline long extract_helper(rtems_task_argument tid, int key)
 {
   // TODO: perhaps mark node for deletion and deal with later.
   rtems_chain_node *x;
@@ -149,7 +149,7 @@ static inline uint64_t extract_helper(rtems_task_argument tid, int key)
   skiplist *sl = &the_skiplist[tid];  /* list */
   int upper_level = sl->level;        /* list->level */
   int i;
-  uint64_t kv;
+  long kv;
   rtems_chain_node *update[MAXLEVEL];
 
   list = &sl->lists[upper_level]; /* top */
@@ -196,10 +196,10 @@ static inline uint64_t extract_helper(rtems_task_argument tid, int key)
       }
       free_node(tid, x_node);
     } else {
-      kv = (uint64_t)-1;
+      kv = (long)-1;
     }
   } else {
-    kv = (uint64_t)-1;
+    kv = (long)-1;
   }
 
   return kv;
@@ -222,41 +222,41 @@ void skiplist_initialize( rtems_task_argument tid, int size ) {
   initialize_helper(tid, size);
 }
 
-void skiplist_insert(rtems_task_argument tid, uint64_t kv ) {
+void skiplist_insert(rtems_task_argument tid, long kv ) {
   node *new_node = alloc_node(tid);
   new_node->data.key = kv_key(kv);
   new_node->data.val = kv_value(kv);
   insert_helper(tid, new_node);
 }
 
-uint64_t skiplist_min( rtems_task_argument tid ) {
+long skiplist_min( rtems_task_argument tid ) {
   node *n;
 
   n = rtems_chain_first(&the_skiplist[tid].lists[0]); // unprotected
   if (n) {
     return PQ_NODE_TO_KV(&n->data);
   }
-  return (uint64_t)-1;
+  return (long)-1;
 }
 
-uint64_t skiplist_pop_min( rtems_task_argument tid ) {
-  uint64_t kv;
+long skiplist_pop_min( rtems_task_argument tid ) {
+  long kv;
   node *n;
   n = rtems_chain_first(&the_skiplist[tid].lists[0]); // unprotected
   kv = extract_helper(tid, n->data.key);
   return kv;
 }
 
-uint64_t skiplist_search( rtems_task_argument tid, int k ) {
+long skiplist_search( rtems_task_argument tid, int k ) {
   node* n = search_helper(tid, k);
   if(!rtems_chain_is_tail(&the_skiplist[tid].lists[0], n) && n->data.key == k) {
     return PQ_NODE_TO_KV(&n->data);
   }
-  return (uint64_t)-1;
+  return (long)-1;
 }
 
-uint64_t skiplist_extract( rtems_task_argument tid, int k ) {
-  uint64_t kv = extract_helper(tid, k);
+long skiplist_extract( rtems_task_argument tid, int k ) {
+  long kv = extract_helper(tid, k);
   return kv;
 }
 

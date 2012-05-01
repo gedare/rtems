@@ -55,6 +55,9 @@ AM_CONDITIONAL([CXXTESTS],[test $CXXTESTS = "yes"])
 AM_CONDITIONAL(NETTESTS,test "$rtems_cv_RTEMS_NETWORKING" = "yes")
 AM_CONDITIONAL(MPTESTS,test "$rtems_cv_RTEMS_MULTIPROCESSING" = "yes")
 
+## GAB: hack to check for custom code
+AM_CONDITIONAL([sun4u],[test x"$RTEMS_CPU_MODEL" = x"sun4u"])
+
 #FIXME: We should use a feature based check
 AM_CONDITIONAL(LIBCHIP,[test "$RTEMS_BSP_FAMILY" != "posix"])
 

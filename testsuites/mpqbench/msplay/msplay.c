@@ -652,7 +652,7 @@ void splay_initialize(rtems_task_argument tid, int size ) {
   the_tree[tid].root = NULL;
 }
 
-void splay_insert( rtems_task_argument tid, uint64_t kv ) {
+void splay_insert( rtems_task_argument tid, long kv ) {
   node *n = alloc_node(tid);
   pq_node *pn = &n->data;
   pn->key = kv_key(kv);
@@ -661,8 +661,8 @@ void splay_insert( rtems_task_argument tid, uint64_t kv ) {
   spenq( &n->st_node, &the_tree[tid] );
 }
 
-uint64_t splay_min(rtems_task_argument tid ) {
-  uint64_t kv;
+long splay_min(rtems_task_argument tid ) {
+  long kv;
   splay_tree_node *stn;
   node *n;
   pq_node *p;
@@ -685,11 +685,11 @@ uint64_t splay_min(rtems_task_argument tid ) {
     kv = PQ_NODE_TO_KV(p);
     return kv;
   } 
-  return (uint64_t)-1; // FIXME: error handling
+  return (long)-1; // FIXME: error handling
 }
 
-uint64_t splay_pop_min( rtems_task_argument tid) {
-  uint64_t kv;
+long splay_pop_min( rtems_task_argument tid) {
+  long kv;
   node *n;
   pq_node *p;
   splay_tree_node *stn;
@@ -703,13 +703,13 @@ uint64_t splay_pop_min( rtems_task_argument tid) {
     kv = PQ_NODE_TO_KV(p);
     free_node(tid,n);
   } else {
-    kv = (uint64_t)-1;
+    kv = (long)-1;
   }
   return kv;
 }
 
-uint64_t splay_search( rtems_task_argument tid, int k) {
-  uint64_t kv;
+long splay_search( rtems_task_argument tid, int k) {
+  long kv;
   splay_tree_node *stn;
   splay_tree *tree;
   node *n;
@@ -722,13 +722,13 @@ uint64_t splay_search( rtems_task_argument tid, int k) {
     assert(p->key == stn->key);
     kv = PQ_NODE_TO_KV(p);
   } else {
-    kv = (uint64_t)-1;
+    kv = (long)-1;
   }
   return kv;
 }
 
-uint64_t splay_extract( rtems_task_argument tid, int k) {
-  uint64_t kv;
+long splay_extract( rtems_task_argument tid, int k) {
+  long kv;
   splay_tree_node *stn;
   splay_tree *tree;
   node *n;
@@ -743,7 +743,7 @@ uint64_t splay_extract( rtems_task_argument tid, int k) {
     kv = PQ_NODE_TO_KV(p);
     free_node(tid, n);
   } else {
-    kv = (uint64_t)-1;
+    kv = (long)-1;
   }
   return kv;
 }
