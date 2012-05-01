@@ -34,13 +34,25 @@ static void initialize_helper(rtems_task_argument tid, int size) {
   }
   sl->level = 0; /* start at the bottom */
 
-  srand48(seed());
+  srand(seed());
+}
+
+static inline int next_random_bit() {
+  static uint32_t random_stream = 0;
+  int rv;
+
+  if ( random_stream == 0 ) {
+    random_stream = rand();
+  }
+  rv = random_stream & 1;
+  random_stream >>= 1;
+  return rv;
 }
 
 static inline int randomLevel()
 {
   int level = 0;
-  while (drand48() < 0.5 && level < MAXLEVEL-1) // FIXME: hard-coded p
+  while (next_random_bit() && level < MAXLEVEL-1) // FIXME: hard-coded p
     level++;
   return level;
 }
@@ -191,7 +203,6 @@ static inline long extract_helper(rtems_task_argument tid, int key)
       for ( i = upper_level; i > 0; i-- ) {
         if ( rtems_chain_is_empty(&sl->lists[i]) ) {
           sl->level--;
-          printk("%d\n", sl->level);
         }
       }
       free_node(tid, x_node);
