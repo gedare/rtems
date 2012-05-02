@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#define GAB_PRINT
+//#define GAB_PRINT
 #define GAB_DEBUG
 #define GAB_CHECK
 
@@ -16,7 +16,7 @@ extern "C" {
 #include "rtems/rtems/types.h"
 #include "params.h"
 
-#define kv_value(kv) (kv & ~((~0U)<<(sizeof(long)*4U)))
+#define kv_value(kv) (kv & ~((~0UL)<<(sizeof(long)*4L)))
 #define kv_key(kv)   (kv>>(sizeof(long)*4L))
 
 typedef enum {

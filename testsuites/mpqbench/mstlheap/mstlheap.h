@@ -7,11 +7,12 @@
 #define __MSTLHEAP_H_
 
 #include "rtems/rtems/types.h"
+#include "../shared/pqbench.h"
 
 #include <algorithm>
 #include <vector>
 
-#define PQ_NODE_TO_KV(n) ((((uint64_t)n->key) << 32UL) | (uint64_t)n->val)
+#define PQ_NODE_TO_KV(n) ((((long)n->key) << 32UL) | (long)n->val)
 
 class pq_node_t {
   public:
@@ -20,7 +21,7 @@ class pq_node_t {
       this->val = val;
     }
     
-    pq_node_t(uint64_t kv) {
+    pq_node_t(long kv) {
       this->key = kv_key(kv);
       this->val = kv_value(kv);
     }
@@ -36,12 +37,12 @@ class pq_t {
 
     ~pq_t() { ; }
 
-    uint64_t first();
-    uint64_t pop();
+    long first();
+    long pop();
 
-    void insert(uint64_t kv);
-    uint64_t search( int key );
-    uint64_t extract( int key );
+    void insert(long kv);
+    long search( int key );
+    long extract( int key );
 
     class pq_node_min_compare {
       public:
