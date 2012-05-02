@@ -7,7 +7,7 @@
  *  code.
  */
  
-/**
+/*
  *  Copyright (c) 2010-2012 Gedare Bloom.
  *
  *  The license and distribution terms for this file may be
