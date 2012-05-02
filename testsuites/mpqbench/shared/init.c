@@ -38,7 +38,6 @@
 static uint32_t  tasks_completed;
 static rtems_id  tasks_complete_sem;
 static rtems_id  final_barrier;
-static uint32_t  Instructions_per_us;
 
 rtems_id   Task_id[ 1+NUM_TASKS ];
 rtems_name Task_name[ 1+NUM_TASKS ];
@@ -84,7 +83,6 @@ rtems_task PQ_Periodic_Task(rtems_task_argument argument)
     if (rtems_rate_monotonic_period(rmid, Periods[argument])==RTEMS_TIMEOUT) {
       puts("Error: deadline missed!\n");
     }
-    //busy_wait( Execution_us[argument], Instructions_per_us );
   }
   /* Shouldn't reach here. */
 
