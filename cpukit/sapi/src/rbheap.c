@@ -107,7 +107,7 @@ rtems_status_code rtems_rbheap_initialize(
 
       rtems_chain_initialize_empty(free_chain);
       rtems_chain_initialize_empty(&control->spare_descriptor_chain);
-      rtems_rbtree_initialize_empty(chunk_tree, chunk_compare, true);
+      rtems_rbtree_initialize_empty(chunk_tree, chunk_compare, false);
       control->alignment = alignment;
       control->handler_arg = handler_arg;
       control->extend_descriptors = extend_descriptors;

@@ -145,8 +145,8 @@ typedef struct {
    * has higher key than second, -1 if lower, 0 if equal.
    */
   RBTree_Compare_function compare_function;
-  /** Determines whether the tree accepts duplicate keys. */
-  bool is_unique;
+  /** True if the tree keeps nodes with duplicate keys in FIFO order. */
+  bool is_stable;
 } RBTree_Control;
 
 /**
@@ -159,7 +159,7 @@ typedef struct {
   .first[0] = NULL, \
   .first[1] = NULL, \
   .compare_function = NULL, \
-  .is_unique = 0 \
+  .is_stable = false \
 }
 
 /**
@@ -198,7 +198,7 @@ void _RBTree_Initialize(
   void                    *starting_address,
   size_t                   number_nodes,
   size_t                   node_size,
-  bool                     is_unique
+  bool                     is_stable
 );
 
 /**

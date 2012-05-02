@@ -41,7 +41,7 @@ void _Scheduler_EDF_Initialize(void)
   _RBTree_Initialize_empty(
       &_Scheduler_EDF_Ready_queue,
       &_Scheduler_EDF_RBTree_compare_function,
-      0
+      true
   );
 }
 

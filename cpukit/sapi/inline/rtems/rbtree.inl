@@ -37,11 +37,11 @@ RTEMS_INLINE_ROUTINE void rtems_rbtree_initialize(
   void                          *starting_address,
   size_t                         number_nodes,
   size_t                         node_size,
-  bool                           is_unique
+  bool                           is_stable
 )
 {
   _RBTree_Initialize( the_rbtree, compare_function, starting_address,
-    number_nodes, node_size, is_unique);
+    number_nodes, node_size, is_stable);
 }
 
 /**
@@ -52,10 +52,10 @@ RTEMS_INLINE_ROUTINE void rtems_rbtree_initialize(
 RTEMS_INLINE_ROUTINE void rtems_rbtree_initialize_empty(
   rtems_rbtree_control          *the_rbtree,
   rtems_rbtree_compare_function  compare_function,
-  bool                           is_unique
+  bool                           is_stable
 )
 {
-  _RBTree_Initialize_empty( the_rbtree, compare_function, is_unique );
+  _RBTree_Initialize_empty( the_rbtree, compare_function, is_stable );
 }
 
 /**
@@ -486,13 +486,13 @@ RTEMS_INLINE_ROUTINE rtems_rbtree_node *rtems_rbtree_insert(
   return _RBTree_Insert( the_rbtree, the_node );
 }
 
-/** @brief Determines whether the tree is unique
+/** @brief Determines whether the tree sorts node in stable (FIFO) order.
  */
-RTEMS_INLINE_ROUTINE bool rtems_rbtree_is_unique(
+RTEMS_INLINE_ROUTINE bool rtems_rbtree_is_stable(
   const rtems_rbtree_control *the_rbtree
 )
 {
-  return _RBTree_Is_unique(the_rbtree);
+  return _RBTree_Is_stable(the_rbtree);
 }
 
 #endif

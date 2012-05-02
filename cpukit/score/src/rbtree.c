@@ -37,7 +37,7 @@ void _RBTree_Initialize(
   void                    *starting_address,
   size_t                   number_nodes,
   size_t                   node_size,
-  bool                     is_unique
+  bool                     is_stable
 )
 {
   size_t      count;
@@ -47,7 +47,7 @@ void _RBTree_Initialize(
   if (!the_rbtree) return;
 
   /* could do sanity checks here */
-  _RBTree_Initialize_empty(the_rbtree, compare_function, is_unique);
+  _RBTree_Initialize_empty(the_rbtree, compare_function, is_stable);
 
   count = number_nodes;
   next  = starting_address;

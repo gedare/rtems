@@ -245,7 +245,7 @@ RTEMS_INLINE_ROUTINE bool _RBTree_Is_root(
 RTEMS_INLINE_ROUTINE void _RBTree_Initialize_empty(
     RBTree_Control          *the_rbtree,
     RBTree_Compare_function  compare_function,
-    bool                     is_unique
+    bool                     is_stable
     )
 {
   the_rbtree->permanent_null   = NULL;
@@ -253,7 +253,7 @@ RTEMS_INLINE_ROUTINE void _RBTree_Initialize_empty(
   the_rbtree->first[0]         = NULL;
   the_rbtree->first[1]         = NULL;
   the_rbtree->compare_function = compare_function;
-  the_rbtree->is_unique        = is_unique;
+  the_rbtree->is_stable        = is_stable;
 }
 
 /** @brief Return a pointer to node's grandparent
@@ -362,7 +362,7 @@ RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Find_unprotected(
     compare_result = the_rbtree->compare_function(the_node, iter_node);
     if ( _RBTree_Is_equal( compare_result ) ) {
       found = iter_node;
-      if ( the_rbtree->is_unique )
+      if ( !the_rbtree->is_stable )
         break;
     }
 
@@ -485,13 +485,13 @@ RTEMS_INLINE_ROUTINE void _RBTree_Rotate(
   the_node->parent = c;
 }
 
-/** @brief Determines whether the tree is unique
+/** @brief True if @a the_rbtree stores duplicates in stable (FIFO) order.
  */
-RTEMS_INLINE_ROUTINE bool _RBTree_Is_unique(
+RTEMS_INLINE_ROUTINE bool _RBTree_Is_stable(
   const RBTree_Control *the_rbtree
 )
 {
-  return( the_rbtree && the_rbtree->is_unique );
+  return( the_rbtree && the_rbtree->is_stable );
 }
 /**@}*/
 

@@ -4,8 +4,6 @@
  *  The license and distribution terms for this file may be
  *  found in the file LICENSE in this distribution or at
  *  http://www.rtems.com/license/LICENSE.
- *
- *  $Id$
  */
 
 #ifdef HAVE_CONFIG_H
@@ -15,6 +13,17 @@
 #include <tmacros.h>
 #include <rtems/rbtree.h>
 
+/* configuration information */
+#define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
+#define CONFIGURE_APPLICATION_DOES_NOT_NEED_CLOCK_DRIVER
+
+#define CONFIGURE_RTEMS_INIT_TASKS_TABLE
+#define CONFIGURE_MAXIMUM_TASKS 1
+
+#define CONFIGURE_INIT
+#include <rtems/confdefs.h>
+
+/* global variables */
 int numbers[20] = {
 52, 99, 0, 85, 43, 44, 10, 60, 50, 19, 8, 68, 48, 57, 17, 67, 90, 12, 77, 71};
 
@@ -85,8 +94,6 @@ static int rb_assert ( rtems_rbtree_node *root )
   }
 }
 
-
-
 rtems_task Init(
     rtems_task_argument ignored
     )
@@ -102,12 +109,12 @@ rtems_task Init(
   puts( "\n\n*** TEST OF RTEMS RBTREE API ***" );
 
   puts( "Init - Initialize rbtree empty" );
-  rtems_rbtree_initialize_empty( &rbtree1, &test_compare_function, true );
+  rtems_rbtree_initialize_empty( &rbtree1, &test_compare_function, false );
 
-  if ( !rtems_rbtree_is_unique( &rbtree1 ) )
-    puts( "INIT - FAILED IS UNIQUE CHECK" );
-  if ( rtems_rbtree_is_unique( NULL ) )
-    puts( "INIT - FAILED IS UNIQUE CHECK" );
+  if ( rtems_rbtree_is_stable( &rbtree1 ) )
+    puts( "INIT - FAILED IS STABLE CHECK" );
+  if ( rtems_rbtree_is_stable( NULL ) )
+    puts( "INIT - FAILED IS STABLE CHECK" );
 
   /* verify that the rbtree insert work */
   puts( "INIT - Verify rtems_rbtree_insert with two nodes" );
@@ -152,35 +159,6 @@ rtems_task Init(
     puts("INIT - NOT ENOUGH NODES ON RBTREE");
     rtems_test_exit(0);
   }
-
-  puts("INIT - Verify rtems_rbtree_insert with the same value twice");
-  node2.key = node1.key;
-  rtems_rbtree_insert(&rbtree1, &node1.Node);
-  p = rtems_rbtree_insert(&rbtree1, &node2.Node);
-
-  if (p != &node1.Node)
-    puts( "INIT - FAILED DUPLICATE INSERT" );
-
-  for ( p = rtems_rbtree_get_min(&rbtree1), id = 1 ; p ;
-      p = rtems_rbtree_get_min(&rbtree1) , id++ ) {
-    test_node *t = rtems_rbtree_container_of(p,test_node,Node);
-    if ( id > 1 ) {
-      puts( "INIT - TOO MANY NODES ON RBTREE" );
-      rtems_test_exit(0);
-    }
-    if ( t->id != id ) {
-      puts( "INIT - ERROR ON RBTREE ID MISMATCH" );
-      rtems_test_exit(0);
-    }
-
-    if (!rb_assert(rbtree1.root) )
-      puts( "INIT - FAILED TREE CHECK" );
-  }
-  if (id < 1) {
-    puts("INIT - NOT ENOUGH NODES ON RBTREE");
-    rtems_test_exit(0);
-  }
-  node2.key = 2;
 
   /* verify that the rbtree is empty */
   puts( "INIT - Verify rtems_rbtree_is_empty" );
@@ -569,12 +547,37 @@ rtems_task Init(
 
   /* Initialize the tree for duplicate keys */
   puts( "Init - Initialize duplicate rbtree empty" );
-  rtems_rbtree_initialize_empty( &rbtree1, &test_compare_function, false );
+  rtems_rbtree_initialize_empty( &rbtree1, &test_compare_function, true );
 
-  if ( rtems_rbtree_is_unique( &rbtree1 ) )
-    puts( "INIT - FAILED IS UNIQUE CHECK" );
-  if ( rtems_rbtree_is_unique( NULL ) )
-    puts( "INIT - FAILED IS UNIQUE CHECK" );
+  if ( !rtems_rbtree_is_stable( &rbtree1 ) )
+    puts( "INIT - FAILED IS STABLE CHECK" );
+
+  puts ( "INIT - Verify stable duplicates" );
+  for (i = 0; i < 10; i++) {
+    node_array[i].id = i;
+  }
+  node_array[0].key = 3;
+  node_array[1].key = 3;
+  node_array[2].key = 3;
+  node_array[3].key = 3;
+  node_array[4].key = 3;
+  node_array[5].key = 1;
+  node_array[6].key = 2;
+  for (i = 0; i < 7; i++) {
+    rtems_rbtree_insert( &rbtree1, &node_array[i].Node );
+
+    if (!rb_assert(rbtree1.root) )
+      puts( "INIT - FAILED TREE CHECK" );
+  }
+  search_node.key = 3;
+  p = rtems_rbtree_find(&rbtree1, &search_node.Node);
+  if(rtems_rbtree_container_of(p,test_node,Node)->id != 0) {
+    puts ("INIT - ERROR ON RBTREE ID MISMATCH");
+    rtems_test_exit(0);
+  }
+
+  for ( p = rtems_rbtree_get_min(&rbtree1), id = 0 ; p ;
+      p = rtems_rbtree_get_min(&rbtree1) , id++ );
 
   puts( "INIT - Verify rtems_rbtree_insert with 100 nodes value [0,99]" );
   for (i = 0; i < 100; i++) {
@@ -661,16 +664,3 @@ rtems_task Init(
   puts( "*** END OF RTEMS RBTREE API TEST ***" );
   rtems_test_exit(0);
 }
-
-/* configuration information */
-
-#define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
-#define CONFIGURE_APPLICATION_DOES_NOT_NEED_CLOCK_DRIVER
-
-#define CONFIGURE_RTEMS_INIT_TASKS_TABLE
-#define CONFIGURE_MAXIMUM_TASKS 1
-
-#define CONFIGURE_INIT
-#include <rtems/confdefs.h>
-
-/* global variables */
