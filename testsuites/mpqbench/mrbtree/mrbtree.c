@@ -22,12 +22,7 @@ int rbtree_compare(
   int key1 = rtems_rbtree_container_of( n1, node, rbt_node )->data.key; 
   int key2 = rtems_rbtree_container_of( n2, node, rbt_node )->data.key;
 
-  if (key1 > key2) 
-    return 1;
-  else if (key1 < key2) 
-    return -1;
-  else 
-    return 0;
+  return key1 - key2;
 }
 
 #if 0
