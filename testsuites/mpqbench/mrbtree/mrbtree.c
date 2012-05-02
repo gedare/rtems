@@ -143,7 +143,7 @@ void rbtree_insert( rtems_task_argument tid,  long kv ) {
   pq_node *pn = &n->data;
   pn->key = kv_key(kv);
   pn->val = kv_value(kv);
-  rtems_rbtree_insert( &the_rbtree[tid], &n->rbt_node );
+  rtems_rbtree_insert_unprotected( &the_rbtree[tid], &n->rbt_node );
 }
 
 long rbtree_min( rtems_task_argument tid ) {
@@ -169,7 +169,7 @@ long rbtree_pop_min( rtems_task_argument tid ) {
   node *n;
   pq_node *p;
 
-  rn = rtems_rbtree_get_min(&the_rbtree[tid]);
+  rn = rtems_rbtree_get_min_unprotected(&the_rbtree[tid]);
 
   if ( rn ) {
     n = rtems_rbtree_container_of(rn, node, rbt_node);
@@ -193,7 +193,7 @@ long rbtree_search( rtems_task_argument tid, int k )
 
   search_node.data.key = k;
 
-  rn = rtems_rbtree_find(&the_rbtree[tid], &search_node.rbt_node);
+  rn = rtems_rbtree_find_unprotected(&the_rbtree[tid], &search_node.rbt_node);
   if ( rn ) {
     n = rtems_rbtree_container_of(rn, node, rbt_node);
     p = &n->data;
@@ -215,9 +215,9 @@ long rbtree_extract( rtems_task_argument tid, int k )
 
   search_node.data.key = k;
 
-  rn = rtems_rbtree_find(&the_rbtree[tid], &search_node.rbt_node);
+  rn = rtems_rbtree_find_unprotected(&the_rbtree[tid], &search_node.rbt_node);
   if ( rn ) {
-    rtems_rbtree_extract(&the_rbtree[tid], rn);
+    rtems_rbtree_extract_unprotected(&the_rbtree[tid], rn);
     n = rtems_rbtree_container_of(rn, node, rbt_node);
     p = &n->data;
     kv = PQ_NODE_TO_KV(p);
