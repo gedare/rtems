@@ -19,7 +19,7 @@ typedef struct {
   uint32_t val;
 } pq_node;
 
-int rbtree_compare(
+static int rbtree_compare(
   rtems_rbtree_node* n1,
   rtems_rbtree_node* n2
 ) {

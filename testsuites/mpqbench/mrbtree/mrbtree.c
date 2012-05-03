@@ -15,7 +15,7 @@ void free_node(rtems_task_argument tid, node *n) {
   rtems_chain_append_unprotected( &freelist[tid], n );
 }
 
-int rbtree_compare(
+static int rbtree_compare(
   rtems_rbtree_node* n1,
   rtems_rbtree_node* n2
 ) {
