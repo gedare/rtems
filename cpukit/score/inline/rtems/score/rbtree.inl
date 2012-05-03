@@ -341,39 +341,6 @@ RTEMS_INLINE_ROUTINE bool _RBTree_Is_lesser(
   return compare_result < 0;
 }
 
-/** @brief Find the node with given key in the tree
- *
- *  This function returns a pointer to the node in @a the_rbtree 
- *  having key equal to key of  @a the_node if it exists,
- *  and NULL if not. @a the_node has to be made up before a search.
- *
- *  @note If the tree is not unique and contains duplicate keys, the set
- *        of duplicate keys acts as FIFO.
- */
-RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Find_unprotected(
-    RBTree_Control *the_rbtree,
-    RBTree_Node *the_node
-    )
-{
-  RBTree_Node* iter_node = the_rbtree->root;
-  RBTree_Node* found = NULL;
-  int compare_result;
-  while (iter_node) {
-    compare_result = the_rbtree->compare_function(the_node, iter_node);
-    if ( _RBTree_Is_equal( compare_result ) ) {
-      found = iter_node;
-      if ( !the_rbtree->is_stable )
-        break;
-    }
-
-    RBTree_Direction dir =
-      (RBTree_Direction) _RBTree_Is_greater( compare_result );
-    iter_node = iter_node->child[dir];
-  } /* while(iter_node) */
-
-  return found;
-}
-
 /**
  * @brief Returns the predecessor of a node.
  *
@@ -489,6 +456,33 @@ RTEMS_INLINE_ROUTINE bool _RBTree_Is_stable(
 {
   return( the_rbtree && the_rbtree->is_stable );
 }
+
+/**
+ * @brief Returns the closest common ancestor of two nodes.
+ *
+ */
+RTEMS_INLINE_ROUTINE RBTree_Node* _RBTree_Common_ancestor(
+  const RBTree_Control *the_rbtree,
+  const RBTree_Node *the_node,
+  RBTree_Node *finger
+)
+{
+  int compare_result;
+  RBTree_Direction dir;
+  RBTree_Node* ancestor = finger;
+
+  while ( finger->parent->parent ) {
+    compare_result = the_rbtree->compare_function(the_node, finger->parent);
+    dir = (RBTree_Direction)_RBTree_Is_greater( compare_result );
+    if ( finger != finger->parent->child[dir] ) {
+      /* finger is not on path between the_node and root. reset ancestor. */
+      ancestor = finger->parent;
+    }
+    finger = finger->parent;
+  }
+  return ancestor;
+}
+
 /**@}*/
 
 #endif

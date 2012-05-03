@@ -262,14 +262,8 @@ RTEMS_INLINE_ROUTINE rtems_rbtree_node* rtems_rbtree_find_unprotected(
   return _RBTree_Find_unprotected( the_rbtree, the_node );
 }
 
-/** @brief Find the node with given key in the tree
- *
- *  This function returns a pointer to the node having key equal to the key
- *  of @a the_node if it exists within @a the_rbtree, and NULL if not.
- *  @a the_node has to be made up before a search.
- *
- *  @note If the tree is not unique and contains duplicate keys, the set
- *        of duplicate keys acts as FIFO.
+/**
+ * @copydoc _RBTree_Find()
  */
 RTEMS_INLINE_ROUTINE rtems_rbtree_node* rtems_rbtree_find(
   rtems_rbtree_control *the_rbtree,
@@ -277,6 +271,18 @@ RTEMS_INLINE_ROUTINE rtems_rbtree_node* rtems_rbtree_find(
 )
 {
   return _RBTree_Find( the_rbtree, the_node );
+}
+
+/**
+ * @copydoc _RBTree_Find_finger()
+ */
+RTEMS_INLINE_ROUTINE rtems_rbtree_node* rtems_rbtree_find_finger(
+  rtems_rbtree_control *the_rbtree,
+  rtems_rbtree_node *the_node,
+  rtems_rbtree_node *finger
+)
+{
+  return _RBTree_Find_finger( the_rbtree, the_node, finger );
 }
 
 /**
@@ -464,15 +470,7 @@ RTEMS_INLINE_ROUTINE rtems_rbtree_node *rtems_rbtree_insert_unprotected(
 }
 
 /**
- *  @brief Insert a node on a rbtree
- *
- *  This routine inserts @a the_node on @a the_rbtree.
- *  It disables interrupts to ensure the atomicity of the insert operation.
- *
- *  @retval 0 Successfully inserted.
- *  @retval -1 NULL @a the_node.
- *  @retval RBTree_Node* if one with equal key to the key of @a the_node exists
- *          in an unique @a the_rbtree.
+ * @copydoc _RBTree_Insert()
  */
 RTEMS_INLINE_ROUTINE rtems_rbtree_node *rtems_rbtree_insert(
   rtems_rbtree_control *the_rbtree,
@@ -480,6 +478,18 @@ RTEMS_INLINE_ROUTINE rtems_rbtree_node *rtems_rbtree_insert(
 )
 {
   return _RBTree_Insert( the_rbtree, the_node );
+}
+
+/**
+ * @copydoc _RBTree_Insert_finger()
+ */
+RTEMS_INLINE_ROUTINE void rtems_rbtree_insert_finger(
+  rtems_rbtree_control *the_rbtree,
+  rtems_rbtree_node *the_node,
+  rtems_rbtree_node *finger
+)
+{
+  _RBTree_Insert_finger( the_rbtree, the_node, finger );
 }
 
 /** @brief Determines whether the tree sorts node in stable (FIFO) order.
