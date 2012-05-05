@@ -76,11 +76,14 @@ static void insert_helper(rtems_task_argument tid, node *new_node)
   // search left-right top-bottom
   for ( i = upper_level; i >= 0; i-- ) {
     list = &sl->lists[i];
-    x_forward = rtems_chain_next(x);
+    if ( rtems_chain_is_tail(list, x) ) {
+      x_forward = x;
+    } else {
+      x_forward = rtems_chain_next(x);
+    }
     /* Find the rightmost node of level i that is left of the insert point */
-    while (!rtems_chain_is_tail(list, x) &&
-           !rtems_chain_is_tail(list, x_forward) &&
-           LINK_TO_NODE(x_forward, i)->data.key < key) {
+    while ( !rtems_chain_is_tail(list, x_forward) &&
+            LINK_TO_NODE(x_forward, i)->data.key < key ) {
       x = x_forward;
       x_forward = rtems_chain_next(x);
     }
