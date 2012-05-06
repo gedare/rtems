@@ -259,7 +259,7 @@ static void print_skiplist( skiplist *sl ) {
   printf("\n");
 }
 
-static void skiplist_promote(
+static rtems_chain_node* skiplist_promote(
     skiplist *sl,
     rtems_chain_node *x,
     node *promote_me,
@@ -267,13 +267,16 @@ static void skiplist_promote(
     int index
 )
 {
+  rtems_chain_node *rv = x;
   if ( index <= top || sl->level < MAXLEVEL-1 ) { 
     rtems_chain_insert_unprotected(x, &(promote_me->link[index]));
+    rv = &(promote_me->link[index]);
     promote_me->height++;
     if ( index > top ) {
       sl->level++;
     }
   }
+  return rv;
 }
 
 static rtems_chain_node* skiplist_demote(
@@ -283,10 +286,9 @@ static rtems_chain_node* skiplist_demote(
 )
 {
   rtems_chain_node *x = &(demote_me->link[index]);
-  rtems_chain_node *rv = rtems_chain_previous(x);
   rtems_chain_extract_unprotected(x);
   demote_me->height--;
-  return rv;
+  return &(demote_me->link[index-1]);
 }
 
 static void
@@ -331,71 +333,6 @@ skiplist_fix_after_insert(skiplist *sl, rtems_chain_node **update, int top)
   }
 }
 
-static void
-skiplist_fix_after_extract(skiplist *sl, rtems_chain_node **update, int top)
-{
-  int i;
-  int count;
-  rtems_chain_node *x;
-  rtems_chain_node *xf;
-  rtems_chain_node *xd;
-  rtems_chain_node *xfd;
-  rtems_chain_node *iter;
-  rtems_chain_node *promote;
-  node *p_node;
-  rtems_chain_node *demote;
-  node *d_node;
-
-  /* 
-   * trace back through the skiplist fixing violations
-   */
-  for ( i = 0; i <= top; i++ ) {
-    x = update[i + 1];
-    xf = skiplist_right(sl, x, i+1);
-    xd = skiplist_down(sl, x, i+1);
-    xfd = skiplist_down(sl, xf, i+1);
-    iter = xd;
-    count = -1;
-    while ( iter != xfd ) {
-      count++;
-      iter = rtems_chain_next(iter);
-    }
-    if ( count > 3 ) {
-      printf("ERROR: INVALID COUNT: %d\n", count);
-    }
-    if ( count > 2 ) {
-      promote = xd;
-      promote = rtems_chain_next(xd);
-      promote = rtems_chain_next(promote);
-      p_node = LINK_TO_NODE(promote, i);
-      skiplist_promote(sl, x, p_node, top, i+1);
-    } else if ( count == 0 ) {
-      /* BROKEN
-      if ( rtems_chain_is_empty(&sl->lists[i+1]) ) {
-        printf("empty list in fix after extract\n");
-        break; // done. 
-      }
-      if ( !rtems_chain_is_head(&sl->lists[i+1], x) ) {
-        d_node = LINK_TO_NODE(x, i+1);
-        update[i+1] = skiplist_demote(sl, d_node, i+1);
-      } else {
-        d_node = LINK_TO_NODE(xf, i+1);
-        skiplist_demote(sl, d_node, i+1);
-      }
-      i--; // reprocess level.
-      */
-    }
-  }
-
-  for ( i = top; i > 0; i-- ) {
-    if ( rtems_chain_is_empty(&sl->lists[i]) ) {
-      sl->level--;
-    } else {
-      break;
-    }
-  }
-
-}
 static void insert_helper(rtems_task_argument tid, node *new_node)
 {
   rtems_chain_node *x;
@@ -471,6 +408,31 @@ static node* search_helper(rtems_task_argument tid, int key)
   return LINK_TO_NODE(x, 0);
 }
 
+static inline int count_from(skiplist *sl, rtems_chain_node *x, int index)
+{
+  rtems_chain_node *x_f;
+  rtems_chain_node *x_fd;
+  rtems_chain_node *x_d;
+  rtems_chain_node *iter;
+  node *x_node;
+  node *xf_node;
+  int count;
+
+  x_f = skiplist_right(sl, x, index);
+  xf_node = LINK_TO_NODE(x_f, index);
+  x_fd = &(xf_node->link[index-1]);
+  x_node = LINK_TO_NODE(x, index);
+  x_d = &(x_node->link[index-1]);
+
+  iter = rtems_chain_next(x_d);
+  count = 0;
+  while ( iter != x_fd ) {
+    iter = rtems_chain_next(iter);
+    count++;
+  }
+  return count;
+}
+
 static inline long extract_helper(rtems_task_argument tid, int key)
 {
   // TODO: perhaps mark node for deletion and deal with later.
@@ -499,6 +461,38 @@ static inline long extract_helper(rtems_task_argument tid, int key)
       x_f = rtems_chain_next(x);
       xf_node = LINK_TO_NODE(x_f, i);
     }
+    if ( i ) {
+      if ( rtems_chain_is_head(list, x) ) {
+        int count = count_from(sl, x, i);
+        if ( count == 1 ) {
+          count = count_from(sl, x_f, i);
+          x_f = skiplist_demote(sl, xf_node, i);
+          if ( count > 1 ) {
+            rtems_chain_node *n = rtems_chain_next(x_f);
+            node *n_node = LINK_TO_NODE(n, i-1);
+            n = skiplist_promote(sl, x, n_node, top, i);
+            if ( n_node->data.key < key ) {
+              x = n;
+            }
+          }
+        }
+      } else {
+        rtems_chain_node *x_b = rtems_chain_previous(x);
+        int count = count_from(sl, x, i);
+        if ( count == 1) {
+          x_node = LINK_TO_NODE(x, i);
+          x = skiplist_demote(sl, x_node, i);
+          count = count_from(sl, x_b, i);
+          if ( count > 1 ) {
+            rtems_chain_node *n = rtems_chain_previous(x);
+            node *n_node = LINK_TO_NODE(n, i-1);
+            x = skiplist_promote(sl, x_b, n_node, top, i);
+          } else {
+            x = x_b;
+          }
+        } 
+      }
+    }
     update[i] = x;
     x = skiplist_down(sl, x, i);
   }
@@ -513,7 +507,13 @@ static inline long extract_helper(rtems_task_argument tid, int key)
           break;
         rtems_chain_extract_unprotected(&x_node->link[i]);
       }
-      skiplist_fix_after_extract(sl, update, top);
+      for ( i = top; i > 0; i-- ) {
+        if ( rtems_chain_is_empty(&sl->lists[i]) ) {
+          sl->level--;
+        } else {
+          break;
+        }
+      }
       free_node(tid, x_node);
     } else {
       kv = (long)-1;
