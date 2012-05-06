@@ -164,11 +164,13 @@ rtems_chain_node* skiplist_down(skiplist *sl, rtems_chain_node *x, int index)
 
   list = &sl->lists[index];
   downlist = &sl->lists[index-1];
-  if ( !rtems_chain_is_head(list, x) ) {
+  if ( rtems_chain_is_head(list, x) ) {
+    x_down = rtems_chain_head(downlist);
+  } else if ( rtems_chain_is_tail(list, x) ) {
+    x_down = rtems_chain_tail(downlist);
+  } else {
     x_node = LINK_TO_NODE(x, index);
     x_down = &(x_node->link[index-1]);
-  } else {
-    x_down = rtems_chain_head(downlist);
   }
   return x_down;
 }
@@ -257,7 +259,7 @@ static void print_skiplist( skiplist *sl ) {
   printf("\n");
 }
 
-static rtems_chain_node* skiplist_promote(
+static void skiplist_promote(
     skiplist *sl,
     rtems_chain_node *x,
     node *promote_me,
@@ -265,34 +267,69 @@ static rtems_chain_node* skiplist_promote(
     int index
 )
 {
-  if ( index < top || sl->level < MAXLEVEL-1 ) { 
+  if ( index <= top || sl->level < MAXLEVEL-1 ) { 
     rtems_chain_insert_unprotected(x, &(promote_me->link[index]));
-    if ( index == top ) {
+    promote_me->height++;
+    if ( index > top ) {
       sl->level++;
     }
   }
-  return x;
+}
+
+static void skiplist_fixup(skiplist *sl, rtems_chain_node **update, int top)
+{
+  int i;
+  int count;
+  rtems_chain_node *x;
+  rtems_chain_node *xf;
+  rtems_chain_node *xd;
+  rtems_chain_node *xfd;
+  rtems_chain_node *iter;
+  rtems_chain_node *promote;
+  node *p_node;
+
+  /* 
+   * trace back through the skiplist fixing violations
+   */
+  for ( i = 0; i <= top; i++ ) {
+    x = update[i + 1];
+    xf = skiplist_right(sl, x, i+1);
+    xd = skiplist_down(sl, x, i+1);
+    xfd = skiplist_down(sl, xf, i+1);
+    iter = xd;
+    count = -1;
+    while ( iter != xfd ) {
+      count++;
+      iter = rtems_chain_next(iter);
+    }
+    if ( count > 3 ) {
+      printf("ERROR: INVALID COUNT: %d\n", count);
+    }
+    if ( count > 2 ) {
+      promote = xd;
+      promote = rtems_chain_next(xd);
+      promote = rtems_chain_next(promote);
+      p_node = LINK_TO_NODE(promote, i);
+      skiplist_promote(sl, x, p_node, top, i+1);
+    } else {
+      break;
+    }
+  }
 }
 
 static void insert_helper(rtems_task_argument tid, node *new_node)
 {
   rtems_chain_node *x;
   rtems_chain_node *x_f;  /* x_f */
-  rtems_chain_node *x_d;
-  rtems_chain_node *x_df;
-  rtems_chain_node *x_dff;
-  rtems_chain_node *x_fd;
   node *xf_node;
-  node *xdf_node;
-  node *xdff_node;
   rtems_chain_control *list;
-  rtems_chain_control *downlist;
   skiplist *sl = &the_skiplist[tid];  /* list */
-  int upper_level = sl->level + 1;    /* list->level */
+  int upper_level = sl->level;    /* list->level */
   int key = new_node->data.key;       /* searchKey */
   int i;
-  int new_level = 0;
   rtems_chain_node *update[MAXLEVEL+1];
+
+  update[upper_level + 1] = rtems_chain_head(&sl->lists[upper_level+1]);
 
   list = &sl->lists[upper_level]; /* top */
   x = rtems_chain_head(list); /* left */
@@ -300,83 +337,12 @@ static void insert_helper(rtems_task_argument tid, node *new_node)
   for ( i = upper_level; i >= 0; i-- ) {
     list = &sl->lists[i];
     x_f = skiplist_right(sl, x, i);
+    xf_node = LINK_TO_NODE(x_f, i);
     /* Find the rightmost node of level i that is left of the insert point */
-    while ( !rtems_chain_is_tail(list, x_f) &&
-            LINK_TO_NODE(x_f, i)->data.key < key ) {
+    while ( !rtems_chain_is_tail(list, x_f) && xf_node->data.key < key ) {
       x = x_f;
       x_f = rtems_chain_next(x);
-    }
-
-    /* move down to next level if it exists.
-     * see if the next level down needs a promotion.
-     * we could store widths to facilitate this check? */
-    if ( i ) {
-      /* promote the next->next vertical list at level i-1 if it exists and
-       * has key less than the next vertical list at level i, i.e. if there
-       * exist two vertical lists between x and x_f */
-      downlist = &(sl->lists[i-1]);
-      x_d = skiplist_down(sl, x, i);
-      x_df = skiplist_right(sl, x_d, i-1);
-      x_dff = skiplist_right(sl, x_df, i-1);
-      /*
-      x_fd = skiplist_down(sl, x_f, i);
-      printf("x: "); print_skiplist_node(x, i); printf("\n");
-      printf("x_f: "); print_skiplist_node(x_f, i); printf("\n");
-      printf("x_fd: "); print_skiplist_node(x_fd, i-1); printf("\n");
-      printf("x_dff: "); print_skiplist_node(x_dff, i-1); printf("\n");
-      */
-      if ( !rtems_chain_is_tail(downlist, x_dff)) {
-        xf_node = LINK_TO_NODE(x_f, i);
-        xdff_node = LINK_TO_NODE(x_dff, i-1);
-        if ( rtems_chain_is_tail(list, x_f) ||
-            xdff_node->data.key < xf_node->data.key) {
-          xdf_node = LINK_TO_NODE(x_df, i-1);
-          // promote either xdf or xdff depending on which side new node goes
-          if ( xdff_node->data.key < key ) {
-            // new_node goes between x_dff and x_f; promote x_dff
-            printf("a\n");
-            skiplist_promote(sl, x, xdff_node, upper_level, i);
-            x = rtems_chain_next(x);
-            k = 0;
-            while ( new_level ) {
-              x_f = rtems_chain_next(x);
-              xf_node = LINK_TO_NODE(x_f, i+k);
-              k++;
-              if ( rtems_chain_is_tail(list, x_f) ||
-                   xdff_node->data.key < xf_node->data.key ) {
-                skiplist_promote(sl, update[i+k], xdff_node, upper_level, i+k);
-                update[i + k] = rtems_chain_next(update[i+k]);
-                new_level--;
-              } else {
-                break;
-              }
-            }
-          } else if (xdf_node->data.key < key ) {
-            printf("b\n");
-            // new_node goes between x_df and x_dff
-            // promoting x_df can cause a gap of 0 between x_d and x_df
-            new_level++;
-//            x = skiplist_promote(sl, x, xdf_node, upper_level, i);
-//            x = rtems_chain_next(x);
-          } else {
-            printf("c\n");
-            // new_node goes between x_d and x_df, promote x_df
-            // but don't update x.
-            skiplist_promote(sl, x, xdf_node, upper_level, i);
-            k = 0;
-            while ( new_level ) {
-               x_f = rtems_chain_next(x);
-               xf_node = LINK_TO_NODE(x_f, i+k);
-               k++;
-               if ( rtems_chain_is_tail(list, x_f) ||
-                   key < 
-              skiplist_promote(sl, update[i+new_level], xdf_node,
-                  upper_level, i+new_level);
-              new_level--;
-            }
-          }
-        }
-      }
+      xf_node = LINK_TO_NODE(x_f, i);
     }
     update[i] = x;
     x = skiplist_down(sl, x, i);
@@ -385,11 +351,14 @@ static void insert_helper(rtems_task_argument tid, node *new_node)
   //assert(list == &sl->lists[0]);
 
   /* Insert new node only on bottom */
-  for ( i = 0; i <= new_level; i++ ) {
-    skiplist_promote(sl, update[i], new_node, upper_level, i);
-  }
+  skiplist_promote(sl, update[0], new_node, upper_level, 0);
+  
+  /* fix-up violations */
+  skiplist_fixup(sl, update, upper_level);
+
+  /* debug */
+  //print_skiplist(sl);
   skiplist_verify(sl, 1, 2);
-  print_skiplist(sl);
 }
 
 /* Returns node with same key, first key greater, or tail of list */
@@ -518,6 +487,7 @@ void skiplist_insert(rtems_task_argument tid, long kv ) {
   node *new_node = alloc_node(tid);
   new_node->data.key = kv_key(kv);
   new_node->data.val = kv_value(kv);
+  new_node->height = 0;
   insert_helper(tid, new_node);
 }
 

@@ -22,6 +22,7 @@ typedef struct {
 typedef struct {
   rtems_chain_node link[MAXLEVEL]; // FIXME: wasteful :(
   pq_node data;
+  int height;
 } node;
 
 typedef struct {
