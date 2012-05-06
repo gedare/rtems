@@ -27,7 +27,7 @@ static void free_node(rtems_task_argument tid, node *n) {
  * exist at level i-1 between two nodes at level i. this debug helper routine
  * verifies the 1-2 property.
  */
-static bool skiplist_verify(skiplist *sl, int threshold) {
+static bool skiplist_verify(skiplist *sl, int min, int max) {
   rtems_chain_node *x;
   rtems_chain_node *x_forward;
   rtems_chain_node *x_forward_down;
@@ -39,22 +39,23 @@ static bool skiplist_verify(skiplist *sl, int threshold) {
   int count;
   int block;
   int i;
+  bool rv = true;
   
   // handle the top level as a special case. first deal with above top
   list = &sl->lists[sl->level + 1];
   if ( !rtems_chain_is_empty( list ) ) {
     printk("level %d above top is non-empty\n", sl->level + 1);
-    return false;
+    rv = false;
   }
   // then deal with top
   list = &sl->lists[sl->level];
   if ( rtems_chain_is_empty( list ) ) {
     if (sl->level) {
       printk("top is empty\n");
-      return false;
+      rv = false;
     } else {
       printk("empty list\n");
-      return true; // empty list
+      return rv; // empty list
     }
   }
   x = rtems_chain_first(list);
@@ -63,9 +64,9 @@ static bool skiplist_verify(skiplist *sl, int threshold) {
     x = rtems_chain_next(x);
     count++;
   }
-  if ( count > threshold ) {
-    printk("too many nodes (%d) in [top] level %d\n", count, sl->level);
-    return false; // this should be allowed, since skiplist could saturate.
+  if ( count < min || count > max ) {
+    printk("%d nodes in [top] level %d\n", count, sl->level);
+    rv = false; // this should be allowed, since skiplist could saturate.
   }
 
   // scan left-right top-bottom excluding the highest and lowest levels
@@ -73,7 +74,7 @@ static bool skiplist_verify(skiplist *sl, int threshold) {
     list = &sl->lists[i];
     if ( rtems_chain_is_empty(list) ) {
       printk("level %d is empty\n", i);
-      return false;
+      rv = false;
     }
     x = rtems_chain_first(list);
     x_forward = rtems_chain_next(x);
@@ -88,10 +89,10 @@ static bool skiplist_verify(skiplist *sl, int threshold) {
       count++;
       iter = rtems_chain_next(iter);
     }
-    if ( count > threshold ) {
-      printk("too many nodes (%d) in level %d at head block %d\n",
+    if ( count < min || count > max ) {
+      printk("%d nodes in level %d at head block %d\n",
           count, i-1, block);
-      return false;
+      rv = false;
     }
     block++;
 
@@ -108,10 +109,10 @@ static bool skiplist_verify(skiplist *sl, int threshold) {
         iter = rtems_chain_next(iter);
         count++;
       }
-      if ( count > threshold ) {
-        printk("too many nodes (%d) in level %d at block %d\n",
+      if ( count < min || count > max ) {
+        printk("%d nodes in level %d at block %d\n",
             count, i-1, block);
-        return false;
+        rv = false;
       }
 
       x = x_forward;
@@ -128,13 +129,13 @@ static bool skiplist_verify(skiplist *sl, int threshold) {
       count++;
       iter = rtems_chain_next(iter);
     }
-    if ( count > threshold ) {
-      printk("too many nodes (%d) in level %d at tail block %d\n",
+    if ( count < min || count > max ) {
+      printk("%d nodes in level %d at tail block %d\n",
           count, i-1, block);
-      return false;
+      rv = false;
     }
   }
-  return true;
+  return rv;
 }
 
 
@@ -211,6 +212,51 @@ static void print_list(rtems_chain_control *list, int index) {
   }
 }
 
+
+static void print_skiplist_node(rtems_chain_node *n, int index)
+{
+  printf("%d-", LINK_TO_NODE(n, index)->data.key);
+  return;
+}
+
+static void
+print_skiplist_list(
+    rtems_chain_control *list,
+    int index,
+    rtems_chain_control *all
+)
+{
+  rtems_chain_node *n;
+  rtems_chain_node *iter;
+ 
+  printf("%d::-", index);
+  if ( rtems_chain_is_empty(list) ) {
+    return;
+  }
+
+  n = rtems_chain_first(list);
+  iter = rtems_chain_first(all);
+  while ( !rtems_chain_is_tail(list, n) ) {
+    while ( LINK_TO_NODE(n,index) != LINK_TO_NODE(iter,0) ) {
+      iter = rtems_chain_next(iter);
+      printf("xxxx-");
+    }
+    print_skiplist_node(n, index);
+    n = rtems_chain_next(n);
+    iter = rtems_chain_next(iter);
+  }
+  printf("x\n");
+}
+
+static void print_skiplist( skiplist *sl ) {
+  int i;
+
+  for ( i = sl->level; i >= 0; i-- ) {
+    print_skiplist_list(&sl->lists[i], i, &sl->lists[0]);
+  }
+  printf("\n");
+}
+
 static void insert_helper(rtems_task_argument tid, node *new_node)
 {
   rtems_chain_node *x;
@@ -278,7 +324,8 @@ static void insert_helper(rtems_task_argument tid, node *new_node)
 
   /* Insert new node only on bottom */
   rtems_chain_insert_unprotected(update[0], &new_node->link[0]);
-  skiplist_verify(sl, 2);
+//  skiplist_verify(sl, 1, 2);
+  print_skiplist(sl);
 }
 
 /* Returns node with same key, first key greater, or tail of list */
