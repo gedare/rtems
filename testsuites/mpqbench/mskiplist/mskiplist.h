@@ -8,7 +8,7 @@
 #include "../shared/pqbench.h"
 
 // FIXME: Derive from parameters? Possible to support dynamic?
-#define MAXLEVEL (5)
+#define MAXLEVEL (12)
 
 #include <rtems.h>
 #include "rtems/chain.h"
@@ -24,7 +24,7 @@ typedef struct {
 } node;
 
 typedef struct {
-  rtems_chain_control lists[MAXLEVEL];
+  rtems_chain_control lists[MAXLEVEL+1]; // note: lists[MAXLEVEL] is empty.
 
   int level;
 } skiplist;

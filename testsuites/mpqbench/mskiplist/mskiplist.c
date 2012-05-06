@@ -22,6 +22,116 @@ static void free_node(rtems_task_argument tid, node *n) {
   rtems_chain_append_unprotected( &freenodes[tid], n );
 }
 
+static bool skiplist_verify(skiplist *sl, int threshold) {
+  rtems_chain_node *x;
+  rtems_chain_node *x_forward;
+  rtems_chain_node *x_forward_down;
+  rtems_chain_node *x_down;
+  rtems_chain_node *iter;
+  node *x_forward_node;
+  node *x_node;
+  rtems_chain_control *list;
+  int count;
+  int block;
+  int i;
+  
+  // handle the top level as a special case. first deal with above top
+  list = &sl->lists[sl->level + 1];
+  if ( !rtems_chain_is_empty( list ) ) {
+    printk("level %d above top is non-empty\n", sl->level + 1);
+    return false;
+  }
+  // then deal with top
+  list = &sl->lists[sl->level];
+  if ( rtems_chain_is_empty( list ) ) {
+    if (sl->level) {
+      printk("top is empty\n");
+      return false;
+    } else {
+      printk("empty list\n");
+      return true; // empty list
+    }
+  }
+  x = rtems_chain_first(list);
+  count = 0;
+  while ( !rtems_chain_is_tail( list, x ) ) {
+    x = rtems_chain_next(x);
+    count++;
+  }
+  if ( count > threshold ) {
+    printk("too many nodes (%d) in [top] level %d\n", count, sl->level);
+    return false; // this should be allowed, since skiplist could saturate.
+  }
+
+  // scan left-right top-bottom excluding the highest and lowest levels
+  for ( i = sl->level; i > 0; i-- ) {
+    list = &sl->lists[i];
+    if ( rtems_chain_is_empty(list) ) {
+      printk("level %d is empty\n", i);
+      return false;
+    }
+    x = rtems_chain_first(list);
+    x_forward = rtems_chain_next(x);
+    block = 0;
+
+    // deal with nodes at start of list
+    x_node = LINK_TO_NODE(x, i);
+    x_down = &x_node->link[i-1];
+    count = 0;
+    iter = rtems_chain_first(&sl->lists[i-1]);
+    while ( iter != x_down ) {
+      count++;
+      iter = rtems_chain_next(iter);
+    }
+    if ( count > threshold ) {
+      printk("too many nodes (%d) in level %d at head block %d\n",
+          count, i-1, block);
+      return false;
+    }
+    block++;
+
+    while ( !rtems_chain_is_tail(list, x_forward) ) {
+      x_forward_node = LINK_TO_NODE(x_forward, i);
+      x_forward_down = &(x_forward_node->link[i-1]);
+      x_node = LINK_TO_NODE(x, i);
+      x_down = &(x_node->link[i-1]);
+
+      /* count nodes between x and x_forward in next level down */
+      iter = rtems_chain_next(x_down);
+      count = 0;
+      while ( iter != x_forward_down ) {
+        iter = rtems_chain_next(iter);
+        count++;
+      }
+      if ( count > threshold ) {
+        printk("too many nodes (%d) in level %d at block %d\n",
+            count, i-1, block);
+        return false;
+      }
+
+      x = x_forward;
+      x_forward = rtems_chain_next(x);
+      block++;
+    }
+
+    // deal with nodes at end of list
+    x_node = LINK_TO_NODE(x, i);
+    x_down = &x_node->link[i-1];
+    count = 0;
+    iter = x_down;
+    while ( !rtems_chain_is_last(iter) ) {
+      count++;
+      iter = rtems_chain_next(iter);
+    }
+    if ( count > threshold ) {
+      printk("too many nodes (%d) in level %d at tail block %d\n",
+          count, i-1, block);
+      return false;
+    }
+  }
+  return true;
+}
+
 static inline unsigned long seed() {
   return 0xdeadbeefUL; // FIXME: randomize
 }
@@ -29,7 +139,7 @@ static void initialize_helper(rtems_task_argument tid, int size) {
   int i;
   skiplist *sl = &the_skiplist[tid];
 
-  for ( i = 0; i < MAXLEVEL; i++ ) {
+  for ( i = 0; i <= MAXLEVEL; i++ ) {
     rtems_chain_initialize_empty ( &sl->lists[i] );
   }
   sl->level = 0; /* start at the bottom */
@@ -112,6 +222,7 @@ static void insert_helper(rtems_task_argument tid, node *new_node)
   for ( i = 0; i <= new_level; i++ ) {
     rtems_chain_insert_unprotected(update[i], &new_node->link[i]);
   }
+  //skiplist_verify(sl, 4);
 }
 
 /* Returns node with same key, first key greater, or tail of list */
