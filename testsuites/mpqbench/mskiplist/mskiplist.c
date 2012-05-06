@@ -22,6 +22,49 @@ static void free_node(rtems_task_argument tid, node *n) {
   rtems_chain_append_unprotected( &freenodes[tid], n );
 }
 
+static void print_skiplist_node(rtems_chain_node *n, int index)
+{
+  printf("%d-", LINK_TO_NODE(n, index)->data.key);
+  return;
+}
+
+static void print_skiplist_list(
+    rtems_chain_control *list,
+    int index,
+    rtems_chain_control *all
+)
+{
+  rtems_chain_node *n;
+  rtems_chain_node *iter;
+ 
+  printf("%d::-", index);
+  if ( rtems_chain_is_empty(list) ) {
+    return;
+  }
+
+  n = rtems_chain_first(list);
+  iter = rtems_chain_first(all);
+  while ( !rtems_chain_is_tail(list, n) ) {
+    while ( LINK_TO_NODE(n,index) != LINK_TO_NODE(iter,0) ) {
+      iter = rtems_chain_next(iter);
+      printf("xxxx-");
+    }
+    print_skiplist_node(n, index);
+    n = rtems_chain_next(n);
+    iter = rtems_chain_next(iter);
+  }
+  printf("x\n");
+}
+
+static void print_skiplist( skiplist *sl ) {
+  int i;
+
+  for ( i = sl->level; i >= 0; i-- ) {
+    print_skiplist_list(&sl->lists[i], i, &sl->lists[0]);
+  }
+  printf("\n");
+}
+
 static bool skiplist_verify(skiplist *sl, int threshold) {
   rtems_chain_node *x;
   rtems_chain_node *x_forward;
@@ -223,6 +266,7 @@ static void insert_helper(rtems_task_argument tid, node *new_node)
     rtems_chain_insert_unprotected(update[i], &new_node->link[i]);
   }
   //skiplist_verify(sl, 4);
+  //print_skiplist(sl);
 }
 
 /* Returns node with same key, first key greater, or tail of list */
