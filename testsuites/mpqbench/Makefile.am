@@ -4,7 +4,7 @@
 
 ACLOCAL_AMFLAGS = -I ../aclocal
 
-SUBDIRS = miheap msplay mlist mskiplist mbptree \
+SUBDIRS = mdetskiplist miheap msplay mlist mskiplist mbptree \
 					mrbtree
 
 if sun4u
