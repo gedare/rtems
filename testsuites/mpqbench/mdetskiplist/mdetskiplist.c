@@ -27,6 +27,7 @@ static void free_node(rtems_task_argument tid, node *n) {
  * at level i there are either 1 or 2 nodes at level i - 1.
  * this debug helper routine verifies the 1-2 property but for any min/max.
  */
+
 static bool skiplist_verify(skiplist *sl, int min, int max) {
   rtems_chain_node *x;
   rtems_chain_node *x_forward;
@@ -37,10 +38,15 @@ static bool skiplist_verify(skiplist *sl, int min, int max) {
   node *x_node;
   rtems_chain_control *list;
   int count;
+  int count_gaps[10];
   int block;
   int i;
   bool rv = true;
   
+  for ( i = 0; i < 10; i++ ) {
+    count_gaps[i] = 0;
+  }
+
   // handle the top level as a special case. first deal with above top
   list = &sl->lists[sl->level + 1];
   if ( !rtems_chain_is_empty( list ) ) {
@@ -65,9 +71,15 @@ static bool skiplist_verify(skiplist *sl, int min, int max) {
     count++;
   }
   if ( count < min || count > max ) {
-    printk("%d nodes in [top] level %d\n", count, sl->level);
     rv = false; // this should be allowed, since skiplist could saturate.
   }
+  if ( count >= 9 ) {
+    count_gaps[9]++;
+  }
+  else {
+    count_gaps[count]++;
+  }
+
 
   // scan left-right top-bottom excluding the highest and lowest levels
   for ( i = sl->level; i > 0; i-- ) {
@@ -90,10 +102,16 @@ static bool skiplist_verify(skiplist *sl, int min, int max) {
       iter = rtems_chain_next(iter);
     }
     if ( count < min || count > max ) {
-      printk("%d nodes in level %d at head block %d\n",
-          count, i-1, block);
       rv = false;
     }
+    if ( count >= 9 ) {
+      count_gaps[9]++;
+    }
+    else {
+      count_gaps[count]++;
+    }
+
+
     block++;
 
     while ( !rtems_chain_is_tail(list, x_forward) ) {
@@ -110,10 +128,15 @@ static bool skiplist_verify(skiplist *sl, int min, int max) {
         count++;
       }
       if ( count < min || count > max ) {
-        printk("%d nodes in level %d at block %d\n",
-            count, i-1, block);
         rv = false;
       }
+      if ( count >= 9 ) {
+        count_gaps[9]++;
+      }
+      else {
+        count_gaps[count]++;
+      }
+
 
       x = x_forward;
       x_forward = rtems_chain_next(x);
@@ -130,14 +153,25 @@ static bool skiplist_verify(skiplist *sl, int min, int max) {
       iter = rtems_chain_next(iter);
     }
     if ( count < min || count > max ) {
-      printk("%d nodes in level %d at tail block %d\n",
-          count, i-1, block);
       rv = false;
     }
+    if ( count >= 9 ) {
+      count_gaps[9]++;
+    }
+    else {
+      count_gaps[count]++;
+    }
+  }
+
+  if ( !rv ) {
+    printf("Gaps: ");
+    for ( i = 0; i < 9; i++ ) {
+      printf("%d ",count_gaps[i]);
+    }
+    printf("%d\n", count_gaps[9]);
   }
   return rv;
 }
-
 
 
 static void initialize_helper(rtems_task_argument tid, int size) {
@@ -461,6 +495,8 @@ static inline long extract_helper(rtems_task_argument tid, int key)
       x_f = rtems_chain_next(x);
       xf_node = LINK_TO_NODE(x_f, i);
     }
+    /* check for raising/lowering */
+#if 0
     if ( i ) {
       if ( rtems_chain_is_head(list, x) ) {
         int count = count_from(sl, x, i);
@@ -493,6 +529,7 @@ static inline long extract_helper(rtems_task_argument tid, int key)
         } 
       }
     }
+#endif
     update[i] = x;
     x = skiplist_down(sl, x, i);
   }

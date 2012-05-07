@@ -65,7 +65,7 @@ static void print_skiplist( skiplist *sl ) {
   printf("\n");
 }
 
-static bool skiplist_verify(skiplist *sl, int threshold) {
+static bool skiplist_verify(skiplist *sl, int min, int max) {
   rtems_chain_node *x;
   rtems_chain_node *x_forward;
   rtems_chain_node *x_forward_down;
@@ -75,24 +75,30 @@ static bool skiplist_verify(skiplist *sl, int threshold) {
   node *x_node;
   rtems_chain_control *list;
   int count;
+  int count_gaps[10];
   int block;
   int i;
+  bool rv = true;
   
+  for ( i = 0; i < 10; i++ ) {
+    count_gaps[i] = 0;
+  }
+
   // handle the top level as a special case. first deal with above top
   list = &sl->lists[sl->level + 1];
   if ( !rtems_chain_is_empty( list ) ) {
     printk("level %d above top is non-empty\n", sl->level + 1);
-    return false;
+    rv = false;
   }
   // then deal with top
   list = &sl->lists[sl->level];
   if ( rtems_chain_is_empty( list ) ) {
     if (sl->level) {
       printk("top is empty\n");
-      return false;
+      rv = false;
     } else {
       printk("empty list\n");
-      return true; // empty list
+      return rv; // empty list
     }
   }
   x = rtems_chain_first(list);
@@ -101,17 +107,23 @@ static bool skiplist_verify(skiplist *sl, int threshold) {
     x = rtems_chain_next(x);
     count++;
   }
-  if ( count > threshold ) {
-    printk("too many nodes (%d) in [top] level %d\n", count, sl->level);
-    return false; // this should be allowed, since skiplist could saturate.
+  if ( count < min || count > max ) {
+    rv = false; // this should be allowed, since skiplist could saturate.
   }
+  if ( count >= 9 ) {
+    count_gaps[9]++;
+  }
+  else {
+    count_gaps[count]++;
+  }
+
 
   // scan left-right top-bottom excluding the highest and lowest levels
   for ( i = sl->level; i > 0; i-- ) {
     list = &sl->lists[i];
     if ( rtems_chain_is_empty(list) ) {
       printk("level %d is empty\n", i);
-      return false;
+      rv = false;
     }
     x = rtems_chain_first(list);
     x_forward = rtems_chain_next(x);
@@ -126,11 +138,17 @@ static bool skiplist_verify(skiplist *sl, int threshold) {
       count++;
       iter = rtems_chain_next(iter);
     }
-    if ( count > threshold ) {
-      printk("too many nodes (%d) in level %d at head block %d\n",
-          count, i-1, block);
-      return false;
+    if ( count < min || count > max ) {
+      rv = false;
     }
+    if ( count >= 9 ) {
+      count_gaps[9]++;
+    }
+    else {
+      count_gaps[count]++;
+    }
+
+
     block++;
 
     while ( !rtems_chain_is_tail(list, x_forward) ) {
@@ -146,11 +164,16 @@ static bool skiplist_verify(skiplist *sl, int threshold) {
         iter = rtems_chain_next(iter);
         count++;
       }
-      if ( count > threshold ) {
-        printk("too many nodes (%d) in level %d at block %d\n",
-            count, i-1, block);
-        return false;
+      if ( count < min || count > max ) {
+        rv = false;
       }
+      if ( count >= 9 ) {
+        count_gaps[9]++;
+      }
+      else {
+        count_gaps[count]++;
+      }
+
 
       x = x_forward;
       x_forward = rtems_chain_next(x);
@@ -166,13 +189,25 @@ static bool skiplist_verify(skiplist *sl, int threshold) {
       count++;
       iter = rtems_chain_next(iter);
     }
-    if ( count > threshold ) {
-      printk("too many nodes (%d) in level %d at tail block %d\n",
-          count, i-1, block);
-      return false;
+    if ( count < min || count > max ) {
+      rv = false;
+    }
+    if ( count >= 9 ) {
+      count_gaps[9]++;
+    }
+    else {
+      count_gaps[count]++;
     }
   }
-  return true;
+
+  if ( !rv ) {
+    printf("Gaps: ");
+    for ( i = 0; i < 9; i++ ) {
+      printf("%d ",count_gaps[i]);
+    }
+    printf("%d\n", count_gaps[9]);
+  }
+  return rv;
 }
 
 static inline unsigned long seed() {
@@ -265,7 +300,7 @@ static void insert_helper(rtems_task_argument tid, node *new_node)
   for ( i = 0; i <= new_level; i++ ) {
     rtems_chain_insert_unprotected(update[i], &new_node->link[i]);
   }
-  //skiplist_verify(sl, 4);
+  skiplist_verify(sl, 1, 4);
   //print_skiplist(sl);
 }
 
