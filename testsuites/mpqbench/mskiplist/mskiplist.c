@@ -316,7 +316,7 @@ static void insert_helper(rtems_task_argument tid, node *new_node)
   for ( i = 0; i <= new_level; i++ ) {
     rtems_chain_insert_unprotected(update[i], &new_node->link[i]);
   }
-  skiplist_verify(sl, 1, 4);
+  //skiplist_verify(sl, 1, 4);
   //print_skiplist(sl);
 }
 
