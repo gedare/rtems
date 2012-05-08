@@ -159,7 +159,7 @@ sparc64_splitrbtree_fill_node(int tid)
 
   if (exception) {
     DPRINTK("Spilling (%d,%X) while filling\n");
-    return sparc64_splitrbtree_spill_node(tid);
+    return sparc64_splitrbtree_handle_spill(tid, count);
   }
 
   return 0;
