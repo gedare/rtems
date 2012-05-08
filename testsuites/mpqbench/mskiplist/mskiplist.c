@@ -15,11 +15,11 @@ rtems_chain_control freenodes[NUM_APERIODIC_TASKS];
 
 /* helpers */
 static node *alloc_node(rtems_task_argument tid) {
-  node *n = rtems_chain_get_unprotected( &freenodes[tid] );
+  node *n = (node*)rtems_chain_get_unprotected( &freenodes[tid] );
   return n;
 }
 static void free_node(rtems_task_argument tid, node *n) {
-  rtems_chain_append_unprotected( &freenodes[tid], n );
+  rtems_chain_append_unprotected( &freenodes[tid], &(n->link[0]) );
 }
 
 static void print_skiplist_node(rtems_chain_node *n, int index)
@@ -210,22 +210,35 @@ static bool skiplist_verify(skiplist *sl, int min, int max) {
   return rv;
 }
 
-static inline unsigned long seed() {
+static inline unsigned long seed(void) {
   return 0xdeadbeefUL; // FIXME: randomize
 }
 static void initialize_helper(rtems_task_argument tid, int size) {
   int i;
+  int k;
   skiplist *sl = &the_skiplist[tid];
 
+  // FIXME: MAXLEVEL
+  sl->lists = malloc(sizeof(rtems_chain_control)*(MAXLEVEL+1));
+  if ( !sl->lists ) {
+    printf("Failed to allocate list headers\n");
+    while(1);
+  }
   for ( i = 0; i <= MAXLEVEL; i++ ) {
     rtems_chain_initialize_empty ( &sl->lists[i] );
   }
   sl->level = 0; /* start at the bottom */
 
+  for ( i = 0; i < size; i++ ) {
+    for ( k = 0; k < MAXLEVEL; k++ ) {
+
+    }
+  }
+
   srand(seed());
 }
 
-static inline int next_random_bit() {
+static inline int next_random_bit(void) {
   static uint32_t random_stream = 0;
   int rv;
 
@@ -237,7 +250,7 @@ static inline int next_random_bit() {
   return rv;
 }
 
-static inline int randomLevel()
+static inline int randomLevel(void)
 {
   int level = 0;
   while (next_random_bit() && level < MAXLEVEL-1) // FIXME: hard-coded p
@@ -413,8 +426,6 @@ static inline long extract_helper(rtems_task_argument tid, int key)
  * benchmark interface
  */
 void skiplist_initialize( rtems_task_argument tid, int size ) {
-  int i;
-
   the_nodes[tid] = (node*)malloc(sizeof(node)*size);
   if ( ! the_nodes[tid] ) {
     printk("failed to alloc nodes\n");
@@ -436,7 +447,7 @@ void skiplist_insert(rtems_task_argument tid, long kv ) {
 long skiplist_min( rtems_task_argument tid ) {
   node *n;
 
-  n = rtems_chain_first(&the_skiplist[tid].lists[0]); // unprotected
+  n = (node*)rtems_chain_first(&the_skiplist[tid].lists[0]); // unprotected
   if (n) {
     return PQ_NODE_TO_KV(&n->data);
   }
@@ -446,14 +457,16 @@ long skiplist_min( rtems_task_argument tid ) {
 long skiplist_pop_min( rtems_task_argument tid ) {
   long kv;
   node *n;
-  n = rtems_chain_first(&the_skiplist[tid].lists[0]); // unprotected
+  n = (node*)rtems_chain_first(&the_skiplist[tid].lists[0]); // unprotected
   kv = extract_helper(tid, n->data.key);
   return kv;
 }
 
 long skiplist_search( rtems_task_argument tid, int k ) {
   node* n = search_helper(tid, k);
-  if(!rtems_chain_is_tail(&the_skiplist[tid].lists[0], n) && n->data.key == k) {
+  if ( !rtems_chain_is_tail(&the_skiplist[tid].lists[0], &n->link[0])
+      && n->data.key == k
+  ) {
     return PQ_NODE_TO_KV(&n->data);
   }
   return (long)-1;

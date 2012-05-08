@@ -24,7 +24,7 @@ typedef struct {
 } node;
 
 typedef struct {
-  rtems_chain_control lists[MAXLEVEL+1]; // note: lists[MAXLEVEL] is empty.
+  rtems_chain_control *lists;
 
   int level;
 } skiplist;
