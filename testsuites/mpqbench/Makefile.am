@@ -8,8 +8,8 @@ SUBDIRS = mdetskiplist miheap msplay mlist mskiplist mbptree \
 					mrbtree
 
 if sun4u
-SUBDIRS += mhwpqsplitheap mhwpqsplitrbtree 
-SUBDIRS += mhwpqunitedlist mhwpq mhwpqunitedsearch
+SUBDIRS += mhwpqsplitheap mhwpqsplitrbtree mhwpqsplitskiplist
+SUBDIRS += mhwpqunitedlist mhwpq mhwpqunitedskiplist
 endif
 if MPTESTS
 endif
