@@ -6,7 +6,7 @@
 
 typedef struct {
   Chain_Node link[MAXLEVEL];
-  int height;
+  uint32_t height;
   uint32_t key;
   uint32_t val;
 } pq_node;
@@ -339,12 +339,6 @@ Chain_Node* sparc64_splitskiplist_spill_node(
 )
 {
   uint64_t kv;
-  uint32_t key, val;
-  pq_node *new_node;
-  int i;
-
-  //Chain_Node *iter;
-  //iter = _Chain_Last(spill_pq);
 
   HWDS_SPILL(queue_idx, kv);
   if (!kv) {
