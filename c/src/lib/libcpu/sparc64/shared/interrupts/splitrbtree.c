@@ -146,8 +146,22 @@ sparc64_splitrbtree_spill_node(int tid)
   return kv;
 }
 
+uint64_t sparc64_splitrbtree_handle_spill( int tid, uint64_t count )
+{
+  int i = 0;
+
+  // pop elements off tail of hwpq, merge into software pq
+  while ( i < count ) {
+    if (!sparc64_splitrbtree_spill_node(tid))
+      break;
+    i++;
+  }
+
+  return i;
+}
+
 static inline uint64_t
-sparc64_splitrbtree_fill_node(int tid)
+sparc64_splitrbtree_fill_node(int tid, int count)
 {
   uint32_t exception;
   uint64_t kv;
@@ -165,20 +179,6 @@ sparc64_splitrbtree_fill_node(int tid)
   return 0;
 }
 
-uint64_t sparc64_splitrbtree_handle_spill( int tid, uint64_t count )
-{
-  int i = 0;
-
-  // pop elements off tail of hwpq, merge into software pq
-  while ( i < count ) {
-    if (!sparc64_splitrbtree_spill_node(tid))
-      break;
-    i++;
-  }
-
-  return i;
-}
-
 /*
  * Current algorithm pulls nodes from the head of the sorted sw pq
  * and fills them into the hw pq.
@@ -189,7 +189,7 @@ uint64_t sparc64_splitrbtree_handle_fill(int tid, uint64_t count )
 
   while (!rtems_rbtree_is_empty( &trees[tid] ) && i < count) {
     i++;
-    sparc64_splitrbtree_fill_node(tid);
+    sparc64_splitrbtree_fill_node(tid, count);
   }
 
   return 0;
