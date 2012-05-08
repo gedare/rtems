@@ -215,8 +215,8 @@ static inline unsigned long seed(void) {
 }
 static void initialize_helper(rtems_task_argument tid, int size) {
   int i;
-  int k;
   skiplist *sl = &the_skiplist[tid];
+  node *n;
 
   // FIXME: MAXLEVEL
   sl->lists = malloc(sizeof(rtems_chain_control)*(MAXLEVEL+1));
@@ -230,9 +230,8 @@ static void initialize_helper(rtems_task_argument tid, int size) {
   sl->level = 0; /* start at the bottom */
 
   for ( i = 0; i < size; i++ ) {
-    for ( k = 0; k < MAXLEVEL; k++ ) {
-
-    }
+    n = &the_nodes[tid][i];
+    n->height = 0;
   }
 
   srand(seed());

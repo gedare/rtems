@@ -20,6 +20,7 @@ typedef struct {
 
 typedef struct {
   rtems_chain_node link[MAXLEVEL];
+  int height;
   pq_node data;
 } node;
 
