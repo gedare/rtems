@@ -29,7 +29,7 @@ static Freelist_Control free_nodes[NUM_QUEUES];
 
 static void print_skiplist_node(Chain_Node *n, int index)
 {
-  printf("%d-", LINK_TO_NODE(n, index)->key);
+  printk("%d-", LINK_TO_NODE(n, index)->key);
   return;
 }
 
@@ -42,7 +42,7 @@ static void print_skiplist_list(
   Chain_Node *n;
   Chain_Node *iter;
  
-  printf("%d::-", index);
+  printk("%d::-", index);
   if ( _Chain_Is_empty(list) ) {
     return;
   }
@@ -52,13 +52,13 @@ static void print_skiplist_list(
   while ( !_Chain_Is_tail(list, n) ) {
     while ( LINK_TO_NODE(n,index) != LINK_TO_NODE(iter,0) ) {
       iter = _Chain_Next(iter);
-      printf("xxxx-");
+      printk("xxxx-");
     }
     print_skiplist_node(n, index);
     n = _Chain_Next(n);
     iter = _Chain_Next(iter);
   }
-  printf("x\n");
+  printk("x\n");
 }
 
 static void print_skiplist( skiplist *sl ) {
@@ -67,10 +67,10 @@ static void print_skiplist( skiplist *sl ) {
   for ( i = sl->level; i >= 0; i-- ) {
     print_skiplist_list(&sl->lists[i], i, &sl->lists[0]);
   }
-  printf("\n");
+  printk("\n");
 }
 
-static void sparc64_print_all_queues()
+static void sparc64_print_all_the_skiplist()
 {
   int k;
   skiplist *sl;
@@ -257,7 +257,7 @@ static inline long extract_helper(int qid, int key)
           sl->level--;
         }
       }
-      free_node(qid, x_node);
+      freelist_put_node(&free_nodes[qid], x_node);
     } else {
       kv = (long)-1;
     }
@@ -281,7 +281,7 @@ uint64_t sparc64_unitedskiplist_initialize( int qid, size_t max_pq_size )
   // FIXME: MAXLEVEL
   sl->lists = malloc(sizeof(Chain_Control)*(MAXLEVEL+1));
   if ( !sl->lists ) {
-    printf("Failed to allocate list headers\n");
+    printk("Failed to allocate list headers\n");
     while(1);
   }
   for ( i = 0; i <= MAXLEVEL; i++ ) {
@@ -293,7 +293,7 @@ uint64_t sparc64_unitedskiplist_initialize( int qid, size_t max_pq_size )
 
   // precompute node heights
   // FIXME: add initializer callout to freelist..
-  for ( i = 0; i < size; i++ ) {
+  for ( i = 0; i < max_pq_size; i++ ) {
     n = _Chain_First(&free_nodes[qid].freelist);
     while (!_Chain_Is_tail(&free_nodes[qid].freelist, n)) {
       pnode = (pq_node*)n;
@@ -307,12 +307,68 @@ uint64_t sparc64_unitedskiplist_initialize( int qid, size_t max_pq_size )
   return 0;
 }
 
+uint64_t sparc64_unitedskiplist_insert(int tid, uint64_t kv)
+{
+  pq_node *new_node;
+  new_node = freelist_get_node(&free_nodes[tid]);
+  if (!new_node) {
+    printk("%d\tUnable to allocate new node during insert\n", tid);
+    while (1);
+  }
+  new_node->key = kv_key(kv);
+  new_node->val = kv_value(kv); // FIXME: not full 64-bits
+
+  insert_helper(tid, new_node);
+  return 0;
+}
+
+uint64_t sparc64_unitedskiplist_first(int tid, uint64_t kv)
+{
+  pq_node *p;
+  Chain_Control *spill_pq;
+  Chain_Node *first;
+  spill_pq = &the_skiplist[tid].lists[0];
+  
+  first = _Chain_First(spill_pq);
+  if ( !_Chain_Is_tail(spill_pq, first) ) {
+    p = LINK_TO_NODE(first, 0);
+    kv = pq_node_to_kv(p);
+  } else {
+    kv = (uint64_t)-1;
+  }
+  return kv;
+}
+
+uint64_t sparc64_unitedskiplist_pop(int tid, uint64_t kv)
+{
+  pq_node *p;
+  Chain_Control *spill_pq;
+  Chain_Node *first;
+  int i;
+  spill_pq = &the_skiplist[tid].lists[0];
+  
+  first = _Chain_First(spill_pq);
+
+  if ( !_Chain_Is_tail(spill_pq, first) ) {
+    p = LINK_TO_NODE(first, 0);
+    kv = pq_node_to_kv(p);
+    for ( i = 0; i <= p->height; i++ ) {
+      _Chain_Extract_unprotected(&p->link[i]);
+    }
+    freelist_put_node(&free_nodes[tid], p);
+  } else {
+    kv = (uint64_t)-1;
+  }
+  return kv;
+}
+
+
 uint64_t sparc64_unitedskiplist_extract(int queue_idx, uint64_t kv)
 {
   uint64_t rv;
   uint32_t key = kv_key(kv);
   
-  rv = (uint64_t)extract_helper(queue_idx, key)
+  rv = (uint64_t)extract_helper(queue_idx, key);
   return rv;
 }
 
@@ -333,76 +389,31 @@ uint64_t sparc64_unitedskiplist_search(int queue_idx, uint64_t kv)
   return rv;
 }
 
-// Pass iter node as either the tail of spill_pq or as a node that is known
-// to have lower priority than the lowest priority node in the hwpq; this is
-// simple when there is not concurrent access to a pq in the hwpq.
+// FIXME: make united
 static inline 
 Chain_Node* sparc64_unitedskiplist_spill_node(
-    int queue_idx,
-    Chain_Control *spill_pq,
-    Chain_Node *iter
+    int queue_idx
 )
 {
   uint64_t kv;
-  uint32_t key, val;
-  pq_node *new_node;
-  int i;
-
-  //Chain_Node *iter;
-  //iter = _Chain_Last(spill_pq);
 
   HWDS_SPILL(queue_idx, kv);
   if (!kv) {
     DPRINTK("%d\tNothing to spill!\n",queue_idx);
-    return 0;
-  }
-  key = kv_key(kv);
-  val = kv_value(kv);
-
-  DPRINTK("%d\tspill: node: %x\tprio: %d\n",queue_idx,val,key);
-
-
-
-  // sort by ascending priority
-  // Note that this is not a stable sort (globally) because it has
-  // FIFO behavior for spilled nodes with equal keys. To get global stability
-  // we would need to ensure that (1) the key comparison is <= and (2) the
-  // last node to be spilled has no ties left in the hwpq.
-  while (!_Chain_Is_head(spill_pq, iter) && key < ((pq_node*)iter)->key) { 
-    iter = _Chain_Previous(iter);
-    // FIXME: use binary search? update search pointers?
+  } else {
+    sparc64_unitedskiplist_insert(queue_idx, kv);
   }
 
-  new_node = freelist_get_node(&free_nodes[queue_idx]);
-  if (!new_node) {
-    // debug output
-    sparc64_print_all_queues();
-    printk("%d\tUnable to allocate new node while spilling\n", queue_idx);
-    while (1);
-  }
-
-  // key > iter->key, insert new node after iter
-  new_node->key = key;
-  new_node->val = val; // FIXME: not full 64-bits
-  new_node->is_valid = true;
-  _Chain_Insert_unprotected(iter, (Chain_Node*)new_node);
-  return new_node;
+  return kv;
 }
-
 
 uint64_t sparc64_unitedskiplist_handle_spill( int queue_idx, uint64_t count )
 {
   int i = 0;
-  Chain_Control *spill_pq;
-  Chain_Node *iter;
 
-  spill_pq = &queues[queue_idx];
-  DPRINTK("spill: queue: %d\n", queue_idx);
-
-  iter = _Chain_Last(spill_pq);
   // pop elements off tail of hwpq, merge into software pq
   while ( i < count ) {
-    if (!(iter = sparc64_unitedskiplist_spill_node(queue_idx, spill_pq, iter)))
+    if (!sparc64_unitedskiplist_spill_node(queue_idx))
       break;
     i++;
   }
@@ -412,23 +423,16 @@ uint64_t sparc64_unitedskiplist_handle_spill( int queue_idx, uint64_t count )
 static inline uint64_t
 sparc64_unitedskiplist_fill_node(
     int queue_idx,
-    Chain_Control *spill_pq,
-    uint64_t count
+    int count
 ) {
   uint32_t exception;
   pq_node *p;
+  uint64_t kv;
 
-  p = (pq_node*)_Chain_Get_first_unprotected(spill_pq);
-  freelist_put_node(&free_nodes[queue_idx], p);
-  while ( p && !p->is_valid ) { /* kill the invalids */
-    p = (pq_node*)_Chain_Get_first_unprotected(spill_pq);
-    freelist_put_node(&free_nodes[queue_idx], p);
-  }
-
-  DPRINTK("%d\tfill node: %x\tprio: %d\n", queue_idx, p->val, p->key);
+  kv = sparc64_unitedskiplist_pop(queue_idx, 0);
 
   // add node to hw pq 
-  HWDS_FILL(queue_idx, p->key, p->val, exception); 
+  HWDS_FILL(queue_idx, kv_key(kv), kv_value(kv), exception); 
 
   if (exception) {
     DPRINTK("%d\tSpilling while filling\n", queue_idx);
@@ -446,12 +450,12 @@ uint64_t sparc64_unitedskiplist_handle_fill(int queue_idx, uint64_t count)
  Chain_Control *spill_pq;
  int            i = 0;
 
- spill_pq = &queues[queue_idx];
+ spill_pq = &the_skiplist[queue_idx].lists[0];
  DPRINTK("fill: queue: %d\n", queue_idx);
 
   while (!_Chain_Is_empty(spill_pq) && i < count) {
     i++;
-    sparc64_unitedskiplist_fill_node(queue_idx, spill_pq, count);
+    sparc64_unitedskiplist_fill_node(queue_idx, count);
   }
   return 0;
 }

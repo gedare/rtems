@@ -29,7 +29,7 @@ static Freelist_Control free_nodes[NUM_QUEUES];
 
 static void print_skiplist_node(Chain_Node *n, int index)
 {
-  printf("%d-", LINK_TO_NODE(n, index)->key);
+  printk("%d-", LINK_TO_NODE(n, index)->key);
   return;
 }
 
@@ -42,7 +42,7 @@ static void print_skiplist_list(
   Chain_Node *n;
   Chain_Node *iter;
  
-  printf("%d::-", index);
+  printk("%d::-", index);
   if ( _Chain_Is_empty(list) ) {
     return;
   }
@@ -52,13 +52,13 @@ static void print_skiplist_list(
   while ( !_Chain_Is_tail(list, n) ) {
     while ( LINK_TO_NODE(n,index) != LINK_TO_NODE(iter,0) ) {
       iter = _Chain_Next(iter);
-      printf("xxxx-");
+      printk("xxxx-");
     }
     print_skiplist_node(n, index);
     n = _Chain_Next(n);
     iter = _Chain_Next(iter);
   }
-  printf("x\n");
+  printk("x\n");
 }
 
 static void print_skiplist( skiplist *sl ) {
@@ -67,7 +67,7 @@ static void print_skiplist( skiplist *sl ) {
   for ( i = sl->level; i >= 0; i-- ) {
     print_skiplist_list(&sl->lists[i], i, &sl->lists[0]);
   }
-  printf("\n");
+  printk("\n");
 }
 
 static void sparc64_print_all_queues()
@@ -257,7 +257,7 @@ static inline long extract_helper(int qid, int key)
           sl->level--;
         }
       }
-      free_node(qid, x_node);
+      freelist_put_node(&free_nodes[qid], x_node);
     } else {
       kv = (long)-1;
     }
@@ -281,7 +281,7 @@ uint64_t sparc64_splitskiplist_initialize( int qid, size_t max_pq_size )
   // FIXME: MAXLEVEL
   sl->lists = malloc(sizeof(Chain_Control)*(MAXLEVEL+1));
   if ( !sl->lists ) {
-    printf("Failed to allocate list headers\n");
+    printk("Failed to allocate list headers\n");
     while(1);
   }
   for ( i = 0; i <= MAXLEVEL; i++ ) {
@@ -293,7 +293,7 @@ uint64_t sparc64_splitskiplist_initialize( int qid, size_t max_pq_size )
 
   // precompute node heights
   // FIXME: add initializer callout to freelist..
-  for ( i = 0; i < size; i++ ) {
+  for ( i = 0; i < max_pq_size; i++ ) {
     n = _Chain_First(&free_nodes[qid].freelist);
     while (!_Chain_Is_tail(&free_nodes[qid].freelist, n)) {
       pnode = (pq_node*)n;
@@ -307,12 +307,67 @@ uint64_t sparc64_splitskiplist_initialize( int qid, size_t max_pq_size )
   return 0;
 }
 
+uint64_t sparc64_splitskiplist_insert(int tid, uint64_t kv)
+{
+  pq_node *new_node;
+  new_node = freelist_get_node(&free_nodes[tid]);
+  if (!new_node) {
+    printk("%d\tUnable to allocate new node during insert\n", tid);
+    while (1);
+  }
+  new_node->key = kv_key(kv);
+  new_node->val = kv_value(kv); // FIXME: not full 64-bits
+
+  insert_helper(tid, new_node);
+  return 0;
+}
+
+uint64_t sparc64_splitskiplist_first(int tid, uint64_t kv)
+{
+  pq_node *p;
+  Chain_Control *spill_pq;
+  Chain_Node *first;
+  spill_pq = &the_skiplist[tid].lists[0];
+  
+  first = _Chain_First(spill_pq);
+  if ( !_Chain_Is_tail(spill_pq, first) ) {
+    p = LINK_TO_NODE(first, 0);
+    kv = pq_node_to_kv(p);
+  } else {
+    kv = (uint64_t)-1;
+  }
+  return kv;
+}
+
+uint64_t sparc64_splitskiplist_pop(int tid, uint64_t kv)
+{
+  pq_node *p;
+  Chain_Control *spill_pq;
+  Chain_Node *first;
+  int i;
+  spill_pq = &the_skiplist[tid].lists[0];
+  
+  first = _Chain_First(spill_pq);
+
+  if ( !_Chain_Is_tail(spill_pq, first) ) {
+    p = LINK_TO_NODE(first, 0);
+    kv = pq_node_to_kv(p);
+    for ( i = 0; i <= p->height; i++ ) {
+      _Chain_Extract_unprotected(&p->link[i]);
+    }
+    freelist_put_node(&free_nodes[tid], p);
+  } else {
+    kv = (uint64_t)-1;
+  }
+  return kv;
+}
+
 uint64_t sparc64_splitskiplist_extract(int queue_idx, uint64_t kv)
 {
   uint64_t rv;
   uint32_t key = kv_key(kv);
   
-  rv = (uint64_t)extract_helper(queue_idx, key)
+  rv = (uint64_t)extract_helper(queue_idx, key);
   return rv;
 }
 
@@ -365,13 +420,14 @@ uint64_t sparc64_splitskiplist_handle_spill( int queue_idx, uint64_t count )
 
 static inline uint64_t
 sparc64_splitskiplist_fill_node(
-    int queue_idx
+    int queue_idx,
+    int count
 ) {
   uint32_t exception;
   pq_node *p;
   uint64_t kv;
 
-  kv = sparc64_splitskiplist_pop(tid, 0);
+  kv = sparc64_splitskiplist_pop(queue_idx, 0);
 
   // add node to hw pq 
   HWDS_FILL(queue_idx, kv_key(kv), kv_value(kv), exception); 
@@ -397,7 +453,7 @@ uint64_t sparc64_splitskiplist_handle_fill(int queue_idx, uint64_t count)
 
   while (!_Chain_Is_empty(spill_pq) && i < count) {
     i++;
-    sparc64_splitskiplist_fill_node(queue_idx, spill_pq, count);
+    sparc64_splitskiplist_fill_node(queue_idx, count);
   }
   return 0;
 }
