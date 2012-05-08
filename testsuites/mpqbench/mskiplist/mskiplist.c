@@ -213,29 +213,6 @@ static bool skiplist_verify(skiplist *sl, int min, int max) {
 static inline unsigned long seed(void) {
   return 0xdeadbeefUL; // FIXME: randomize
 }
-static void initialize_helper(rtems_task_argument tid, int size) {
-  int i;
-  skiplist *sl = &the_skiplist[tid];
-  node *n;
-
-  // FIXME: MAXLEVEL
-  sl->lists = malloc(sizeof(rtems_chain_control)*(MAXLEVEL+1));
-  if ( !sl->lists ) {
-    printf("Failed to allocate list headers\n");
-    while(1);
-  }
-  for ( i = 0; i <= MAXLEVEL; i++ ) {
-    rtems_chain_initialize_empty ( &sl->lists[i] );
-  }
-  sl->level = 0; /* start at the bottom */
-
-  for ( i = 0; i < size; i++ ) {
-    n = &the_nodes[tid][i];
-    n->height = 0;
-  }
-
-  srand(seed());
-}
 
 static inline int next_random_bit(void) {
   static uint32_t random_stream = 0;
@@ -255,6 +232,33 @@ static inline int randomLevel(void)
   while (next_random_bit() && level < MAXLEVEL-1) // FIXME: hard-coded p
     level++;
   return level;
+}
+
+
+static void initialize_helper(rtems_task_argument tid, int size) {
+  int i;
+  skiplist *sl = &the_skiplist[tid];
+  node *n;
+
+  // FIXME: MAXLEVEL
+  sl->lists = malloc(sizeof(rtems_chain_control)*(MAXLEVEL+1));
+  if ( !sl->lists ) {
+    printf("Failed to allocate list headers\n");
+    while(1);
+  }
+  for ( i = 0; i <= MAXLEVEL; i++ ) {
+    rtems_chain_initialize_empty ( &sl->lists[i] );
+  }
+  sl->level = 0; /* start at the bottom */
+
+  srand(seed());
+
+  // precompute node heights
+  for ( i = 0; i < size; i++ ) {
+    n = &the_nodes[tid][i];
+    n->height = randomLevel();
+  }
+
 }
 
 /* implements skip list insert according to pugh */
@@ -301,7 +305,7 @@ static void insert_helper(rtems_task_argument tid, node *new_node)
   }
 
   //assert(list == &sl->lists[0]);
-  new_level = randomLevel();
+  new_level = new_node->height;
   if ( new_level > upper_level ) {
     for (i = upper_level + 1; i <= new_level; i++) {
       list = &sl->lists[i];
