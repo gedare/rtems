@@ -49,12 +49,16 @@ extern "C" {
  */
 typedef struct RBTree_Node_struct RBTree_Node;
 
+typedef uint8_t RBTree_Node_attributes;
+#define RBTree_Node_color_bitmask         (0x80)
+#define RBTree_Node_reserved_bitmask      (0x7f)
+
 /**
  * This enum type defines the colors available for the RBTree Nodes
  */
 typedef enum {
-  RBT_BLACK,
-  RBT_RED
+  RBT_BLACK = 0,
+  RBT_RED = RBTree_Node_color_bitmask
 } RBTree_Color;
 
 /**
@@ -77,8 +81,8 @@ struct RBTree_Node_struct {
   RBTree_Node *parent;
   /** child[0] points to the left child, child[1] points to the right child */
   RBTree_Node *child[2];
-  /** The color of the node. Either red or black */
-  RBTree_Color color;
+  /** Node attributes include: color, black-height */
+  RBTree_Node_attributes attributes;
 };
 
 /**

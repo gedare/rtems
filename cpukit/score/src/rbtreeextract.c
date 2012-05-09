@@ -46,8 +46,8 @@ static void _RBTree_Extract_validate_unprotected(
      * update sibling pointer.
      */
     if (_RBTree_Is_red(sibling)) {
-      parent->color = RBT_RED;
-      sibling->color = RBT_BLACK;
+      _RBTree_Set_color(parent, RBT_RED);
+      _RBTree_Set_color(sibling, RBT_BLACK);
       dir = the_node != parent->child[0];
       _RBTree_Rotate(parent, dir);
       sibling = parent->child[_RBTree_Opposite_direction(dir)];
@@ -56,9 +56,9 @@ static void _RBTree_Extract_validate_unprotected(
     /* sibling is black, see if both of its children are also black. */
     if (!_RBTree_Is_red(sibling->child[RBT_RIGHT]) &&
         !_RBTree_Is_red(sibling->child[RBT_LEFT])) {
-        sibling->color = RBT_RED;
+        _RBTree_Set_color(sibling, RBT_RED);
         if (_RBTree_Is_red(parent)) {
-          parent->color = RBT_BLACK;
+          _RBTree_Set_color(parent, RBT_BLACK);
           break;
         }
         the_node = parent; /* done if parent is red */
@@ -73,19 +73,24 @@ static void _RBTree_Extract_validate_unprotected(
        */
       dir = the_node != parent->child[0];
       if (!_RBTree_Is_red(sibling->child[_RBTree_Opposite_direction(dir)])) {
-        sibling->color = RBT_RED;
-        sibling->child[dir]->color = RBT_BLACK;
+        _RBTree_Set_color(sibling, RBT_RED);
+        _RBTree_Set_color(sibling->child[dir], RBT_BLACK);
         _RBTree_Rotate(sibling, _RBTree_Opposite_direction(dir));
         sibling = parent->child[_RBTree_Opposite_direction(dir)];
       }
-      sibling->color = parent->color;
-      parent->color = RBT_BLACK;
-      sibling->child[_RBTree_Opposite_direction(dir)]->color = RBT_BLACK;
+      _RBTree_Copy_color(sibling, parent);
+      _RBTree_Set_color(parent, RBT_BLACK);
+      _RBTree_Set_color(
+          sibling->child[_RBTree_Opposite_direction(dir)],
+          RBT_BLACK
+      );
       _RBTree_Rotate(parent, dir);
       break; /* done */
     }
   } /* while */
-  if(!the_node->parent->parent) the_node->color = RBT_BLACK;
+  if ( !the_node->parent->parent ) {
+    _RBTree_Set_color(the_node, RBT_BLACK);
+  }
 }
 
 /** @brief Extract a Node (unprotected)
@@ -145,7 +150,7 @@ void _RBTree_Extract_unprotected(
       /* fix the tree here if the child is a null leaf. */
       _RBTree_Extract_validate_unprotected(target);
     }
-    victim_color = target->color;
+    victim_color = _RBTree_Get_color(target);
     dir = target != target->parent->child[0];
     target->parent->child[dir] = leaf;
 
@@ -167,7 +172,7 @@ void _RBTree_Extract_unprotected(
      * still.
      */
     target->parent = the_node->parent;
-    target->color = the_node->color;
+    _RBTree_Copy_color(target, the_node);
   } else {
     /* the_node has at most 1 non-null child. Move the child in to
      * the_node's location in the tree. This may cause the coloring to be
@@ -182,7 +187,7 @@ void _RBTree_Extract_unprotected(
       /* fix the tree here if the child is a null leaf. */
       _RBTree_Extract_validate_unprotected(the_node);
     }
-    victim_color = the_node->color;
+    victim_color = _RBTree_Get_color(the_node);
 
     /* remove the_node from the tree */
     dir = the_node != the_node->parent->child[0];
@@ -196,7 +201,7 @@ void _RBTree_Extract_unprotected(
    */
   if (victim_color == RBT_BLACK) { /* eliminate case 1 */
     if (leaf) {
-      leaf->color = RBT_BLACK; /* case 2 */
+      _RBTree_Set_color(leaf, RBT_BLACK); /* case 2 */
     }
   }
 
@@ -204,7 +209,9 @@ void _RBTree_Extract_unprotected(
   _RBTree_Set_off_rbtree(the_node);
 
   /* set root to black, if it exists */
-  if (the_rbtree->root) the_rbtree->root->color = RBT_BLACK;
+  if ( the_rbtree->root ) {
+    _RBTree_Set_color(the_rbtree->root, RBT_BLACK);
+  }
 }
 
 

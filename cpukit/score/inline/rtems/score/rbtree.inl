@@ -199,17 +199,46 @@ RTEMS_INLINE_ROUTINE bool _RBTree_Is_first(
   return (the_node == _RBTree_First(the_rbtree, dir));
 }
 
+/** @brief Set node's color
+ */
+RTEMS_INLINE_ROUTINE void _RBTree_Set_color(
+  RBTree_Node *the_node,
+  RBTree_Color the_color
+)
+{
+  the_node->attributes &= ~RBTree_Node_color_bitmask;
+  the_node->attributes |= the_color;
+}
+
+/** @brief Get node's color
+ */
+RTEMS_INLINE_ROUTINE RBTree_Color _RBTree_Get_color(
+  const RBTree_Node *the_node
+)
+{
+  return the_node->attributes & RBTree_Node_color_bitmask;
+}
+
 /** @brief Is this node red?
  *
  *  This function returns true if @a the_node is red and false otherwise.
  */
 RTEMS_INLINE_ROUTINE bool _RBTree_Is_red(
-    const RBTree_Node *the_node
-    )
+  const RBTree_Node *the_node
+)
 {
-  return (the_node && the_node->color == RBT_RED);
+  return the_node && _RBTree_Get_color(the_node);
 }
 
+/** @brief Copy @a src node's color to @a dst node.
+ */
+RTEMS_INLINE_ROUTINE void _RBTree_Copy_color(
+  RBTree_Node *dst,
+  const RBTree_Node *src
+)
+{
+  _RBTree_Set_color(dst, _RBTree_Get_color(src));
+}
 
 /** @brief Does this RBTree have only One Node
  *

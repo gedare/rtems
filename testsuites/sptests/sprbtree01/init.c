@@ -62,8 +62,9 @@ static int rb_assert ( rtems_rbtree_node *root )
     rtems_rbtree_node *rn = rtems_rbtree_right(root);
 
     /* Consecutive red links */
-    if ( root->color == RBT_RED ) {
-      if ((ln && ln->color == RBT_RED)  || (rn && rn->color == RBT_RED)) {
+    if (_RBTree_Get_color(root) == RBT_RED ) {
+      if ((ln && _RBTree_Get_color(ln) == RBT_RED) ||
+          (rn && _RBTree_Get_color(rn) == RBT_RED)) {
         puts ( "Red violation" );
         return -1;
       }
@@ -88,7 +89,7 @@ static int rb_assert ( rtems_rbtree_node *root )
 
     /* Only count black links */
     if ( lh != -1 && rh != -1 )
-      return ( root->color == RBT_RED ) ? lh : lh + 1;
+      return ( _RBTree_Get_color(root) == RBT_RED ) ? lh : lh + 1;
     else
       return -1;
   }

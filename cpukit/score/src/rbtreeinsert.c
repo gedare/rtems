@@ -44,9 +44,9 @@ static void _RBTree_Validate_insert_unprotected(
 
     /* if uncle is red, repaint uncle/parent black and grandparent red */
     if( _RBTree_Is_red( u ) ) {
-      the_node->parent->color = RBT_BLACK;
-      u->color = RBT_BLACK;
-      g->color = RBT_RED;
+      _RBTree_Set_color(the_node->parent, RBT_BLACK);
+      _RBTree_Set_color(u, RBT_BLACK);
+      _RBTree_Set_color(g, RBT_RED);
       the_node = g;
     } else { /* if uncle is black */
       RBTree_Direction dir;
@@ -59,8 +59,8 @@ static void _RBTree_Validate_insert_unprotected(
         _RBTree_Rotate( the_node->parent, pdir );
         the_node = the_node->child[pdir];
       }
-      the_node->parent->color = RBT_BLACK;
-      g->color = RBT_RED;
+      _RBTree_Set_color(the_node->parent, RBT_BLACK);
+      _RBTree_Set_color(g, RBT_RED);
 
       /* now rotate grandparent in the other branch direction (toward uncle) */
       _RBTree_Rotate( g, ( 1 - pdir ) );
@@ -69,7 +69,7 @@ static void _RBTree_Validate_insert_unprotected(
 
   /* if the_node is now the root recolor it black */
   if ( !the_node->parent->parent ) {
-    the_node->color = RBT_BLACK;
+    _RBTree_Set_color(the_node, RBT_BLACK);
   }
 }
 
@@ -94,7 +94,7 @@ void _RBTree_Insert_finger(
     if ( !iter_node->child[dir] ) {
       /* found insertion point: iter_node->child[dir] */
       the_node->child[RBT_LEFT] = the_node->child[RBT_RIGHT] = NULL;
-      the_node->color = RBT_RED;
+      _RBTree_Set_color(the_node, RBT_RED);
       iter_node->child[dir] = the_node;
       the_node->parent = iter_node;
 
@@ -132,7 +132,7 @@ RBTree_Node *_RBTree_Insert_unprotected(
 
   if ( !root_node ) {
     /* special case: node inserted to empty tree */
-    the_node->color = RBT_BLACK;
+    _RBTree_Set_color(the_node, RBT_BLACK);
     the_rbtree->root = the_node;
     the_rbtree->first[0] = the_rbtree->first[1] = the_node;
     the_node->parent = (RBTree_Node *) the_rbtree;
