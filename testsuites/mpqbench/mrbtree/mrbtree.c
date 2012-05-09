@@ -25,6 +25,50 @@ static int rbtree_compare(
   return key1 - key2;
 }
 
+#define USE_RB_ASSERT
+static int rb_assert ( rtems_rbtree_node *root )
+{
+  int lh, rh;
+
+  if ( root == NULL )
+    return 1;
+  else {
+    rtems_rbtree_node *ln = rtems_rbtree_left(root);
+    rtems_rbtree_node *rn = rtems_rbtree_right(root);
+
+    /* Consecutive red links */
+    if ( root->color == RBT_RED ) {
+      if ((ln && ln->color == RBT_RED)  || (rn && rn->color == RBT_RED)) {
+        puts ( "Red violation" );
+        return -1;
+      }
+    }
+
+      lh = rb_assert ( ln );
+      rh = rb_assert ( rn );
+
+    /* Invalid binary search tree */
+    if ( ( ln != NULL && rbtree_compare(ln, root) > 0 )
+        || ( rn != NULL && rbtree_compare(rn, root) < 0 ) )
+    {
+      puts ( "Binary tree violation" );
+      return -1;
+    }
+
+    /* Black height mismatch */
+    if ( lh != -1 && rh != -1 && lh != rh ) {
+      puts ( "Black violation" );
+      return -1;
+    }
+
+    /* Only count black links */
+    if ( lh != -1 && rh != -1 )
+      return ( root->color == RBT_RED ) ? lh : lh + 1;
+    else
+      return -1;
+  }
+}
+
 #if 0
 /** @brief Find the node with given key in the tree
  *
@@ -139,6 +183,9 @@ void rbtree_insert( rtems_task_argument tid,  long kv ) {
   pn->key = kv_key(kv);
   pn->val = kv_value(kv);
   rtems_rbtree_insert_unprotected( &the_rbtree[tid], &n->rbt_node );
+#if defined(USE_RB_ASSERT)
+  rb_assert(the_rbtree[tid].root);
+#endif
 }
 
 long rbtree_min( rtems_task_argument tid ) {
@@ -174,6 +221,9 @@ long rbtree_pop_min( rtems_task_argument tid ) {
   } else {
     kv = (long)-1;
   }
+#if defined(USE_RB_ASSERT)
+  rb_assert(the_rbtree[tid].root);
+#endif
   return kv;
 }
 
@@ -220,6 +270,9 @@ long rbtree_extract( rtems_task_argument tid, int k )
   } else {
     kv = (long)-1;
   }
+#if defined(USE_RB_ASSERT)
+  rb_assert(the_rbtree[tid].root);
+#endif
   return kv;
 }
 
