@@ -42,12 +42,17 @@ void _RBTree_Initialize(
 {
   size_t      count;
   RBTree_Node *next;
+  RBTree_Node_attributes attr = 0;
 
   if ( !the_rbtree )
     return;
 
+  if ( is_stable ) {
+    attr |= RBT_STABLE;
+  }
+
   /* could do sanity checks here */
-  _RBTree_Initialize_empty( the_rbtree, compare_function, is_stable );
+  _RBTree_Initialize_empty( the_rbtree, compare_function, attr );
 
   count = number_nodes;
   next  = starting_address;

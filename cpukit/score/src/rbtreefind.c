@@ -42,7 +42,7 @@ RBTree_Node *_RBTree_Find_finger(
     compare_result = the_rbtree->compare_function( the_node, iter_node );
     if ( _RBTree_Is_equal( compare_result ) ) {
       found = iter_node;
-      if ( !the_rbtree->is_stable )
+      if ( !_RBTree_Is_stable(the_rbtree) )
         break;
     }
 

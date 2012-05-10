@@ -51,14 +51,17 @@ typedef struct RBTree_Node_struct RBTree_Node;
 
 typedef uint8_t RBTree_Node_attributes;
 #define RBTree_Node_color_bitmask         (0x80)
+#define RBTree_Node_is_stable_bitmask     (0x80)
 #define RBTree_Node_reserved_bitmask      (0x7f)
 
 typedef enum {
   RBT_BLACK = 0,
 
   RBT_RED = RBTree_Node_color_bitmask,
+  RBT_STABLE = RBTree_Node_is_stable_bitmask,
 
   RBTree_Attribute_color = RBTree_Node_color_bitmask,
+  RBTree_Attribute_is_stable = RBTree_Node_is_stable_bitmask,
 } RBTree_Attribute;
 
 /**
@@ -141,7 +144,7 @@ typedef struct {
   RBTree_Node *root;
   /** This points to the min and max nodes of this RBT. */
   RBTree_Node *first[2];
-  /** Tree attributes include: */
+  /** Tree attributes include: is_stable */
   RBTree_Node_attributes attributes;
   /**
    * Comparison function pointer. Keys to compare have to be found
@@ -149,8 +152,6 @@ typedef struct {
    * has higher key than second, -1 if lower, 0 if equal.
    */
   RBTree_Compare_function compare_function;
-  /** True if the tree keeps nodes with duplicate keys in FIFO order. */
-  bool is_stable;
 } RBTree_Control;
 
 /**

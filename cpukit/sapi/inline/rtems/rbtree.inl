@@ -55,7 +55,10 @@ RTEMS_INLINE_ROUTINE void rtems_rbtree_initialize_empty(
   bool                           is_stable
 )
 {
-  _RBTree_Initialize_empty( the_rbtree, compare_function, is_stable );
+  RBTree_Node_attributes attr = 0;
+  if ( is_stable )
+    attr |= RBT_STABLE;
+  _RBTree_Initialize_empty( the_rbtree, compare_function, attr );
 }
 
 /**
