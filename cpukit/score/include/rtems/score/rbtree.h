@@ -58,7 +58,7 @@ typedef enum {
 
   RBT_RED = RBTree_Node_color_bitmask,
 
-  RBTree_Color = RBTree_Node_color_bitmask,
+  RBTree_Attribute_color = RBTree_Node_color_bitmask,
 } RBTree_Attribute;
 
 /**
