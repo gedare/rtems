@@ -199,24 +199,43 @@ RTEMS_INLINE_ROUTINE bool _RBTree_Is_first(
   return (the_node == _RBTree_First(the_rbtree, dir));
 }
 
+/** @brief Set a node's attribute
+ */
+RTEMS_INLINE_ROUTINE void _RBTree_Set_attribute(
+  RBTree_Node *the_node,
+  const RBTree_Attribute the_attribute,
+  const RBTree_Attribute value
+)
+{
+  the_node->attributes &= ~the_attribute;
+  the_node->attributes |= value;
+}
+
+RTEMS_INLINE_ROUTINE RBTree_Attribute _RBTree_Get_attribute(
+  const RBTree_Node *the_node,
+  const RBTree_Node_attributes the_attribute
+)
+{
+  return the_node->attributes & the_attribute;
+}
+
 /** @brief Set node's color
  */
 RTEMS_INLINE_ROUTINE void _RBTree_Set_color(
   RBTree_Node *the_node,
-  RBTree_Color the_color
+  RBTree_Attribute the_color
 )
 {
-  the_node->attributes &= ~RBTree_Node_color_bitmask;
-  the_node->attributes |= the_color;
+  _RBTree_Set_attribute(the_node, RBTree_Color, the_color);
 }
 
 /** @brief Get node's color
  */
-RTEMS_INLINE_ROUTINE RBTree_Color _RBTree_Get_color(
+RTEMS_INLINE_ROUTINE RBTree_Attribute _RBTree_Get_color(
   const RBTree_Node *the_node
 )
 {
-  return the_node->attributes & RBTree_Node_color_bitmask;
+  return _RBTree_Get_attribute(the_node, RBTree_Color);
 }
 
 /** @brief Is this node red?

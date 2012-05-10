@@ -53,13 +53,13 @@ typedef uint8_t RBTree_Node_attributes;
 #define RBTree_Node_color_bitmask         (0x80)
 #define RBTree_Node_reserved_bitmask      (0x7f)
 
-/**
- * This enum type defines the colors available for the RBTree Nodes
- */
 typedef enum {
   RBT_BLACK = 0,
-  RBT_RED = RBTree_Node_color_bitmask
-} RBTree_Color;
+
+  RBT_RED = RBTree_Node_color_bitmask,
+
+  RBTree_Color = RBTree_Node_color_bitmask,
+} RBTree_Attribute;
 
 /**
  *  @struct RBTree_Node_struct
@@ -162,8 +162,8 @@ typedef struct {
   .root = NULL, \
   .first[0] = NULL, \
   .first[1] = NULL, \
+  .atttributes = 0 \
   .compare_function = NULL, \
-  .is_stable = false \
 }
 
 /**

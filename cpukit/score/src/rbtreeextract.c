@@ -106,7 +106,7 @@ void _RBTree_Extract_unprotected(
     )
 {
   RBTree_Node *leaf, *target;
-  RBTree_Color victim_color;
+  RBTree_Attribute victim_color;
   RBTree_Direction dir;
 
   if (!the_node) return;
