@@ -70,6 +70,7 @@ static void _RBTree_Validate_insert_unprotected(
   /* if the_node is now the root recolor it black */
   if ( !_RBTree_Parent(the_node) ) {
     _RBTree_Set_color(the_node, RBT_BLACK);
+    _RBTree_Add_to_black_height(the_node->parent, 1);
   }
 }
 
@@ -133,6 +134,7 @@ RBTree_Node *_RBTree_Insert_unprotected(
   if ( !root_node ) {
     /* special case: node inserted to empty tree */
     _RBTree_Set_color(the_node, RBT_BLACK);
+    _RBTree_Set_black_height(the_node, 1);
     the_rbtree->root = the_node;
     the_rbtree->first[0] = the_rbtree->first[1] = the_node;
     the_node->parent = (RBTree_Node *) the_rbtree;

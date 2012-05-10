@@ -268,6 +268,18 @@ RTEMS_INLINE_ROUTINE bool _RBTree_Is_red(
   return the_node && _RBTree_Get_color(the_node);
 }
 
+/** @brief Add or subtract @a amount to/from node's black height
+ */
+RTEMS_INLINE_ROUTINE void _RBTree_Add_to_black_height(
+  RBTree_Node *the_node,
+  int amount
+)
+{
+  int bh = _RBTree_Get_black_height(the_node);
+  bh += amount;
+  _RBTree_Set_black_height(the_node, bh);
+}
+
 /** @brief Does this RBTree have only One Node
  *
  *  This function returns true if there is only one node on @a the_rbtree and

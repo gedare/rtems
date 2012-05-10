@@ -52,7 +52,8 @@ typedef struct RBTree_Node_struct RBTree_Node;
 typedef uint8_t RBTree_Node_attributes;
 #define RBTree_Node_color_bitmask         (0x80)
 #define RBTree_Node_is_stable_bitmask     (0x80)
-#define RBTree_Node_reserved_bitmask      (0x7f)
+#define RBTree_Node_reserved_bitmask      (0x60)
+#define RBTree_Node_black_height_bitmask  (0x1f)
 
 typedef enum {
   RBT_BLACK = 0,
@@ -62,6 +63,7 @@ typedef enum {
 
   RBTree_Attribute_color = RBTree_Node_color_bitmask,
   RBTree_Attribute_is_stable = RBTree_Node_is_stable_bitmask,
+  RBTree_Attribute_black_height = RBTree_Node_black_height_bitmask,
 } RBTree_Attribute;
 
 /**

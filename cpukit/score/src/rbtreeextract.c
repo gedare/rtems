@@ -66,6 +66,10 @@ static void _RBTree_Extract_validate_unprotected(
         _RBTree_Set_color( parent, RBT_BLACK );
         break;
       }
+      if ( !_RBTree_Parent(parent) ) {
+        _RBTree_Add_to_black_height(parent->parent, -1);
+        break;
+      }
       the_node = parent; /* done if parent is red */
       parent = _RBTree_Parent( the_node );
       sibling = _RBTree_Sibling( the_node );
@@ -96,6 +100,7 @@ static void _RBTree_Extract_validate_unprotected(
   } /* while */
   if ( !_RBTree_Parent( the_node ) ) {
     _RBTree_Set_color( the_node, RBT_BLACK );
+    _RBTree_Add_to_black_height(the_node->parent, 1);
   }
 }
 
