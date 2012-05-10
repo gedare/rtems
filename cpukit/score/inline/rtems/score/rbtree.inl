@@ -222,28 +222,40 @@ RTEMS_INLINE_ROUTINE RBTree_Attribute _RBTree_Get_attribute(
   return the_node->attributes & the_attribute;
 }
 
-#define RBTREE_GENERATE_SET_ATTRIBUTE( name )                           \
-RTEMS_INLINE_ROUTINE void _RBTree_Set_##name (                          \
-  RBTree_Node *the_node,                                                \
-  RBTree_Attribute the_##name                                           \
-)                                                                       \
-{                                                                       \
-  _RBTree_Set_attribute(the_node, RBTree_Attribute_##name, the_##name); \
+#define RBTREE_GENERATE_SET_ATTRIBUTE( name )                             \
+RTEMS_INLINE_ROUTINE void _RBTree_Set_##name (                            \
+  RBTree_Node *the_node,                                                  \
+  RBTree_Attribute the_##name                                             \
+)                                                                         \
+{                                                                         \
+  _RBTree_Set_attribute( the_node, RBTree_Attribute_##name, the_##name ); \
 }
 
-#define RBTREE_GENERATE_GET_ATTRIBUTE( name )                           \
-RTEMS_INLINE_ROUTINE RBTree_Attribute _RBTree_Get_##name(               \
-  const RBTree_Node *the_node                                           \
-)                                                                       \
-{                                                                       \
-  return _RBTree_Get_attribute(the_node, RBTree_Attribute_##name);      \
+#define RBTREE_GENERATE_GET_ATTRIBUTE( name )                             \
+RTEMS_INLINE_ROUTINE RBTree_Attribute _RBTree_Get_##name(                 \
+  const RBTree_Node *the_node                                             \
+)                                                                         \
+{                                                                         \
+  return _RBTree_Get_attribute( the_node, RBTree_Attribute_##name );      \
 }
-#define RBTREE_GENERATE_GET_AND_SET_ATTRIBUTE(name) \
-  RBTREE_GENERATE_SET_ATTRIBUTE(name)               \
-  RBTREE_GENERATE_GET_ATTRIBUTE(name)
+#define RBTREE_GENERATE_GET_AND_SET_ATTRIBUTE( name )                     \
+  RBTREE_GENERATE_SET_ATTRIBUTE( name )                                   \
+  RBTREE_GENERATE_GET_ATTRIBUTE( name )
 
-RBTREE_GENERATE_GET_AND_SET_ATTRIBUTE(color)
-RBTREE_GENERATE_GET_AND_SET_ATTRIBUTE(is_stable)
+RBTREE_GENERATE_GET_AND_SET_ATTRIBUTE(color);
+RBTREE_GENERATE_GET_AND_SET_ATTRIBUTE(is_stable);
+RBTREE_GENERATE_GET_AND_SET_ATTRIBUTE(black_height);
+
+#define RBTREE_GENERATE_COPY_ATTRIBUTE( name )                            \
+RTEMS_INLINE_ROUTINE void _RBTree_Copy_##name(                            \
+  RBTree_Node *dst,                                                       \
+  const RBTree_Node *src                                                  \
+)                                                                         \
+{                                                                         \
+  _RBTree_Set_##name( dst, _RBTree_Get_##name( src ) );                   \
+}
+
+RBTREE_GENERATE_COPY_ATTRIBUTE(color);
 
 /** @brief Is this node red?
  *
@@ -254,16 +266,6 @@ RTEMS_INLINE_ROUTINE bool _RBTree_Is_red(
 )
 {
   return the_node && _RBTree_Get_color(the_node);
-}
-
-/** @brief Copy @a src node's color to @a dst node.
- */
-RTEMS_INLINE_ROUTINE void _RBTree_Copy_color(
-  RBTree_Node *dst,
-  const RBTree_Node *src
-)
-{
-  _RBTree_Set_color(dst, _RBTree_Get_color(src));
 }
 
 /** @brief Does this RBTree have only One Node
