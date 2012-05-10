@@ -42,17 +42,17 @@ RBTree_Node *_RBTree_Next_unprotected(
       next = current;
     }
   } else {
-    RBTree_Node *parent = node->parent;
+    RBTree_Node *parent = _RBTree_Parent(node);
 
-    if ( parent->parent && node == parent->child [opp_dir] ) {
+    if ( parent && node == parent->child [opp_dir] ) {
       next = parent;
     } else {
-      while ( parent->parent && node == parent->child [dir] ) {
+      while ( parent && node == parent->child [dir] ) {
         node = parent;
-        parent = parent->parent;
+        parent = _RBTree_Parent(parent);
       }
 
-      if ( parent->parent ) {
+      if ( _RBTree_Parent(parent) ) {
         next = parent;
       }
     }

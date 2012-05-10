@@ -68,7 +68,7 @@ static void _RBTree_Validate_insert_unprotected(
   }
 
   /* if the_node is now the root recolor it black */
-  if ( !the_node->parent->parent ) {
+  if ( !_RBTree_Parent(the_node) ) {
     _RBTree_Set_color(the_node, RBT_BLACK);
   }
 }

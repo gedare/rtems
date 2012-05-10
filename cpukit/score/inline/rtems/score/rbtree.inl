@@ -132,7 +132,10 @@ RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Parent(
   const RBTree_Node *the_node
 )
 {
-  if (!the_node->parent->parent) return NULL;
+  if ( !the_node )
+    return NULL;
+  if ( the_node->parent->parent == the_node )
+    return NULL;
   return the_node->parent;
 }
 
@@ -299,7 +302,6 @@ RTEMS_INLINE_ROUTINE void _RBTree_Initialize_empty(
     bool                     is_stable
     )
 {
-  the_rbtree->permanent_null   = NULL;
   the_rbtree->root             = NULL;
   the_rbtree->first[0]         = NULL;
   the_rbtree->first[1]         = NULL;
@@ -317,11 +319,7 @@ RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Grandparent(
   const RBTree_Node *the_node
 )
 {
-  if(!the_node) return NULL;
-  if(!(the_node->parent)) return NULL;
-  if(!(the_node->parent->parent)) return NULL;
-  if(!(the_node->parent->parent->parent)) return NULL;
-  return(the_node->parent->parent);
+  return _RBTree_Parent( _RBTree_Parent( the_node ) );
 }
 
 /** @brief Return a pointer to node's sibling
@@ -333,14 +331,15 @@ RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Sibling(
   const RBTree_Node *the_node
 )
 {
-  if(!the_node) return NULL;
-  if(!(the_node->parent)) return NULL;
-  if(!(the_node->parent->parent)) return NULL;
+  RBTree_Node *p = _RBTree_Parent( the_node );
+  if ( !p )
+    return NULL;
 
-  if(the_node == the_node->parent->child[RBT_LEFT])
-    return the_node->parent->child[RBT_RIGHT];
-  else
-    return the_node->parent->child[RBT_LEFT];
+  if ( the_node == _RBTree_Left(p) ) {
+    return _RBTree_Right(p);
+  } else {
+    return _RBTree_Left(p);
+  }
 }
 
 /** @brief Return a pointer to node's parent's sibling
@@ -352,10 +351,7 @@ RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Parent_sibling(
   const RBTree_Node *the_node
 )
 {
-  if(!the_node) return NULL;
-  if(_RBTree_Grandparent(the_node) == NULL) return NULL;
-
-  return _RBTree_Sibling(the_node->parent);
+  return _RBTree_Sibling( _RBTree_Parent(the_node) );
 }
 
 /** @brief Find the RBTree_Control header given a node in the tree
@@ -364,13 +360,16 @@ RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Parent_sibling(
  *  Tree containing @a the_node if it exists, and NULL if not. 
  */
 RTEMS_INLINE_ROUTINE RBTree_Control *_RBTree_Find_header_unprotected(
-    RBTree_Node *the_node
-    )
+  RBTree_Node *the_node
+)
 {
-  if(!the_node) return NULL;
-  if(!(the_node->parent)) return NULL;
-  while(the_node->parent) the_node = the_node->parent;
-  return (RBTree_Control*)the_node;
+  RBTree_Node *n = the_node;
+  RBTree_Node *p = _RBTree_Parent(n);
+  while ( p ) {
+    n = p;
+    p = _RBTree_Parent(n);
+  }
+  return (RBTree_Control*)n;
 }
 
 RTEMS_INLINE_ROUTINE bool _RBTree_Is_equal( int compare_result )
@@ -482,18 +481,29 @@ RTEMS_INLINE_ROUTINE void _RBTree_Rotate(
     )
 {
   RBTree_Node *c;
-  if (the_node == NULL) return;
-  if (the_node->child[_RBTree_Opposite_direction(dir)] == NULL) return;
+  RBTree_Direction opp_dir = _RBTree_Opposite_direction(dir);
+  RBTree_Direction node_dir;
 
-  c = the_node->child[_RBTree_Opposite_direction(dir)];
-  the_node->child[_RBTree_Opposite_direction(dir)] = c->child[dir];
+  if ( !the_node)
+    return;
 
-  if (c->child[dir])
+  c = the_node->child[opp_dir];
+  if ( !c )
+    return;
+
+  the_node->child[opp_dir] = c->child[dir];
+
+  if ( c->child[dir] )
     c->child[dir]->parent = the_node;
 
   c->child[dir] = the_node;
 
-  the_node->parent->child[the_node != the_node->parent->child[0]] = c;
+  if ( _RBTree_Parent(the_node) ) {
+    node_dir = the_node != the_node->parent->child[0];
+    the_node->parent->child[node_dir] = c;
+  } else {
+    the_node->parent->parent = c;
+  }
 
   c->parent = the_node->parent;
   the_node->parent = c;
@@ -520,16 +530,16 @@ RTEMS_INLINE_ROUTINE RBTree_Node* _RBTree_Common_ancestor(
 {
   int compare_result;
   RBTree_Direction dir;
-  RBTree_Node* ancestor = finger;
+  RBTree_Node *ancestor = finger;
+  RBTree_Node *p;
 
-  while ( finger->parent->parent ) {
-    compare_result = the_rbtree->compare_function(the_node, finger->parent);
+  while ( p = _RBTree_Parent(finger) ) {
+    compare_result = the_rbtree->compare_function(the_node, p);
     dir = (RBTree_Direction)_RBTree_Is_greater( compare_result );
-    if ( finger != finger->parent->child[dir] ) {
+    if ( finger != p->child[dir] ) {
       /* finger is not on path between the_node and root. reset ancestor. */
-      ancestor = finger->parent;
+      ancestor = p;
     }
-    finger = finger->parent;
   }
   return ancestor;
 }

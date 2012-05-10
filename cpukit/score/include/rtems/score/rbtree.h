@@ -132,17 +132,17 @@ typedef int (*RBTree_Compare_function)(
 
 /* the RBTree_Control is actually part of the RBTree structure as an
  * RBTree_Node. The mapping of fields from RBTree_Control to RBTree_Node are:
- *   permanent_null == parent
- *   root == left
- *   first[0] == right
+ *   root == parent
+ *   first[] == child[]
+ *   attributes == attributes
  */
 typedef struct {
-  /** This points to a NULL. Useful for finding the root. */
-  RBTree_Node *permanent_null;
   /** This points to the root node of the RBT. */
   RBTree_Node *root;
   /** This points to the min and max nodes of this RBT. */
   RBTree_Node *first[2];
+  /** Tree attributes include: */
+  RBTree_Node_attributes attributes;
   /**
    * Comparison function pointer. Keys to compare have to be found
    * inside to maintain generality. It has to return 1 if first node
@@ -158,7 +158,6 @@ typedef struct {
  */
 #define RBTREE_INITIALIZER_EMPTY(name) \
 { \
-  .permanent_null = NULL, \
   .root = NULL, \
   .first[0] = NULL, \
   .first[1] = NULL, \
