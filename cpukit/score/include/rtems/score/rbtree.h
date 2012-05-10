@@ -81,7 +81,7 @@ struct RBTree_Node_struct {
   RBTree_Node *parent;
   /** child[0] points to the left child, child[1] points to the right child */
   RBTree_Node *child[2];
-  /** Node attributes include: color, black-height */
+  /** Node attributes include: color */
   RBTree_Node_attributes attributes;
 };
 
