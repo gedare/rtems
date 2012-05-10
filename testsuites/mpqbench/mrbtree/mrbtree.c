@@ -31,7 +31,7 @@ static int rb_assert ( rtems_rbtree_node *root )
   int lh, rh;
 
   if ( root == NULL )
-    return 1;
+    return 0;
   else {
     rtems_rbtree_node *ln = rtems_rbtree_left(root);
     rtems_rbtree_node *rn = rtems_rbtree_right(root);
@@ -46,6 +46,13 @@ static int rb_assert ( rtems_rbtree_node *root )
 
       lh = rb_assert ( ln );
       rh = rb_assert ( rn );
+    if ( !rtems_rbtree_parent(root) ) {
+      int bh = _RBTree_Get_black_height(root->parent);
+      if ( lh != -1 && lh != bh ) {
+        printf ( "Tree black height violation: %d != %d\n", lh, bh );
+        return -1;
+      }
+    }
 
     /* Invalid binary search tree */
     if ( ( ln != NULL && rbtree_compare(ln, root) > 0 )
