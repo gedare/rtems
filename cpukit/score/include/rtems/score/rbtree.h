@@ -146,7 +146,7 @@ typedef struct {
   RBTree_Node *root;
   /** This points to the min and max nodes of this RBT. */
   RBTree_Node *first[2];
-  /** Tree attributes include: is_stable */
+  /** Tree attributes include: is_stable, black height */
   RBTree_Node_attributes attributes;
   /**
    * Comparison function pointer. Keys to compare have to be found
