@@ -47,7 +47,7 @@ RBTree_Node *_RBTree_Find_finger(
     }
 
     dir = (RBTree_Direction)_RBTree_Is_greater( compare_result );
-    iter_node = iter_node->child[dir];
+    iter_node = _RBTree_Child(iter_node, dir);
   }
 
   return found;
