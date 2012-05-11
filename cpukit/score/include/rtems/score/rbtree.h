@@ -50,10 +50,13 @@ extern "C" {
 typedef struct RBTree_Node_struct RBTree_Node;
 
 typedef uint8_t RBTree_Node_attributes;
-#define RBTree_Node_color_bitmask         (0x80)
-#define RBTree_Node_is_stable_bitmask     (0x80)
-#define RBTree_Node_reserved_bitmask      (0x60)
+// Tree attributes
 #define RBTree_Node_black_height_bitmask  (0x1f)
+#define RBTree_Node_is_stable_bitmask     (0x80)
+// Node attributes
+#define RBTree_Node_left_thread_bitmask   (0x20)
+#define RBTree_Node_right_thread_bitmask  (0x40)
+#define RBTree_Node_color_bitmask         (0x80)
 
 typedef enum {
   RBT_BLACK = 0,
@@ -61,8 +64,13 @@ typedef enum {
   RBT_RED = RBTree_Node_color_bitmask,
   RBT_STABLE = RBTree_Node_is_stable_bitmask,
 
+  RBT_LEFT_THREAD = RBTree_Node_left_thread_bitmask,
+  RBT_RIGHT_THREAD = RBTree_Node_right_thread_bitmask,
+
   RBTree_Attribute_color = RBTree_Node_color_bitmask,
   RBTree_Attribute_is_stable = RBTree_Node_is_stable_bitmask,
+  RBTree_Attribute_left_thread = RBTree_Node_left_thread_bitmask,
+  RBTree_Attribute_right_thread = RBTree_Node_right_thread_bitmask,
   RBTree_Attribute_black_height = RBTree_Node_black_height_bitmask,
 } RBTree_Attribute;
 
@@ -164,7 +172,7 @@ typedef struct {
   .root = NULL, \
   .first[0] = NULL, \
   .first[1] = NULL, \
-  .atttributes = 0 \
+  .attributes = 0 \
   .compare_function = NULL, \
 }
 
@@ -182,7 +190,7 @@ RBTree_Control name = RBTREE_INITIALIZER_EMPTY(name)
   .parent = NULL, \
   .child[0] = NULL, \
   .child[1] = NULL, \
-  RBT_RED \
+  .attributes = 0 \
 }
 
 /**

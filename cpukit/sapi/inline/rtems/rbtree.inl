@@ -144,7 +144,7 @@ RTEMS_INLINE_ROUTINE rtems_rbtree_node *rtems_rbtree_left(
   const rtems_rbtree_node *the_node
 )
 {
-  return _RBTree_Left( the_node );
+  return _RBTree_Child( the_node, RBT_LEFT );
 }
 
 /**
@@ -156,7 +156,7 @@ RTEMS_INLINE_ROUTINE rtems_rbtree_node *rtems_rbtree_right(
   const rtems_rbtree_node *the_node
 )
 {
-  return _RBTree_Right( the_node );
+  return _RBTree_Child( the_node, RBT_RIGHT );
 }
 
 /**

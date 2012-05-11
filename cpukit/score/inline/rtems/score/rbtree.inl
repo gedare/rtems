@@ -99,6 +99,22 @@ RTEMS_INLINE_ROUTINE bool _RBTree_Is_null_node(
   return (the_node == NULL);
 }
 
+/** @brief Is the RBTree Empty
+ *
+ *  This function returns true if there are no nodes on @a the_rbtree and
+ *  false otherwise.
+ *
+ *  @param[in] the_rbtree is the rbtree to be operated upon.
+ *
+ *  @return This function returns true if there are no nodes on 
+ *  @a the_rbtree and false otherwise.
+ */
+RTEMS_INLINE_ROUTINE bool _RBTree_Is_empty(
+  const RBTree_Control *the_rbtree
+)
+{
+  return (the_rbtree->root == NULL);
+}
 
 /** @brief Return pointer to RBTree's root node
  *
@@ -122,68 +138,6 @@ RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_First(
 )
 {
   return the_rbtree->first[dir];
-}
-
-/** @brief Return pointer to the parent of this node
- *
- *  This function returns a pointer to the parent node of @a the_node.
- */
-RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Parent(
-  const RBTree_Node *the_node
-)
-{
-  if ( !the_node )
-    return NULL;
-  if ( the_node->parent->parent == the_node )
-    return NULL;
-  return the_node->parent;
-}
-
-/** @brief Return pointer to the left of this node
- *
- *  This function returns a pointer to the left node of this node.
- *
- *  @param[in] the_node is the node to be operated upon.
- *
- *  @return This method returns the left node on the rbtree.
- */
-RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Left(
-  const RBTree_Node *the_node
-)
-{
-  return the_node->child[RBT_LEFT];
-}
-
-/** @brief Return pointer to the right of this node
- *
- *  This function returns a pointer to the right node of this node.
- *
- *  @param[in] the_node is the node to be operated upon.
- *
- *  @return This method returns the right node on the rbtree.
- */
-RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Right(
-  const RBTree_Node *the_node
-)
-{
-  return the_node->child[RBT_RIGHT];
-}
-
-/** @brief Is the RBTree Empty
- *
- *  This function returns true if there are no nodes on @a the_rbtree and
- *  false otherwise.
- *
- *  @param[in] the_rbtree is the rbtree to be operated upon.
- *
- *  @return This function returns true if there are no nodes on 
- *  @a the_rbtree and false otherwise.
- */
-RTEMS_INLINE_ROUTINE bool _RBTree_Is_empty(
-  const RBTree_Control *the_rbtree
-)
-{
-  return (the_rbtree->root == NULL);
 }
 
 /** @brief Is this the First Node on the RBTree
@@ -280,6 +234,42 @@ RTEMS_INLINE_ROUTINE void _RBTree_Add_to_black_height(
   _RBTree_Set_black_height(the_node, bh);
 }
 
+/** @brief Return pointer to the parent of this node
+ *
+ *  This function returns a pointer to the parent node of @a the_node.
+ */
+RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Parent(
+  const RBTree_Node *the_node
+)
+{
+  if ( !the_node )
+    return NULL;
+  if ( the_node->parent->parent == the_node )
+    return NULL;
+  return the_node->parent;
+}
+
+/** @brief Return pointer to the child of this node in given direction
+ *
+ *  This function returns a pointer to the child of this node if it exists.
+ *
+ *  @param[in] the_node is the node to be operated upon.
+ *  @param[in] dir is the direction of the child.
+ */
+RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Child(
+  const RBTree_Node *the_node,
+  const RBTree_Direction dir
+)
+{
+  RBTree_Node_attributes attr;
+  if ( !the_node )
+    return NULL;
+  attr = _RBTree_Get_attribute(the_node, RBTree_Attribute_left_thread << dir);
+  if ( !attr )
+    return NULL;
+  return the_node->child[dir];
+}
+
 /** @brief Does this RBTree have only One Node
  *
  *  This function returns true if there is only one node on @a the_rbtree and
@@ -287,11 +277,13 @@ RTEMS_INLINE_ROUTINE void _RBTree_Add_to_black_height(
  *
  */
 RTEMS_INLINE_ROUTINE bool _RBTree_Has_only_one_node(
-    const RBTree_Control *the_rbtree
-    )
+  const RBTree_Control *the_rbtree
+)
 {
-  if(!the_rbtree) return NULL; /* TODO: expected behavior? */
-  return (the_rbtree->root->child[RBT_LEFT] == NULL && the_rbtree->root->child[RBT_RIGHT] == NULL);
+  if ( !the_rbtree )
+    return false;
+  return (_RBTree_Child(the_rbtree->root, RBT_LEFT) == NULL
+          && _RBTree_Child(the_rbtree->root, RBT_RIGHT) == NULL);
 }
 
 /** @brief Is this Node the RBTree root
@@ -337,6 +329,14 @@ RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Grandparent(
   return _RBTree_Parent( _RBTree_Parent( the_node ) );
 }
 
+// Does not work for the root node.. not sure of a useful ret value anyway
+RTEMS_INLINE_ROUTINE RBTree_Direction _RBTree_Direction_from_parent(
+  const RBTree_Node *the_node
+)
+{
+  return the_node != the_node->parent->child[0];
+}
+
 /** @brief Return a pointer to node's sibling
  *
  *  This function returns a pointer to the sibling of @a the_node if it 
@@ -347,14 +347,15 @@ RTEMS_INLINE_ROUTINE RBTree_Node *_RBTree_Sibling(
 )
 {
   RBTree_Node *p = _RBTree_Parent( the_node );
+  RBTree_Direction dir;
+  RBTree_Direction opp_dir;
+
   if ( !p )
     return NULL;
 
-  if ( the_node == _RBTree_Left(p) ) {
-    return _RBTree_Right(p);
-  } else {
-    return _RBTree_Left(p);
-  }
+  dir = _RBTree_Direction_from_parent(the_node);
+  opp_dir = _RBTree_Opposite_direction(dir); 
+  return _RBTree_Child(p, opp_dir);
 }
 
 /** @brief Return a pointer to node's parent's sibling
@@ -496,27 +497,31 @@ RTEMS_INLINE_ROUTINE void _RBTree_Rotate(
     )
 {
   RBTree_Node *c;
+  RBTree_Node *cc;
   RBTree_Direction opp_dir = _RBTree_Opposite_direction(dir);
   RBTree_Direction node_dir;
 
-  if ( !the_node)
-    return;
-
-  c = the_node->child[opp_dir];
+  c = _RBTree_Child(the_node, opp_dir);
   if ( !c )
     return;
 
-  the_node->child[opp_dir] = c->child[dir];
-
-  if ( c->child[dir] )
-    c->child[dir]->parent = the_node;
+  cc = _RBTree_Child(c, dir);
+  if ( cc ) {
+    the_node->child[opp_dir] = cc;
+    cc->parent = the_node;
+  } else {
+    // cc is a thread back to the_node. so create a thread from the_node to c
+    the_node->child[opp_dir] = c;
+    _RBTree_Set_attribute(the_node, RBTree_Attribute_left_thread << opp_dir, 1);
+  }
 
   c->child[dir] = the_node;
 
   if ( _RBTree_Parent(the_node) ) {
-    node_dir = the_node != the_node->parent->child[0];
+    node_dir = _RBTree_Direction_from_parent(the_node);
     the_node->parent->child[node_dir] = c;
   } else {
+    // the_node is the root, so now c is the root.
     the_node->parent->parent = c;
   }
 
@@ -530,7 +535,10 @@ RTEMS_INLINE_ROUTINE bool _RBTree_Is_stable(
   const RBTree_Control *the_rbtree
 )
 {
-  return( the_rbtree && _RBTree_Get_is_stable(the_rbtree) == RBT_STABLE );
+  return (
+    the_rbtree
+    && _RBTree_Get_is_stable( (RBTree_Node*) the_rbtree ) == RBT_STABLE
+  );
 }
 
 /**
@@ -548,7 +556,7 @@ RTEMS_INLINE_ROUTINE RBTree_Node* _RBTree_Common_ancestor(
   RBTree_Node *ancestor = finger;
   RBTree_Node *p;
 
-  while ( p = _RBTree_Parent(finger) ) {
+  while ( ( p = _RBTree_Parent(finger) ) ) {
     compare_result = the_rbtree->compare_function(the_node, p);
     dir = (RBTree_Direction)_RBTree_Is_greater( compare_result );
     if ( finger != p->child[dir] ) {

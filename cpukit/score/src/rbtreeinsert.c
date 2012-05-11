@@ -51,13 +51,13 @@ static void _RBTree_Validate_insert_unprotected(
     } else { /* if uncle is black */
       RBTree_Direction dir;
       RBTree_Direction pdir;
-      dir = the_node != the_node->parent->child[0];
-      pdir = the_node->parent != g->child[0];
+      dir = _RBTree_Direction_from_parent(the_node);
+      pdir = _RBTree_Direction_from_parent(the_node->parent);
 
       /* ensure node is on the same branch direction as parent */
       if ( dir != pdir ) {
         _RBTree_Rotate( the_node->parent, pdir );
-        the_node = the_node->child[pdir];
+        the_node = _RBTree_Child(the_node, pdir);
       }
       _RBTree_Set_color(the_node->parent, RBT_BLACK);
       _RBTree_Set_color(g, RBT_RED);
@@ -82,7 +82,9 @@ void _RBTree_Insert_finger(
 {
   int compare_result;
   RBTree_Direction dir;
+  RBTree_Direction opp_dir;
   RBTree_Node* iter_node;
+  RBTree_Node* c;
 
   /* first make sure the finger is good. this can be cheaper if a finger
    * path is kept to the root instead of reconstructing it here. */
@@ -92,10 +94,17 @@ void _RBTree_Insert_finger(
   while ( iter_node ) {
     compare_result = the_rbtree->compare_function( the_node, iter_node );
     dir = !_RBTree_Is_lesser( compare_result );
-    if ( !iter_node->child[dir] ) {
+    c = _RBTree_Child(iter_node, dir);
+    if ( !c ) {
       /* found insertion point: iter_node->child[dir] */
-      the_node->child[RBT_LEFT] = the_node->child[RBT_RIGHT] = NULL;
-      _RBTree_Set_color(the_node, RBT_RED);
+      opp_dir = _RBTree_Opposite_direction(dir);
+      _RBTree_Set_attribute(the_node, RBTree_Attribute_left_thread << dir, 1);
+      the_node->child[dir] = iter_node->child[dir];
+
+      _RBTree_Set_attribute(the_node, RBTree_Attribute_left_thread << opp_dir, 1);
+      the_node->child[opp_dir] = iter_node;
+
+      _RBTree_Set_attribute(iter_node, RBTree_Attribute_left_thread << dir, 0);
       iter_node->child[dir] = the_node;
       the_node->parent = iter_node;
 
@@ -109,9 +118,8 @@ void _RBTree_Insert_finger(
         the_rbtree->first[dir] = the_node;
       }
       break;
-    } else {
-      iter_node = iter_node->child[dir];
     }
+    iter_node = c;
   } /* while(iter_node) */
 
   /* verify red-black properties */
