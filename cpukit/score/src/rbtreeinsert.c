@@ -86,9 +86,8 @@ void _RBTree_Insert_finger(
   RBTree_Node* iter_node;
   RBTree_Node* c;
 
-  /* first make sure the finger is good. this can be cheaper if a finger
-   * path is kept to the root instead of reconstructing it here. */
-  iter_node = _RBTree_Common_ancestor(the_rbtree, the_node, finger);
+  /* TODO: make sure the finger is good. */
+  iter_node = finger;
 
   /* descend tree to leaf and insert */
   while ( iter_node ) {
@@ -98,17 +97,23 @@ void _RBTree_Insert_finger(
     if ( !c ) {
       /* found insertion point: iter_node->child[dir] */
       opp_dir = _RBTree_Opposite_direction(dir);
-      _RBTree_Set_attribute(the_node, RBTree_Attribute_left_thread << dir, 1);
+      _RBTree_Set_attribute(
+          the_node,
+          RBTree_Attribute_left_thread << dir, 
+          RBTree_Attribute_left_thread << dir);
       the_node->child[dir] = iter_node->child[dir];
 
-      _RBTree_Set_attribute(the_node, RBTree_Attribute_left_thread << opp_dir, 1);
+      _RBTree_Set_attribute(
+          the_node,
+          RBTree_Attribute_left_thread << opp_dir,
+          RBTree_Attribute_left_thread << opp_dir);
       the_node->child[opp_dir] = iter_node;
 
       _RBTree_Set_attribute(iter_node, RBTree_Attribute_left_thread << dir, 0);
       iter_node->child[dir] = the_node;
       the_node->parent = iter_node;
 
-      /* update min/max */
+      /* update min/max */ // FIXME: just check if !iter_node->child[dir]??
       compare_result = the_rbtree->compare_function(
           the_node,
           _RBTree_First(the_rbtree, dir)

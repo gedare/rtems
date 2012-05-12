@@ -117,6 +117,9 @@ void _RBTree_Extract_unprotected(
     )
 {
   RBTree_Node *leaf, *target;
+  RBTree_Node *lc, *rc;
+  RBTree_Node *p;
+  RBTree_Node *tmp;
   RBTree_Attribute victim_color;
   RBTree_Direction dir;
 
@@ -138,18 +141,22 @@ void _RBTree_Extract_unprotected(
     the_rbtree->first[RBT_RIGHT] = previous;
   }
 
+  lc = _RBTree_Child(the_node, RBT_LEFT);
+  rc = _RBTree_Child(the_node, RBT_RIGHT);
   /* if the_node has at most one non-null child then it is safe to proceed
    * check if both children are non-null, if so then we must find a target node
    * either max in node->child[RBT_LEFT] or min in node->child[RBT_RIGHT],
    * and replace the_node with the target node. This maintains the binary
    * search tree property, but may violate the red-black properties.
    */
-
-  if ( the_node->child[RBT_LEFT] && the_node->child[RBT_RIGHT] ) {
-    /* find max in node->child[RBT_LEFT] */
-    target = the_node->child[RBT_LEFT];
-    while ( target->child[RBT_RIGHT] )
-      target = target->child[RBT_RIGHT];
+  if ( lc && rc ) {
+    /* find max in node's left subtree. */
+    target = lc;
+    tmp = _RBTree_Child(target, RBT_RIGHT);
+    while ( tmp ) {
+      target = tmp;
+      tmp = _RBTree_Child(target, RBT_RIGHT);
+    }
 
     /* if the target node has a child, need to move it up the tree into
      * target's position (target is the right child of target->parent)
@@ -157,28 +164,35 @@ void _RBTree_Extract_unprotected(
      * should become NULL. This may cause the coloring to be violated.
      * For now we store the color of the node being deleted in victim_color.
      */
-    leaf = target->child[RBT_LEFT];
+    leaf = _RBTree_Child(target, RBT_LEFT);
     if ( leaf ) {
       leaf->parent = target->parent;
+      dir = _RBTree_Direction_from_parent(target);
+      target->parent->child[dir] = leaf;
     } else {
       /* fix the tree here if the child is a null leaf. */
       _RBTree_Extract_validate_unprotected( target );
+      dir = _RBTree_Direction_from_parent(target);
+      target->parent->child[dir] = target->child[RBT_LEFT]; // FIXME
+      _RBTree_Set_attribute(
+          target->parent,
+          RBTree_Attribute_left_thread << RBT_LEFT,
+          RBTree_Attribute_left_thread << RBT_LEFT
+      );
     }
     victim_color = _RBTree_Get_color( target );
-    dir = target != target->parent->child[0];
-    target->parent->child[dir] = leaf;
 
     /* now replace the_node with target */
-    dir = the_node != the_node->parent->child[0];
+    dir = _RBTree_Direction_from_parent(the_node);
     the_node->parent->child[dir] = target;
 
     /* set target's new children to the original node's children */
     target->child[RBT_RIGHT] = the_node->child[RBT_RIGHT];
-    if ( the_node->child[RBT_RIGHT] )
-      the_node->child[RBT_RIGHT]->parent = target;
+    if ( ( rc = _RBTree_Child( the_node, RBT_RIGHT ) ) )
+      rc->parent = target;
     target->child[RBT_LEFT] = the_node->child[RBT_LEFT];
-    if ( the_node->child[RBT_LEFT] )
-      the_node->child[RBT_LEFT]->parent = target;
+    if ( ( lc = _RBTree_Child( the_node, RBT_LEFT ) ) )
+      lc->parent = target;
 
     /* finally, update the parent node and recolor. target has completely
      * replaced the_node, and target's child has moved up the tree if needed.
@@ -193,22 +207,36 @@ void _RBTree_Extract_unprotected(
      * violated. We will fix it later.
      * For now we store the color of the node being deleted in victim_color.
      */
-    if ( the_node->child[RBT_LEFT] ) {
-      leaf = the_node->child[RBT_LEFT];
+    if ( lc ) {
+      leaf = lc;
+      dir = RBT_RIGHT;
     } else {
-      leaf = the_node->child[RBT_RIGHT];
+      leaf = rc;
+      dir = RBT_LEFT;
     }
-    if( leaf ) {
+
+    if ( leaf ) {
+      tmp = leaf;
+      while ( _RBTree_Child(tmp, dir) ) {
+        tmp = _RBTree_Child(tmp, dir);
+      }
+      tmp->child[dir] = leaf;
       leaf->parent = the_node->parent;
+
+      /* remove the_node from the tree */
+      dir = _RBTree_Direction_from_parent(the_node);
+      the_node->parent->child[dir] = leaf;
     } else {
       /* fix the tree here if the child is a null leaf. */
       _RBTree_Extract_validate_unprotected( the_node );
+      p = _RBTree_Parent(the_node);
+      if ( p ) {
+        /* remove the_node from the tree */
+        dir = _RBTree_Direction_from_parent(the_node);
+        p->child[dir] = the_node->child[dir];
+      }
     }
     victim_color = _RBTree_Get_color( the_node );
-
-    /* remove the_node from the tree */
-    dir = the_node != the_node->parent->child[0];
-    the_node->parent->child[dir] = leaf;
   }
 
   /* fix coloring. leaf has moved up the tree. The color of the deleted

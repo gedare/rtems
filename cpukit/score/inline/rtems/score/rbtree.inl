@@ -508,14 +508,20 @@ RTEMS_INLINE_ROUTINE void _RBTree_Rotate(
   cc = _RBTree_Child(c, dir);
   if ( cc ) {
     the_node->child[opp_dir] = cc;
+    _RBTree_Set_attribute( the_node, RBTree_Attribute_left_thread << opp_dir, 0 );
     cc->parent = the_node;
   } else {
     // cc is a thread back to the_node. so create a thread from the_node to c
     the_node->child[opp_dir] = c;
-    _RBTree_Set_attribute(the_node, RBTree_Attribute_left_thread << opp_dir, 1);
+    _RBTree_Set_attribute(
+        the_node,
+        RBTree_Attribute_left_thread << opp_dir,
+        RBTree_Attribute_left_thread << opp_dir
+    );
   }
 
   c->child[dir] = the_node;
+  _RBTree_Set_attribute( c, RBTree_Attribute_left_thread << dir, 0 );
 
   if ( _RBTree_Parent(the_node) ) {
     node_dir = _RBTree_Direction_from_parent(the_node);
@@ -539,32 +545,6 @@ RTEMS_INLINE_ROUTINE bool _RBTree_Is_stable(
     the_rbtree
     && _RBTree_Get_is_stable( (RBTree_Node*) the_rbtree ) == RBT_STABLE
   );
-}
-
-/**
- * @brief Returns the closest common ancestor of two nodes.
- *
- */
-RTEMS_INLINE_ROUTINE RBTree_Node* _RBTree_Common_ancestor(
-  const RBTree_Control *the_rbtree,
-  const RBTree_Node *the_node,
-  RBTree_Node *finger
-)
-{
-  int compare_result;
-  RBTree_Direction dir;
-  RBTree_Node *ancestor = finger;
-  RBTree_Node *p;
-
-  while ( ( p = _RBTree_Parent(finger) ) ) {
-    compare_result = the_rbtree->compare_function(the_node, p);
-    dir = (RBTree_Direction)_RBTree_Is_greater( compare_result );
-    if ( finger != p->child[dir] ) {
-      /* finger is not on path between the_node and root. reset ancestor. */
-      ancestor = p;
-    }
-  }
-  return ancestor;
 }
 
 /**@}*/

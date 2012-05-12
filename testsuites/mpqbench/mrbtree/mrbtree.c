@@ -26,6 +26,12 @@ static int rbtree_compare(
 }
 
 #define USE_RB_ASSERT
+static void print_node( rtems_rbtree_node* n )
+{
+  printf("%X\t%X\t%X\t%X\t%d\n",
+      n, n->parent, n->child[0], n->child[1], n->attributes);
+}
+
 static int rb_assert ( rtems_rbtree_node *root )
 {
   int lh, rh;
@@ -44,6 +50,7 @@ static int rb_assert ( rtems_rbtree_node *root )
       }
     }
 
+      print_node(root); // pre-order print
       lh = rb_assert ( ln );
       rh = rb_assert ( rn );
     if ( !rtems_rbtree_parent(root) ) {

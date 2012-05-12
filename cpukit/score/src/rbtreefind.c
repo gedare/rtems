@@ -34,9 +34,8 @@ RBTree_Node *_RBTree_Find_finger(
   RBTree_Direction dir;
   int compare_result;
 
-  /* first make sure the finger is good. this can be cheaper if a finger
-   * path is kept to the root instead of reconstructing it here. */
-  iter_node = _RBTree_Common_ancestor(the_rbtree, the_node, finger);
+  /* TODO: make sure the finger is good. */
+  iter_node = finger;
 
   while ( iter_node ) {
     compare_result = the_rbtree->compare_function( the_node, iter_node );
