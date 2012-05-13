@@ -4,8 +4,6 @@
  *  The license and distribution terms for this file may be
  *  found in the file LICENSE in this distribution or at
  *  http://www.rtems.com/license/LICENSE.
- *
- *  $Id$
  */
 /**
  * @file
@@ -150,43 +148,6 @@ rtems_rfs_rtems_dir_read (rtems_libio_t* iop,
   return bytes_transferred;
 }
 
-/**
- * This routine will behave in one of three ways based on the state of argument
- * whence. Based on the state of its value the offset argument will be
- * interpreted using one of the following methods:
- *
- *   SEEK_SET - offset is the absolute byte offset from the start of the
- *              logical start of the dirent sequence that represents the
- *              directory
- *   SEEK_CUR - offset is used as the relative byte offset from the current
- *              directory position index held in the iop structure
- *   SEEK_END - N/A --> This will cause an assert.
- *
- * @param iop
- * @param offset
- * @param whence
- * return off_t
- */
-static off_t
-rtems_rfs_rtems_dir_lseek (rtems_libio_t* iop,
-                           off_t          offset,
-                           int            whence)
-{
-  switch (whence)
-  {
-    case SEEK_SET:   /* absolute move from the start of the file */
-    case SEEK_CUR:   /* relative move */
-      break;
-
-     case SEEK_END:   /* Movement past the end of the directory via lseek */
-                      /* is not a permitted operation                     */
-    default:
-      return rtems_rfs_rtems_error ("dir_lseek: bad whence", EINVAL);
-      break;
-  }
-  return 0;
-}
-
 /*
  *  Set of operations handlers for operations on directories.
  */
@@ -197,7 +158,7 @@ const rtems_filesystem_file_handlers_r rtems_rfs_rtems_dir_handlers = {
   .read_h      = rtems_rfs_rtems_dir_read,
   .write_h     = rtems_filesystem_default_write,
   .ioctl_h     = rtems_filesystem_default_ioctl,
-  .lseek_h     = rtems_rfs_rtems_dir_lseek,
+  .lseek_h     = rtems_filesystem_default_lseek_directory,
   .fstat_h     = rtems_rfs_rtems_fstat,
   .ftruncate_h = rtems_filesystem_default_ftruncate_directory,
   .fsync_h     = rtems_filesystem_default_fsync_or_fdatasync,

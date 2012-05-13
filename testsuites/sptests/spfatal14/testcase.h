@@ -5,8 +5,6 @@
  *  The license and distribution terms for this file may be
  *  found in the file LICENSE in this distribution or at
  *  http://www.rtems.com/license/LICENSE.
- *
- *  $Id$
  */
 
 /* generate fatal errors in open_dev_console.c */
@@ -17,8 +15,7 @@
 #define FATAL_ERROR_EXPECTED_IS_INTERNAL FALSE
 #define FATAL_ERROR_EXPECTED_ERROR       0x55544431
 
-#define CONFIGURE_APPLICATION_PREREQUISITE_DRIVERS \
-  CONSUME_SEMAPHORE_DRIVERS
+#define CONFIGURE_LIBIO_MAXIMUM_FILE_DESCRIPTORS 1
 
 void force_error()
 {

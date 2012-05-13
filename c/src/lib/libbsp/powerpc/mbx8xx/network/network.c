@@ -20,8 +20,6 @@
  *  Modifications by Darlene Stewart <Darlene.Stewart@iit.nrc.ca>
  *  and Charles-Antoine Gauthier <charles.gauthier@iit.nrc.ca>
  *  Copyright (c) 1999, National Research Council of Canada
- *
- *  $Id$
  */
 #include <bsp.h>
 #include <stdio.h>
@@ -443,7 +441,6 @@ m860_fec_initialize_hardware (struct m860_enet_struct *sc)
   int i;
   unsigned char *hwaddr;
   rtems_status_code status;
-  rtems_isr_entry old_handler;
 
   /*
    * Issue reset to FEC

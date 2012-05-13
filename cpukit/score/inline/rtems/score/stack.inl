@@ -12,8 +12,6 @@
  *  The license and distribution terms for this file may be
  *  found in the file LICENSE in this distribution or at
  *  http://www.rtems.com/license/LICENSE.
- *
- *  $Id$
  */
 
 #ifndef _RTEMS_SCORE_STACK_H
@@ -24,7 +22,6 @@
 #define _RTEMS_SCORE_STACK_INL
 
 #include <rtems/score/basedefs.h> /* RTEMS_INLINE_ROUTINE */
-#include <rtems/score/cpu.h> /* CPU_STACK_ALIGNMENT */
 
 /**
  *  @addtogroup ScoreStack 
@@ -88,23 +85,6 @@ RTEMS_INLINE_ROUTINE size_t _Stack_Ensure_minimum (
   if ( size >= _Stack_Minimum() )
     return size;
   return _Stack_Minimum();
-}
-
-/**
- *  This function increases the stack size to ensure that the thread
- *  has the desired amount of stack space after the initial stack
- *  pointer is determined based on alignment restrictions.
- *
- *  @note
- *
- *  The amount of adjustment for alignment is CPU dependent.
- */
-
-RTEMS_INLINE_ROUTINE uint32_t   _Stack_Adjust_size (
-  size_t size
-)
-{
-  return size + CPU_STACK_ALIGNMENT;
 }
 
 /**@}*/

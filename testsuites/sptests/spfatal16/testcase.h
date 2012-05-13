@@ -5,8 +5,6 @@
  *  The license and distribution terms for this file may be
  *  found in the file LICENSE in this distribution or at
  *  http://www.rtems.com/license/LICENSE.
- *
- *  $Id$
  */
 
 /* generate fatal errors in termios.c 
@@ -24,5 +22,7 @@
 
 void force_error()
 {
-  /* we will not run this far */
+  /* This fatal error depends on the Termios device configuration */
+  printk( "*** END OF TEST FATAL " FATAL_ERROR_TEST_NAME " ***\n" );
+  rtems_test_exit(0);
 }

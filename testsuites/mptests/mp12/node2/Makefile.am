@@ -1,7 +1,3 @@
-##
-## $Id$
-##
-
 rtems_tests_PROGRAMS = mp12-node2
 mp12_node2_SOURCES = ../init.c ../system.h
 
@@ -16,7 +12,7 @@ AM_CPPFLAGS += -DNODE_NUMBER=2 -I$(srcdir)/..
 
 AM_CPPFLAGS += -I$(top_srcdir)/../support/include
 
-LINK_OBJS = 
+LINK_OBJS = $(mp12_node2_OBJECTS)
 LINK_LIBS = $(mp12_node2_LDLIBS)
 
 mp12-node2$(EXEEXT): $(mp12_node2_OBJECTS) $(mp12_node2_DEPENDENCIES)

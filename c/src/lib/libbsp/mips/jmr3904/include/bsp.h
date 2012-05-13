@@ -12,8 +12,6 @@
  *  The license and distribution terms for this file may be
  *  found in the file LICENSE in this distribution or at
  *  http://www.rtems.com/license/LICENSE.
- *
- *  $Id$
  */
 
 #ifndef _BSP_H
@@ -33,11 +31,6 @@ extern "C" {
 
 #define BSP_FEATURE_IRQ_EXTENSION
 #define BSP_SHARED_HANDLER_SUPPORT      1
-
-/* functions */
-
-rtems_isr_entry set_vector(
-  rtems_isr_entry, rtems_vector_number, int );
 
 #ifdef __cplusplus
 }

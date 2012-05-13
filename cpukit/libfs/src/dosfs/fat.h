@@ -10,8 +10,6 @@
  *  The license and distribution terms for this file may be
  *  found in the file LICENSE in this distribution or at
  *  http://www.rtems.com/license/LICENSE.
- *
- *  @(#) $Id$
  */
 
 #ifndef __DOSFS_FAT_H__
@@ -463,6 +461,12 @@ _fat_block_write(rtems_filesystem_mount_table_entry_t *mt_entry,
                  uint32_t                              offset,
                  uint32_t                              count,
                  const void                           *buff);
+
+int
+_fat_block_zero(rtems_filesystem_mount_table_entry_t *mt_entry,
+                 uint32_t                              start,
+                 uint32_t                              offset,
+                 uint32_t                              count);
 
 int
 _fat_block_release(rtems_filesystem_mount_table_entry_t *mt_entry);

@@ -10,8 +10,6 @@
  *  The license and distribution terms for this file may be
  *  found in the file LICENSE in this distribution or at
  *  http://www.rtems.com/license/LICENSE.
- *
- *  @(#) $Id$
  */
 #ifndef __DOSFS_FAT_FAT_OPERATIONS_H__
 #define __DOSFS_FAT_FAT_OPERATIONS_H__
@@ -43,7 +41,8 @@ fat_scan_fat_for_free_clusters(
     uint32_t                             *chain,
     uint32_t                              count,
     uint32_t                             *cls_added,
-    uint32_t                             *last_cl
+    uint32_t                             *last_cl,
+    bool                                  zero_fill
 );
 
 int

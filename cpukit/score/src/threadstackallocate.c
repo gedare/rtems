@@ -7,8 +7,6 @@
  *  The license and distribution terms for this file may be
  *  found in the file LICENSE in this distribution or at
  *  http://www.rtems.com/license/LICENSE.
- *
- *  $Id$
  */
 
 #if HAVE_CONFIG_H
@@ -50,18 +48,6 @@ size_t _Thread_Stack_Allocate(
     rtems_configuration_get_stack_allocate_hook();
 
   the_stack_size = _Stack_Ensure_minimum( stack_size );
-
-  /*
-   *  Pad the requested size so we allocate enough memory
-   *  so the context initialization can align it properly.  The address
-   *  returned the workspace allocate must be directly stored in the
-   *  stack control block because it is later used in the free sequence.
-   *
-   *  Thus it is the responsibility of the CPU dependent code to
-   *  get and keep the stack adjust factor, the stack alignment, and
-   *  the context initialization sequence in sync.
-   */
-  the_stack_size = _Stack_Adjust_size( the_stack_size );
 
   stack_addr = (*stack_allocate_hook)( the_stack_size );
 

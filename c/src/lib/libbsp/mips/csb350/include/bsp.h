@@ -12,8 +12,6 @@
  *  The license and distribution terms for this file may be
  *  found in the file LICENSE in this distribution or at
  *  http://www.rtems.com/license/LICENSE.
- *
- *  $Id$
  */
 
 #ifndef _BSP_H
@@ -43,11 +41,6 @@ int rtems_au1x00_emac_attach(struct rtems_bsdnet_ifconfig *config,
                              int attaching);
 #define RTEMS_BSP_NETWORK_DRIVER_NAME	"eth0"
 #define RTEMS_BSP_NETWORK_DRIVER_ATTACH	rtems_au1x00_emac_attach
-
-/* functions */
-
-rtems_isr_entry set_vector(
-  rtems_isr_entry, rtems_vector_number, int );
 
 #ifdef __cplusplus
 }

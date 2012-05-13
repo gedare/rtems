@@ -7,12 +7,13 @@
  */
 
 /*
- * Copyright (c) 2009
- * embedded brains GmbH
- * Obere Lagerstr. 30
- * D-82178 Puchheim
- * Germany
- * rtems@embedded-brains.de
+ * Copyright (c) 2009-2012 embedded brains GmbH.  All rights reserved.
+ *
+ *  embedded brains GmbH
+ *  Obere Lagerstr. 30
+ *  82178 Puchheim
+ *  Germany
+ *  <rtems@embedded-brains.de>
  *
  * The license and distribution terms for this file may be
  * found in the file LICENSE in this distribution or at
@@ -51,13 +52,10 @@ extern "C" {
  */
 
 /**
- * @brief Task stack management initialization.
- *
- * This function should be called in bsp_start() with the designated task stack
- * area begin address @a begin and task stack area size @a size in bytes.  The
- * area boundaries have to be aligned properly.
+ * @brief Task stack allocator initialization for
+ * @ref CONFIGURE_TASK_STACK_ALLOCATOR_INIT.
  */
-void bsp_stack_initialize(void *begin, uintptr_t size);
+void bsp_stack_allocate_init(size_t stack_space_size);
 
 /**
  * @brief Task stack allocator for @ref CONFIGURE_TASK_STACK_ALLOCATOR.
@@ -71,6 +69,11 @@ void *bsp_stack_allocate(size_t size);
  * @brief Task stack free function for @ref CONFIGURE_TASK_STACK_DEALLOCATOR.
  */
 void bsp_stack_free(void *stack);
+
+/**
+ * @brief Task stack allocator initialization configuration option.
+ */
+#define CONFIGURE_TASK_STACK_ALLOCATOR_INIT bsp_stack_allocate_init
 
 /**
  * @brief Task stack allocator configuration option.

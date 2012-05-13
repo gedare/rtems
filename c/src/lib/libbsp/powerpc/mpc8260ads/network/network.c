@@ -22,8 +22,6 @@
  * University of Saskatchewan
  * Saskatoon, Saskatchewan, CANADA
  * eric@skatter.usask.ca
- *
- *  $Id$
  */
 #include <bsp.h>
 #include <bsp/irq.h>
@@ -205,13 +203,7 @@ m8260_scc_initialize_hardware (struct m8260_hdlc_struct *sc)
   int i;
   int brg;
 
-/*
-  unsigned char *hwaddr;
-*/
   rtems_status_code status;
-/*
-  rtems_isr_entry old_handler;
-*/
 
   /* RxD PB14 */
   m8260.pparb |=  0x00020000;

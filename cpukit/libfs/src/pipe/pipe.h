@@ -11,8 +11,6 @@
  * The license and distribution terms for this file may be
  * found in the file LICENSE in this distribution or at
  * http://www.rtems.com/license/LICENSE.
- *
- * $Id$
  */
 
 #ifndef _RTEMS_PIPE_H
@@ -101,16 +99,6 @@ extern int pipe_ioctl(
   pipe_control_t *pipe,
   uint32_t        cmd,
   void           *buffer,
-  rtems_libio_t  *iop
-);
-
-/*
- * Interface to file system lseek.
- */
-extern int pipe_lseek(
-  pipe_control_t *pipe,
-  off_t           offset,
-  int             whence,
   rtems_libio_t  *iop
 );
 

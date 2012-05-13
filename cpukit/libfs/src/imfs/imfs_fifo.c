@@ -6,8 +6,6 @@
  * The license and distribution terms for this file may be
  * found in the file LICENSE in this distribution or at
  * http://www.rtems.com/license/LICENSE.
- *
- * $Id$
  */
 
 #if HAVE_CONFIG_H
@@ -109,23 +107,13 @@ static int IMFS_fifo_ioctl(
   IMFS_FIFO_RETURN(err);
 }
 
-static off_t IMFS_fifo_lseek(
-  rtems_libio_t *iop,
-  off_t          offset,
-  int            whence
-)
-{
-  off_t err = pipe_lseek(LIBIO2PIPE(iop), offset, whence, iop);
-  IMFS_FIFO_RETURN(err);
-}
-
 static const rtems_filesystem_file_handlers_r IMFS_fifo_handlers = {
   IMFS_fifo_open,
   IMFS_fifo_close,
   IMFS_fifo_read,
   IMFS_fifo_write,
   IMFS_fifo_ioctl,
-  IMFS_fifo_lseek,
+  rtems_filesystem_default_lseek,
   IMFS_stat,
   rtems_filesystem_default_ftruncate,
   rtems_filesystem_default_fsync_or_fdatasync,

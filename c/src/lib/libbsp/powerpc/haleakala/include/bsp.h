@@ -40,8 +40,6 @@
  *
  *
  *
- *  $Id$
- *
  */
 
 #ifndef _BSP_H
@@ -83,14 +81,6 @@ extern "C" {
   #define BSP_CONSOLE_PORT    BSP_UART_COM1    /* console */
 
   #define BSP_UART_BAUD_BASE    (11059200 / 16)    /* Kilauea ext clock, max speed */
-
-  /* functions */
-
-  rtems_isr_entry set_vector(                    /* returns old vector */
-    rtems_isr_entry     handler,                  /* isr routine        */
-    rtems_vector_number vector,                   /* vector number      */
-    int                 type                      /* RTEMS or RAW intr  */
-  );
 
 #endif /* ASM */
 

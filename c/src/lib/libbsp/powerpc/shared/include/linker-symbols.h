@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2010 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2010-2012 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Obere Lagerstr. 30
@@ -18,8 +18,6 @@
  * The license and distribution terms for this file may be
  * found in the file LICENSE in this distribution or at
  * http://www.rtems.com/license/LICENSE.
- *
- * $Id$
  */
 
 #ifndef LIBBSP_POWERPC_SHARED_LINKER_SYMBOLS_H
@@ -95,9 +93,15 @@ LINKER_SYMBOL(bsp_section_stack_begin)
 LINKER_SYMBOL(bsp_section_stack_end)
 LINKER_SYMBOL(bsp_section_stack_size)
 
+LINKER_SYMBOL(bsp_section_nocache_begin)
+LINKER_SYMBOL(bsp_section_nocache_end)
+LINKER_SYMBOL(bsp_section_nocache_size)
+
 #define BSP_FAST_TEXT_SECTION __attribute__((section(".bsp_fast_text")))
 
 #define BSP_FAST_DATA_SECTION __attribute__((section(".bsp_fast_data")))
+
+#define BSP_NOCACHE_SECTION __attribute__((section(".bsp_nocache")))
 
 /** @} */
 

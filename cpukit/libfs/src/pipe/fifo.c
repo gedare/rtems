@@ -6,8 +6,6 @@
  * The license and distribution terms for this file may be
  * found in the file LICENSE in this distribution or at
  * http://www.rtems.com/license/LICENSE.
- *
- * $Id$
  */
 
 
@@ -571,18 +569,4 @@ int pipe_ioctl(
   }
 
   return -EINVAL;
-}
-
-/*
- * Interface to file system lseek.
- */
-int pipe_lseek(
-  pipe_control_t *pipe,
-  off_t           offset,
-  int             whence,
-  rtems_libio_t  *iop
-)
-{
-  /* Seek on pipe is not supported */
-  return -ESPIPE;
 }

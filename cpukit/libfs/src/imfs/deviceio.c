@@ -10,8 +10,6 @@
  *  The license and distribution terms for this file may be
  *  found in the file LICENSE in this distribution or at
  *  http://www.rtems.com/license/LICENSE.
- *
- *  $Id$
  */
 
 #if HAVE_CONFIG_H
@@ -189,23 +187,6 @@ int device_ioctl(
     return rtems_deviceio_errno(status);
 
   return args.ioctl_return;
-}
-
-/*
- *  device_lseek
- *
- *  This handler eats all lseek() operations and does not create
- *  an error. It assumes all devices can handle the seek. The
- *  writes fail.
- */
-
-off_t device_lseek(
-  rtems_libio_t *iop,
-  off_t          offset,
-  int            whence
-)
-{
-  return offset;
 }
 
 /*

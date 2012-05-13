@@ -10,8 +10,6 @@
  *  The license and distribution terms for this file may be
  *  found in the file LICENSE in this distribution or at
  *  http://www.rtems.com/license/LICENSE.
- *
- *  $Id$
  */
 
 #ifndef _BSP_H
@@ -80,12 +78,6 @@ void *M8260AllocateBufferDescriptors( int count );
 void *M8260AllocateRiscTimers( int count );
 extern char M8260DefaultWatchdogFeeder;
 #endif
-
-rtems_isr_entry set_vector(                    /* returns old vector */
-  rtems_isr_entry     handler,                  /* isr routine        */
-  rtems_vector_number vector,                   /* vector number      */
-  int                 type                      /* RTEMS or RAW intr  */
-);
 
 #ifdef __cplusplus
 }

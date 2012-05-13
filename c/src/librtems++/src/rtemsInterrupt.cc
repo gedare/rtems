@@ -1,7 +1,5 @@
 /*
   ------------------------------------------------------------------------
-  $Id$
-  ------------------------------------------------------------------------
 
   COPYRIGHT (c) 1997
   Objective Design Systems Ltd Pty (ODS)
@@ -19,6 +17,8 @@
 */
 
 #include <rtems++/rtemsInterrupt.h>
+
+#if (CPU_SIMPLE_VECTORED_INTERRUPTS == TRUE)
 
 /* ----
    Interrupt Table
@@ -123,3 +123,4 @@ void rtemsInterrupt::redirector(rtems_vector_number vector)
   if (interrupt_table[vector])
     interrupt_table[vector]->handler();
 }
+#endif

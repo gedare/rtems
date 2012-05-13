@@ -10,8 +10,6 @@
  *  The license and distribution terms for this file may be
  *  found in the file LICENSE in this distribution or at
  *  http://www.rtems.com/license/LICENSE.
- *
- *  $Id$
  */
 
 #if HAVE_CONFIG_H
@@ -31,7 +29,7 @@ ssize_t IMFS_readlink(
 
   node = loc->node_access;
 
-  IMFS_assert( node->type == IMFS_SYM_LINK );
+  IMFS_assert( node->control.imfs_type == IMFS_SYM_LINK );
 
   for( i=0; ((i<bufsize) && (node->info.sym_link.name[i] != '\0')); i++ )
     buf[i] = node->info.sym_link.name[i];

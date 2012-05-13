@@ -8,8 +8,6 @@
  *  The license and distribution terms for this file may be
  *  found in the file LICENSE in this distribution or at
  *  http://www.rtems.com/license/LICENSE.
- *
- *  $Id: installisrentries.c,v 1.1 2010/06/17 16:16:25 joel Exp $
  */
 
 #include <rtems.h>

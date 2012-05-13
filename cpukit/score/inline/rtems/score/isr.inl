@@ -6,14 +6,12 @@
  */
 
 /*
- *  COPYRIGHT (c) 1989-2004.
+ *  COPYRIGHT (c) 1989-2012.
  *  On-Line Applications Research Corporation (OAR).
  *
  *  The license and distribution terms for this file may be
  *  found in the file LICENSE in this distribution or at
  *  http://www.rtems.com/license/LICENSE.
- *
- *  $Id$
  */
 
 #ifndef _RTEMS_SCORE_ISR_H
@@ -28,6 +26,7 @@
  *  @{
  */
 
+#if (CPU_SIMPLE_VECTORED_INTERRUPTS == TRUE)
 /**
  *  This function returns true if the vector is a valid vector number
  *  for this processor and false otherwise.
@@ -51,6 +50,7 @@ RTEMS_INLINE_ROUTINE bool _ISR_Is_valid_user_handler (
 {
   return (handler != NULL);
 }
+#endif
 
 /**@}*/
 

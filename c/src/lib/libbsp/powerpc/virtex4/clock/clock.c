@@ -33,8 +33,6 @@
  *  http://www.rtems.com/license/LICENSE.
  *
  *  Modifications for PPC405GP by Dennis Ehlin
- *
- *  $Id: clock.c 63 2011-04-26 00:23:51Z claus $
  */
 
 #include <rtems.h>
@@ -58,12 +56,6 @@ static uint32_t   pit_value, tick_time;
 static bool auto_restart;
 
 void Clock_exit( void );
-
-rtems_isr_entry set_vector(                     /* returns old vector */
-  rtems_isr_entry     handler,                  /* isr routine        */
-  rtems_vector_number vector,                   /* vector number      */
-  int                 type                      /* RTEMS or RAW intr  */
-);
 
 /*
  * These are set by clock driver during its init

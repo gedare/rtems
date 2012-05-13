@@ -7,8 +7,6 @@
  *  The license and distribution terms for this file may be
  *  found in the file LICENSE in this distribution or at
  *  http://www.rtems.com/license/LICENSE.
- *
- *  $Id$
  */
 
 #if HAVE_CONFIG_H
@@ -52,7 +50,7 @@ static const rtems_filesystem_file_handlers_r IMFS_directory_handlers = {
   imfs_dir_read,
   rtems_filesystem_default_write,
   rtems_filesystem_default_ioctl,
-  imfs_dir_lseek,
+  rtems_filesystem_default_lseek_directory,
   IMFS_stat_directory,
   rtems_filesystem_default_ftruncate_directory,
   rtems_filesystem_default_fsync_or_fdatasync_success,

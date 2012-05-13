@@ -8,7 +8,6 @@
  *
  *  The license and distribution terms for this file may be
  *  found in the file LICENSE in this distribution or at
- *
  *  http://www.rtems.com/license/LICENSE.
  *
  * Notes:
@@ -19,8 +18,6 @@
  *
  *  It is important that the timer start/stop overhead be determined
  *  when porting or modifying this code.
- *
- *  $Id$
 */
 
 #include <rtems.h>
