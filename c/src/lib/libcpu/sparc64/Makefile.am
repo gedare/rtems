@@ -17,6 +17,7 @@ include_libcpu_HEADERS += shared/interrupts/spillpq.h
 include_libcpu_HEADERS += shared/interrupts/splitheappq.h
 include_libcpu_HEADERS += shared/interrupts/splitrbtree.h
 include_libcpu_HEADERS += shared/interrupts/splitskiplist.h
+include_libcpu_HEADERS += shared/interrupts/splitsplay.h
 include_libcpu_HEADERS += shared/interrupts/unitedlistpq.h
 include_libcpu_HEADERS += shared/interrupts/unitedskiplist.h
 include_libcpu_HEADERS += shared/interrupts/hwpqlib.h
@@ -48,6 +49,7 @@ shared_interrupts_rel_SOURCES += shared/interrupts/unitedskiplist.c
 shared_interrupts_rel_SOURCES += shared/interrupts/splitheappq.c
 shared_interrupts_rel_SOURCES += shared/interrupts/splitrbtree.c
 shared_interrupts_rel_SOURCES += shared/interrupts/splitskiplist.c
+shared_interrupts_rel_SOURCES += shared/interrupts/splitsplay.c
 shared_interrupts_rel_CPPFLAGS = $(AM_CPPFLAGS) -I$(srcdir)/shared/interrupts
 shared_interrupts_rel_LDFLAGS = $(RTEMS_RELLDFLAGS)
 

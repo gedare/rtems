@@ -39,6 +39,10 @@ $(PROJECT_INCLUDE)/libcpu/splitskiplist.h: shared/interrupts/splitskiplist.h $(P
 	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/libcpu/splitskiplist.h
 PREINSTALL_FILES += $(PROJECT_INCLUDE)/libcpu/splitskiplist.h
 
+$(PROJECT_INCLUDE)/libcpu/splitsplay.h: shared/interrupts/splitsplay.h $(PROJECT_INCLUDE)/libcpu/$(dirstamp)
+	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/libcpu/splitsplay.h
+PREINSTALL_FILES += $(PROJECT_INCLUDE)/libcpu/splitsplay.h
+
 $(PROJECT_INCLUDE)/libcpu/unitedlistpq.h: shared/interrupts/unitedlistpq.h $(PROJECT_INCLUDE)/libcpu/$(dirstamp)
 	$(INSTALL_DATA) $< $(PROJECT_INCLUDE)/libcpu/unitedlistpq.h
 PREINSTALL_FILES += $(PROJECT_INCLUDE)/libcpu/unitedlistpq.h

@@ -69,6 +69,7 @@ mhwpq/Makefile
 mhwpqsplitheap/Makefile
 mhwpqsplitrbtree/Makefile
 mhwpqsplitskiplist/Makefile
+mhwpqsplitsplay/Makefile
 mhwpqunitedlist/Makefile
 mhwpqunitedskiplist/Makefile
 miheap/Makefile
