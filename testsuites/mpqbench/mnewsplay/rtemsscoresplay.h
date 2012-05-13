@@ -33,12 +33,16 @@
 extern "C" {
 #endif
 
+typedef enum {
+  TREE_LEFT = 0,
+  TREE_RIGHT = 1
+} Splay_Direction;
+
 typedef struct Splay_Node_struct Splay_Node;
 struct Splay_Node_struct
 {
-    Splay_Node  * uplink;
-    Splay_Node  * leftlink;
-    Splay_Node  * rightlink;
+    Splay_Node  * parent;
+    Splay_Node  * child[2];
 };
 
 typedef int (*Splay_Compare_function)(
@@ -68,11 +72,12 @@ typedef struct
 
 bool _Splay_Is_empty( Splay_Control *the_tree );
 Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node );
+Splay_Node *_Splay_Find(Splay_Control *the_tree, Splay_Node *search_node);
+Splay_Node* _Splay_Extract(Splay_Control *the_tree, Splay_Node *search_node);
+
 Splay_Node *_Splay_Dequeue( Splay_Node **node_pointer );
 Splay_Node *_Splay_Insert_before(Splay_Control *the_tree, Splay_Node *the_node);
 void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node );
-Splay_Node *_Splay_Find(Splay_Control *the_tree, Splay_Node *search_node);
-Splay_Node* _Splay_Extract(Splay_Control *the_tree, Splay_Node *search_node);
 
 static void inline _Splay_Initialize_empty(
   Splay_Control *the_tree,

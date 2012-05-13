@@ -56,17 +56,8 @@ long newsplay_min(rtems_task_argument tid ) {
   pq_node *p;
 
   stn = rtems_splay_dequeue( &the_tree[tid].root ); // TODO: peek without remove
-
   if ( stn ) {
-    stn->rightlink = the_tree[tid].root;
-    stn->leftlink = NULL;
-    stn->uplink = NULL;
-    if ( the_tree[tid].root )
-      the_tree[tid].root->uplink = stn;
-  }
-  the_tree[tid].root = stn;
-
-  if ( stn ) {
+    rtems_splay_insert(&the_tree[tid], stn); // FIXME ^
     n = ST_NODE_TO_NODE(stn);
     p = &n->data;
     kv = PQ_NODE_TO_KV(p);

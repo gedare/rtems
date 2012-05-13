@@ -59,14 +59,14 @@ Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node )
   Splay_Node * temp;
 
   the_tree->enqs++;
-  the_node->uplink = NULL;
+  the_node->parent = NULL;
   next = the_tree->root;
   the_tree->root = the_node;
   
   if( next == NULL )  /* trivial enq */
   {
-    the_node->leftlink = NULL;
-    the_node->rightlink = NULL;
+    the_node->child[TREE_LEFT] = NULL;
+    the_node->child[TREE_RIGHT] = NULL;
     return the_node;
   }
   
@@ -88,37 +88,37 @@ one:  /* assert next->key <= key */
 
   do  /* walk to the right in the left tree */
   {
-    temp = next->rightlink;
+    temp = next->child[TREE_RIGHT];
     if( temp == NULL )
     {
-      left->rightlink = next;
-      next->uplink = left;
-      right->leftlink = NULL;
+      left->child[TREE_RIGHT] = next;
+      next->parent = left;
+      right->child[TREE_LEFT] = NULL;
       goto done;  /* job done, entire tree split */
     }
 
     the_tree->enqcmps++;
     if( the_tree->compare_function(temp, the_node) > 0 )
     {
-      left->rightlink = next;
-      next->uplink = left;
+      left->child[TREE_RIGHT] = next;
+      next->parent = left;
       left = next;
       next = temp;
       goto two;  /* change sides */
     }
 
-    next->rightlink = temp->leftlink;
-    if( temp->leftlink != NULL )
-      temp->leftlink->uplink = next;
-    left->rightlink = temp;
-    temp->uplink = left;
-    temp->leftlink = next;
-    next->uplink = temp;
+    next->child[TREE_RIGHT] = temp->child[TREE_LEFT];
+    if( temp->child[TREE_LEFT] != NULL )
+      temp->child[TREE_LEFT]->parent = next;
+    left->child[TREE_RIGHT] = temp;
+    temp->parent = left;
+    temp->child[TREE_LEFT] = next;
+    next->parent = temp;
     left = temp;
-    next = temp->rightlink;
+    next = temp->child[TREE_RIGHT];
     if( next == NULL )
     {
-      right->leftlink = NULL;
+      right->child[TREE_LEFT] = NULL;
       goto done;  /* job done, entire tree split */
     }
 
@@ -130,36 +130,36 @@ two:  /* assert next->key > key */
 
   do  /* walk to the left in the right tree */
   {
-    temp = next->leftlink;
+    temp = next->child[TREE_LEFT];
     if( temp == NULL )
     {
-      right->leftlink = next;
-      next->uplink = right;
-      left->rightlink = NULL;
+      right->child[TREE_LEFT] = next;
+      next->parent = right;
+      left->child[TREE_RIGHT] = NULL;
       goto done;  /* job done, entire tree split */
     }
 
     the_tree->enqcmps++;
     if( the_tree->compare_function(temp, the_node) <= 0 )
     {
-      right->leftlink = next;
-      next->uplink = right;
+      right->child[TREE_LEFT] = next;
+      next->parent = right;
       right = next;
       next = temp;
       goto one;  /* change sides */
     }
-    next->leftlink = temp->rightlink;
-    if( temp->rightlink != NULL )
-      temp->rightlink->uplink = next;
-    right->leftlink = temp;
-    temp->uplink = right;
-    temp->rightlink = next;
-    next->uplink = temp;
+    next->child[TREE_LEFT] = temp->child[TREE_RIGHT];
+    if( temp->child[TREE_RIGHT] != NULL )
+      temp->child[TREE_RIGHT]->parent = next;
+    right->child[TREE_LEFT] = temp;
+    temp->parent = right;
+    temp->child[TREE_RIGHT] = next;
+    next->parent = temp;
     right = temp;
-    next = temp->leftlink;
+    next = temp->child[TREE_LEFT];
     if( next == NULL )
     {
-      left->rightlink = NULL;
+      left->child[TREE_RIGHT] = NULL;
       goto done;  /* job done, entire tree split */
     }
 
@@ -171,9 +171,9 @@ two:  /* assert next->key > key */
 
 done:  /* split is done, branches of the_node need reversal */
 
-  temp = the_node->leftlink;
-  the_node->leftlink = the_node->rightlink;
-  the_node->rightlink = temp;
+  temp = the_node->child[TREE_LEFT];
+  the_node->child[TREE_LEFT] = the_node->child[TREE_RIGHT];
+  the_node->child[TREE_RIGHT] = temp;
 
   return( the_node );
 
@@ -204,48 +204,48 @@ Splay_Node *_Splay_Dequeue( Splay_Node **np )
   else
   {
     next = *np;
-    left = next->leftlink;
+    left = next->child[TREE_LEFT];
     if( left == NULL )
     {
       deq = next;
-      *np = next->rightlink;
+      *np = next->child[TREE_RIGHT];
 
       if( *np != NULL )
-  (*np)->uplink = NULL;
+  (*np)->parent = NULL;
 
     }
     else for(;;)  /* left is not null */
     {
       /* next is not it, left is not NULL, might be it */
-      farleft = left->leftlink;
+      farleft = left->child[TREE_LEFT];
       if( farleft == NULL )
       {
   deq = left;
-  next->leftlink = left->rightlink;
-  if( left->rightlink != NULL )
-    left->rightlink->uplink = next;
+  next->child[TREE_LEFT] = left->child[TREE_RIGHT];
+  if( left->child[TREE_RIGHT] != NULL )
+    left->child[TREE_RIGHT]->parent = next;
   break;
       }
 
       /* next, left are not it, farleft is not NULL, might be it */
-      farfarleft = farleft->leftlink;
+      farfarleft = farleft->child[TREE_LEFT];
       if( farfarleft == NULL )
       {
   deq = farleft;
-  left->leftlink = farleft->rightlink;
-  if( farleft->rightlink != NULL )
-    farleft->rightlink->uplink = left;
+  left->child[TREE_LEFT] = farleft->child[TREE_RIGHT];
+  if( farleft->child[TREE_RIGHT] != NULL )
+    farleft->child[TREE_RIGHT]->parent = left;
   break;
       }
 
       /* next, left, farleft are not it, rotate */
-      next->leftlink = farleft;
-      farleft->uplink = next;
-      left->leftlink = farleft->rightlink;
-      if( farleft->rightlink != NULL )
-  farleft->rightlink->uplink = left;
-      farleft->rightlink = left;
-      left->uplink = farleft;
+      next->child[TREE_LEFT] = farleft;
+      farleft->parent = next;
+      left->child[TREE_LEFT] = farleft->child[TREE_RIGHT];
+      if( farleft->child[TREE_RIGHT] != NULL )
+  farleft->child[TREE_RIGHT]->parent = left;
+      farleft->child[TREE_RIGHT] = left;
+      left->parent = farleft;
       next = farleft;
       left = farfarleft;
     }
@@ -277,13 +277,13 @@ Splay_Node *_Splay_Insert_before(Splay_Control *the_tree, Splay_Node *the_node)
   Splay_Node * next;  /* the root of unsplit part of tree */
   Splay_Node * temp;
 
-  the_node->uplink = NULL;
+  the_node->parent = NULL;
   next = the_tree->root;
   the_tree->root = the_node;
   if( next == NULL )  /* trivial enq */
   {
-    the_node->leftlink = NULL;
-    the_node->rightlink = NULL;
+    the_node->child[TREE_LEFT] = NULL;
+    the_node->child[TREE_RIGHT] = NULL;
     return the_node;
   }
   /* difficult enq */
@@ -301,34 +301,34 @@ one:  /* assert next->key < key */
 
   do  /* walk to the right in the left tree */
   {
-    temp = next->rightlink;
+    temp = next->child[TREE_RIGHT];
     if( temp == NULL )
     {
-      left->rightlink = next;
-      next->uplink = left;
-      right->leftlink = NULL;
+      left->child[TREE_RIGHT] = next;
+      next->parent = left;
+      right->child[TREE_LEFT] = NULL;
       goto done;  /* job done, entire tree split */
     }
     if( the_tree->compare_function(temp, the_node) >= 0 )
     {
-      left->rightlink = next;
-      next->uplink = left;
+      left->child[TREE_RIGHT] = next;
+      next->parent = left;
       left = next;
       next = temp;
       goto two;  /* change sides */
     }
-    next->rightlink = temp->leftlink;
-    if( temp->leftlink != NULL )
-      temp->leftlink->uplink = next;
-    left->rightlink = temp;
-    temp->uplink = left;
-    temp->leftlink = next;
-    next->uplink = temp;
+    next->child[TREE_RIGHT] = temp->child[TREE_LEFT];
+    if( temp->child[TREE_LEFT] != NULL )
+      temp->child[TREE_LEFT]->parent = next;
+    left->child[TREE_RIGHT] = temp;
+    temp->parent = left;
+    temp->child[TREE_LEFT] = next;
+    next->parent = temp;
     left = temp;
-    next = temp->rightlink;
+    next = temp->child[TREE_RIGHT];
     if( next == NULL )
     {
-      right->leftlink = NULL;
+      right->child[TREE_LEFT] = NULL;
       goto done;  /* job done, entire tree split */
     }
 
@@ -338,34 +338,34 @@ two:  /* assert next->key >= key */
 
   do   /* walk to the left in the right tree */
   {
-    temp = next->leftlink;
+    temp = next->child[TREE_LEFT];
     if( temp == NULL )
     {
-      right->leftlink = next;
-      next->uplink = right;
-      left->rightlink = NULL;
+      right->child[TREE_LEFT] = next;
+      next->parent = right;
+      left->child[TREE_RIGHT] = NULL;
       goto done;  /* job done, entire tree split */
     }
     if( the_tree->compare_function(temp, the_node) < 0 )
     {
-      right->leftlink = next;
-      next->uplink = right;
+      right->child[TREE_LEFT] = next;
+      next->parent = right;
       right = next;
       next = temp;
       goto one;  /* change sides */
     }
-    next->leftlink = temp->rightlink;
-    if( temp->rightlink != NULL )
-      temp->rightlink->uplink = next;
-    right->leftlink = temp;
-    temp->uplink = right;
-    temp->rightlink = next;
-    next->uplink = temp;
+    next->child[TREE_LEFT] = temp->child[TREE_RIGHT];
+    if( temp->child[TREE_RIGHT] != NULL )
+      temp->child[TREE_RIGHT]->parent = next;
+    right->child[TREE_LEFT] = temp;
+    temp->parent = right;
+    temp->child[TREE_RIGHT] = next;
+    next->parent = temp;
     right = temp;
-    next = temp->leftlink;
+    next = temp->child[TREE_LEFT];
     if( next == NULL )
     {
-      left->rightlink = NULL;
+      left->child[TREE_RIGHT] = NULL;
       goto done;  /* job done, entire tree split */
     }
 
@@ -375,9 +375,9 @@ two:  /* assert next->key >= key */
 
 done:  /* split is done, branches of the_node need reversal */
 
-  temp = the_node->leftlink;
-  the_node->leftlink = the_node->rightlink;
-  the_node->rightlink = temp;
+  temp = the_node->child[TREE_LEFT];
+  the_node->child[TREE_LEFT] = the_node->child[TREE_RIGHT];
+  the_node->child[TREE_RIGHT] = temp;
 
   return( the_node );
 
@@ -407,10 +407,10 @@ void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node )
   Splay_Node * left;  /* the top of left subtree being built */
   Splay_Node * right;  /* the top of right subtree being built */
 
-  left = the_node->leftlink;
-  right = the_node->rightlink;
+  left = the_node->child[TREE_LEFT];
+  right = the_node->child[TREE_RIGHT];
   prev = the_node;
-  up = prev->uplink;
+  up = prev->parent;
 
   the_tree->splays++;
 
@@ -421,54 +421,54 @@ void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node )
     /* walk up the tree towards the root, splaying all to the left of
        the_node into the left subtree, all to right into the right subtree */
 
-    upup = up->uplink;
-    if( up->leftlink == prev )  /* up is to the right of the_node */
+    upup = up->parent;
+    if( up->child[TREE_LEFT] == prev )  /* up is to the right of the_node */
     {
-      if( upup != NULL && upup->leftlink == up )  /* rotate */
+      if( upup != NULL && upup->child[TREE_LEFT] == up )  /* rotate */
       {
-  upupup = upup->uplink;
-  upup->leftlink = up->rightlink;
-  if( upup->leftlink != NULL )
-    upup->leftlink->uplink = upup;
-  up->rightlink = upup;
-  upup->uplink = up;
+  upupup = upup->parent;
+  upup->child[TREE_LEFT] = up->child[TREE_RIGHT];
+  if( upup->child[TREE_LEFT] != NULL )
+    upup->child[TREE_LEFT]->parent = upup;
+  up->child[TREE_RIGHT] = upup;
+  upup->parent = up;
   if( upupup == NULL )
     the_tree->root = up;
-  else if( upupup->leftlink == upup )
-    upupup->leftlink = up;
+  else if( upupup->child[TREE_LEFT] == upup )
+    upupup->child[TREE_LEFT] = up;
   else
-    upupup->rightlink = up;
-  up->uplink = upupup;
+    upupup->child[TREE_RIGHT] = up;
+  up->parent = upupup;
   upup = upupup;
       }
-      up->leftlink = right;
+      up->child[TREE_LEFT] = right;
       if( right != NULL )
-  right->uplink = up;
+  right->parent = up;
       right = up;
 
     }
     else  /* up is to the left of the_node */
     {
-      if( upup != NULL && upup->rightlink == up )  /* rotate */
+      if( upup != NULL && upup->child[TREE_RIGHT] == up )  /* rotate */
       {
-  upupup = upup->uplink;
-  upup->rightlink = up->leftlink;
-  if( upup->rightlink != NULL )
-    upup->rightlink->uplink = upup;
-  up->leftlink = upup;
-  upup->uplink = up;
+  upupup = upup->parent;
+  upup->child[TREE_RIGHT] = up->child[TREE_LEFT];
+  if( upup->child[TREE_RIGHT] != NULL )
+    upup->child[TREE_RIGHT]->parent = upup;
+  up->child[TREE_LEFT] = upup;
+  upup->parent = up;
   if( upupup == NULL )
     the_tree->root = up;
-  else if( upupup->rightlink == upup )
-    upupup->rightlink = up;
+  else if( upupup->child[TREE_RIGHT] == upup )
+    upupup->child[TREE_RIGHT] = up;
   else
-    upupup->leftlink = up;
-  up->uplink = upupup;
+    upupup->child[TREE_LEFT] = up;
+  up->parent = upupup;
   upup = upupup;
       }
-      up->rightlink = left;
+      up->child[TREE_RIGHT] = left;
       if( left != NULL )
-  left->uplink = up;
+  left->parent = up;
       left = up;
     }
     prev = up;
@@ -483,14 +483,14 @@ void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node )
   }
 # endif
 
-  the_node->leftlink = left;
-  the_node->rightlink = right;
+  the_node->child[TREE_LEFT] = left;
+  the_node->child[TREE_RIGHT] = right;
   if( left != NULL )
-    left->uplink = the_node;
+    left->parent = the_node;
   if( right != NULL )
-    right->uplink = the_node;
+    right->parent = the_node;
   the_tree->root = the_node;
-  the_node->uplink = NULL;
+  the_node->parent = NULL;
 
 } /* splay */
 /* /sptree.c */
@@ -506,10 +506,10 @@ Splay_Node *_Splay_Find(Splay_Control *tree, Splay_Node *search_node)
   Splay_Node *iter = tree->root;
   while ( iter ) {
     if(tree->compare_function(iter, search_node) > 0) {
-      iter = iter->leftlink;
+      iter = iter->child[TREE_LEFT];
     }
     else if(tree->compare_function(iter, search_node) < 0) {
-      iter = iter->rightlink;
+      iter = iter->child[TREE_RIGHT];
     }
     else {
       _Splay_Splay(tree, iter);
@@ -525,9 +525,9 @@ Splay_Node *_Splay_Find(Splay_Control *tree, Splay_Node *search_node)
  * Find the in-order successor of the_node. Assumes it exists
  */
 static Splay_Node* spget_successor( Splay_Node *the_node ) {
-  the_node = the_node->rightlink;
-  while ( the_node->leftlink ) {
-    the_node = the_node->leftlink;
+  the_node = the_node->child[TREE_RIGHT];
+  while ( the_node->child[TREE_LEFT] ) {
+    the_node = the_node->child[TREE_LEFT];
   }
   return the_node;
 }
@@ -547,41 +547,41 @@ Splay_Node* _Splay_Extract(Splay_Control *tree, Splay_Node *search_node)
 
   if ( node ) {
     /* because of splaying in _Splay_Find() node is the root */
-    if ( node->leftlink == NULL ) {
+    if ( node->child[TREE_LEFT] == NULL ) {
       /* replace with right child if it exists */
-      right = node->rightlink;
+      right = node->child[TREE_RIGHT];
       if ( right ) {
-        right->uplink = NULL;
+        right->parent = NULL;
       }
       tree->root = right;
-    } else if ( node->rightlink == NULL ) {
+    } else if ( node->child[TREE_RIGHT] == NULL ) {
       /* replace with left child, which exists */
-      left = node->leftlink;
-      left->uplink = NULL;
+      left = node->child[TREE_LEFT];
+      left->parent = NULL;
       tree->root = left;
     } else {
       /* replace node with its successor */
       Splay_Node *suc = spget_successor(node);
-      right = node->rightlink;
-      left = node->leftlink;
-      if ( suc != node->rightlink ) {
-        new_root = suc->uplink;
-        if ( suc->rightlink ) {
-          suc->rightlink->uplink = new_root;
-          new_root->leftlink = suc->rightlink;
+      right = node->child[TREE_RIGHT];
+      left = node->child[TREE_LEFT];
+      if ( suc != node->child[TREE_RIGHT] ) {
+        new_root = suc->parent;
+        if ( suc->child[TREE_RIGHT] ) {
+          suc->child[TREE_RIGHT]->parent = new_root;
+          new_root->child[TREE_LEFT] = suc->child[TREE_RIGHT];
         } else {
-          new_root->leftlink = NULL;
+          new_root->child[TREE_LEFT] = NULL;
         }
-        suc->uplink = node->uplink;
-        node->rightlink->uplink = suc;
-        node->leftlink->uplink = suc;
-        suc->rightlink = node->rightlink;
-        suc->leftlink = node->leftlink;
+        suc->parent = node->parent;
+        node->child[TREE_RIGHT]->parent = suc;
+        node->child[TREE_LEFT]->parent = suc;
+        suc->child[TREE_RIGHT] = node->child[TREE_RIGHT];
+        suc->child[TREE_LEFT] = node->child[TREE_LEFT];
       } else { /* successor is the right child */
         new_root = suc;
-        suc->uplink = node->uplink;
-        node->leftlink->uplink = suc;
-        suc->leftlink = node->leftlink;
+        suc->parent = node->parent;
+        node->child[TREE_LEFT]->parent = suc;
+        suc->child[TREE_LEFT] = node->child[TREE_LEFT];
       }
       tree->root = suc;
       _Splay_Splay(tree, new_root);
