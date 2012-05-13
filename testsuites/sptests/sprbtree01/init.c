@@ -545,47 +545,6 @@ rtems_task Init(
     rtems_test_exit(0);
   }
 
-  puts( "INIT - Verify rtems_rbtree_insert_finger" );
-  node_array[0].id = numbers[0];
-  node_array[0].key = numbers[0];
-  rtems_rbtree_insert( &rbtree1, &node_array[0].Node );
-  for (i = 1; i < 20; i++) {
-    node_array[i].id = numbers[i];
-    node_array[i].key = numbers[i];
-    rtems_rbtree_insert_finger(
-        &rbtree1,
-        &node_array[i].Node,
-        &node_array[i-1].Node
-    );
-
-    if (!rb_assert(rbtree1.root) )
-      puts( "INIT - FAILED TREE CHECK" );
-  }
-
-  puts( "INIT - Removing 20 nodes" );
-
-  for ( p = rtems_rbtree_get_min(&rbtree1), id = 0 ; p ;
-      p = rtems_rbtree_get_min(&rbtree1) , id++ ) {
-    test_node *t = rtems_rbtree_container_of(p,test_node,Node);
-    if ( id > 19 ) {
-      puts( "INIT - TOO MANY NODES ON RBTREE" );
-      rtems_test_exit(0);
-    }
-    if ( t->id != numbers_sorted[id] ) {
-      puts( "INIT - ERROR ON RBTREE ID MISMATCH" );
-      rtems_test_exit(0);
-    }
-
-    if (!rb_assert(rbtree1.root) )
-      puts( "INIT - FAILED TREE CHECK" );
-  }
-
-  if(!rtems_rbtree_is_empty(&rbtree1)) {
-    puts( "INIT - TREE NOT EMPTY" );
-    rtems_test_exit(0);
-  }
-
-
   /* Initialize the tree for duplicate keys */
   puts( "Init - Initialize duplicate rbtree empty" );
   rtems_rbtree_initialize_empty( &rbtree1, &test_compare_function, true );

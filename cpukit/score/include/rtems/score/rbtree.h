@@ -219,37 +219,16 @@ RBTree_Node *_RBTree_Get(
   RBTree_Direction dir
 );
 
-/** @brief Find the node with given key in the tree
- *
- *  This function returns a pointer to the node in @a the_rbtree
- *  having key equal to key of @a the_node if it exists,
- *  and NULL if not. @a the_node has to be made up before a search.
- *  If the tree is stable duplicate keys act as FIFO.
- */
-RBTree_Node *_RBTree_Find_unprotected(
-  RBTree_Control *the_rbtree,
-  RBTree_Node *the_node
-);
-
 /**
- * @copydoc _RBTree_Find_unprotected()
+ * @brief Find the node with given key in the tree
  *
- * This function disables interrupts to protect the operation.
+ *  This function returns a pointer to the node with key equal to a key
+ *  of @a the_node if it exists in the Red-Black Tree @a the_rbtree,
+ *  and NULL if not.
  */
 RBTree_Node *_RBTree_Find(
   RBTree_Control *the_rbtree,
   RBTree_Node *the_node
-);
-
-/**
- * @copydoc _RBTree_Find_unprotected()
- *
- *  This function starts at a finger node instead of the root node.
- */
-RBTree_Node *_RBTree_Find_finger(
-  RBTree_Control *the_rbtree,
-  RBTree_Node *the_node,
-  RBTree_Node *finger
 );
 
 /**
@@ -263,26 +242,17 @@ RBTree_Control *_RBTree_Find_header(
 );
 
 /**
- * @brief Insert a node as a descendent of a finger node.
+ * @brief Insert a Node (unprotected)
  *
- * @param[in] the_rbtree The red-black tree.
- * @param[in] finger Ancestor of new node.
- * @param[in] the_node The node to insert.
- */
-void _RBTree_Insert_finger(
-  RBTree_Control *the_rbtree,
-  RBTree_Node *the_node,
-  RBTree_Node *finger
-);
-
-/**
- * @brief Inserts a node into a red-black tree.
+ *  This routine inserts @a the_node on the Red-Black Tree @a the_rbtree.
  *
- * @param[in] the_rbtree The red-black tree.
- * @param[in] the_node The node to insert.
+ *  @retval 0 Successfully inserted.
+ *  @retval -1 NULL @a the_node.
+ *  @retval RBTree_Node* if one with equal value to @a the_node 's key exists
+ *          in an unique @a the_rbtree.
  *
- *  @retval @a the_node if successfully inserted.
- *  @retval NULL otherwise.
+ *  @note It does NOT disable interrupts to ensure the atomicity
+ *        of the extract operation.
  */
 RBTree_Node *_RBTree_Insert_unprotected(
   RBTree_Control *the_rbtree,
@@ -290,14 +260,23 @@ RBTree_Node *_RBTree_Insert_unprotected(
 );
 
 /**
- *  @copydoc _RBTree_Insert_unprotected()
+ *  @brief Insert a node on a rbtree
  *
- * The function disables interrupts to protect the operation.
+ *  This routine inserts @a the_node on the tree @a the_rbtree.
+ *
+ *  @retval 0 Successfully inserted.
+ *  @retval -1 NULL @a the_node.
+ *  @retval RBTree_Node* if one with equal value to @a the_node 's key exists
+ *          in an unique @a the_rbtree.
+ *
+ *  @note It disables interrupts to ensure the atomicity
+ *  of the extract operation.
  */
 RBTree_Node *_RBTree_Insert(
   RBTree_Control *the_rbtree,
   RBTree_Node *the_node
 );
+
 
 /**
  * @brief Extract a Node (unprotected)
