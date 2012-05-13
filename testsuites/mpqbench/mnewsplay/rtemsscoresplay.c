@@ -512,7 +512,7 @@ Splay_Node *_Splay_Find(Splay_Control *tree, Splay_Node *search_node)
       iter = iter->rightlink;
     }
     else {
-      _Splay_Splay(iter, tree);
+      _Splay_Splay(tree, iter);
       break;
     }
   }
@@ -584,7 +584,7 @@ Splay_Node* _Splay_Extract(Splay_Control *tree, Splay_Node *search_node)
         suc->leftlink = node->leftlink;
       }
       tree->root = suc;
-      _Splay_Splay(new_root, tree);
+      _Splay_Splay(tree, new_root);
     }
   }
   return node;
