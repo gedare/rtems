@@ -74,6 +74,7 @@ mhwpqunitedlist/Makefile
 mhwpqunitedskiplist/Makefile
 miheap/Makefile
 mlist/Makefile
+mnewsplay/Makefile
 mrbtree/Makefile
 mskiplist/Makefile
 msplay/Makefile

@@ -5,7 +5,7 @@
 ACLOCAL_AMFLAGS = -I ../aclocal
 
 SUBDIRS = mdetskiplist miheap msplay mlist mskiplist mbptree \
-					mrbtree
+					mrbtree mnewsplay
 
 if sun4u
 SUBDIRS += mhwpqsplitheap mhwpqsplitrbtree mhwpqsplitskiplist mhwpqsplitsplay
