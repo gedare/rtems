@@ -35,10 +35,9 @@ static int sparc64_splitsplay_compare(
   return key1 - key2;
 }
 
-
 int sparc64_splitsplay_initialize( int tid, size_t max_pq_size )
 {
-  rtems_splay_compare_function cf = &sparc64_splitsplay_compare;
+  rtems_splay_compare_function cf = sparc64_splitsplay_compare;
   freelist_initialize(&free_nodes[tid], sizeof(pq_node), max_pq_size);
 
 
@@ -109,12 +108,9 @@ uint64_t sparc64_splitsplay_extract(int tid, uint64_t kv )
   rtems_splay_node *n;
   rtems_splay_control *tree;
   pq_node *p;
-  pq_node search_node;
-
-  search_node.key = kv_key(kv);
 
   tree = &trees[tid];
-  n = rtems_splay_extract(tree, &search_node.st_node);
+  n = rtems_splay_extract(tree, search_helper(tid, kv));
 
   if ( n ) {
     p = _Container_of(n, pq_node, st_node);
