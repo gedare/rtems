@@ -222,6 +222,30 @@ Splay_Node *_Splay_Dequeue( Splay_Control *the_tree )
 
 } /* _Splay_Dequeue */
 
+// FIXME: copied from RBTree. share it
+static void _Splay_Rotate(
+    Splay_Node *the_node,
+    Splay_Direction dir
+    )
+{
+  Splay_Node *c;
+  if (the_node == NULL) return;
+  if (the_node->child[!dir] == NULL) return;
+
+  c = the_node->child[!dir];
+  the_node->child[!dir] = c->child[dir];
+
+  if (c->child[dir])
+    c->child[dir]->parent = the_node;
+
+  c->child[dir] = the_node;
+
+  the_node->parent->child[the_node != the_node->parent->child[0]] = c;
+
+  c->parent = the_node->parent;
+  the_node->parent = c;
+}
+
 /*----------------
  *
  *  _Splay_Splay() -- reorganize the tree.
@@ -272,21 +296,7 @@ void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node )
 
     if ( upup->parent != NULL && upup->child[dir] == up ) {
       // rotate(upup, opp_dir)
-      upupup = upup->parent;
-      upup->child[dir] = up->child[opp_dir];
-      if( upup->child[dir] != NULL )
-        upup->child[dir]->parent = upup;
-      up->child[opp_dir] = upup;
-      upup->parent = up;
-
-      if( upupup->parent == NULL )
-        the_tree->root = up;
-      else if( upupup->child[dir] == upup )
-        upupup->child[dir] = up;
-      else
-        upupup->child[opp_dir] = up;
-      up->parent = upupup;
-      upup = upupup;
+      _Splay_Rotate(upup, opp_dir);
     }
     
     up->child[dir] = split[opp_dir];
@@ -295,7 +305,7 @@ void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node )
     split[opp_dir] = up;
 
     prev = up;
-    up = upup;
+    up = up->parent;
   }
 
   the_node->child[TREE_LEFT] = split[TREE_LEFT];
