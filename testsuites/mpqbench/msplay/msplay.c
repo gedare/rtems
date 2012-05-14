@@ -23,6 +23,16 @@ void free_node(rtems_task_argument tid, node *n) {
   rtems_chain_append_unprotected( &freelist[tid], n );
 }
 
+static void _Splay_Print( splay_tree *the_tree )
+{
+  printf("Splay Tree Stats\n\t");
+  printf("lookups:\t%d\n", the_tree->lookups);
+  printf("lkpcmps:\t%d\n", the_tree->lkpcmps);
+  printf("enqs:\t%d\n", the_tree->enqs);
+  printf("enqcmps:\t%d\n", the_tree->enqcmps);
+  printf("splays:\t%d\n", the_tree->splays);
+  printf("splayloops:\t%d\n", the_tree->splayloops);
+}
 /*
  *
  *  sptree.c:  The following code implements the basic operations on

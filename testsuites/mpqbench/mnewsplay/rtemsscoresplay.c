@@ -2,6 +2,15 @@
 #include <rtems/system.h>
 #include "rtemsscoresplay.h"
 
+void _Splay_Print_stats( Splay_Control *the_tree )
+{
+  printf("Splay Tree Stats\n\t");
+  printf("enqs:\t%d\n", the_tree->enqs);
+  printf("enqcmps:\t%d\n", the_tree->enqcmps);
+  printf("splays:\t%d\n", the_tree->splays);
+  printf("splayloops:\t%d\n", the_tree->splayloops);
+}
+
 /*
  *  The implementation used here is based on the implementation
  *  which was used in the tests of splay trees reported in:
@@ -84,7 +93,7 @@ Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node )
 
   while ( 1 ) {
     compare_result = the_tree->compare_function(next, the_node);
-    dir = (compare_result > 0);
+    dir = (compare_result > 0); // use >= for prepending tied nodes
     opp_dir = !dir;
 
     temp = next->child[opp_dir];
@@ -97,6 +106,7 @@ Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node )
     the_tree->enqcmps++;
     compare_result = the_tree->compare_function(temp, the_node);
     if ( (compare_result > 0) != dir ) {
+      // switch sides
       split[dir]->child[opp_dir] = next;
       next->parent = split[dir];
       split[dir] = next;
@@ -134,7 +144,6 @@ Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node )
   return the_node;
 } /* _Splay_Insert */
 
-// copy from rbtree next... modify a bit to deal with different parenting
 Splay_Node *_Splay_Successor( Splay_Node *the_node )
 {
   return _RBTree_Next_unprotected(the_node, TREE_RIGHT);
@@ -234,11 +243,13 @@ void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node )
   Splay_Node * prev;  /* a descendent of up, already dealt with */
   Splay_Node * upup;  /* the parent of up */
   Splay_Node * upupup;  /* the grandparent of up */
-  Splay_Node * left;  /* the top of left subtree being built */
-  Splay_Node * right;  /* the top of right subtree being built */
+  Splay_Node *split[2]; /* left and right subtree roots */
 
-  left = the_node->child[TREE_LEFT];
-  right = the_node->child[TREE_RIGHT];
+  Splay_Direction dir;
+  Splay_Direction opp_dir;
+
+  split[TREE_LEFT] = the_node->child[TREE_LEFT];
+  split[TREE_RIGHT] = the_node->child[TREE_RIGHT];
   prev = the_node;
   up = prev->parent;
 
@@ -252,76 +263,51 @@ void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node )
        the_node into the left subtree, all to right into the right subtree */
 
     upup = up->parent;
-    if( up->child[TREE_LEFT] == prev )  /* up is to the right of the_node */
-    {
-      if( upup->parent != NULL && upup->child[TREE_LEFT] == up )  /* rotate */
-      {
-  upupup = upup->parent;
-  upup->child[TREE_LEFT] = up->child[TREE_RIGHT];
-  if( upup->child[TREE_LEFT] != NULL )
-    upup->child[TREE_LEFT]->parent = upup;
-  up->child[TREE_RIGHT] = upup;
-  upup->parent = up;
-  if( upupup->parent == NULL )
-    the_tree->root = up;
-  else if( upupup->child[TREE_LEFT] == upup )
-    upupup->child[TREE_LEFT] = up;
-  else
-    upupup->child[TREE_RIGHT] = up;
-  up->parent = upupup;
-  upup = upupup;
-      }
-      up->child[TREE_LEFT] = right;
-      if( right != NULL )
-  right->parent = up;
-      right = up;
+    if ( up->child[TREE_LEFT] == prev ) {
+      dir = TREE_LEFT;
+    } else {
+      dir = TREE_RIGHT;
+    }
+    opp_dir = !dir;
 
+    if ( upup->parent != NULL && upup->child[dir] == up ) {
+      // rotate(upup, opp_dir)
+      upupup = upup->parent;
+      upup->child[dir] = up->child[opp_dir];
+      if( upup->child[dir] != NULL )
+        upup->child[dir]->parent = upup;
+      up->child[opp_dir] = upup;
+      upup->parent = up;
+
+      if( upupup->parent == NULL )
+        the_tree->root = up;
+      else if( upupup->child[dir] == upup )
+        upupup->child[dir] = up;
+      else
+        upupup->child[opp_dir] = up;
+      up->parent = upupup;
+      upup = upupup;
     }
-    else  /* up is to the left of the_node */
-    {
-      if( upup->parent != NULL && upup->child[TREE_RIGHT] == up )  /* rotate */
-      {
-  upupup = upup->parent;
-  upup->child[TREE_RIGHT] = up->child[TREE_LEFT];
-  if( upup->child[TREE_RIGHT] != NULL )
-    upup->child[TREE_RIGHT]->parent = upup;
-  up->child[TREE_LEFT] = upup;
-  upup->parent = up;
-  if( upupup->parent == NULL )
-    the_tree->root = up;
-  else if( upupup->child[TREE_RIGHT] == upup )
-    upupup->child[TREE_RIGHT] = up;
-  else
-    upupup->child[TREE_LEFT] = up;
-  up->parent = upupup;
-  upup = upupup;
-      }
-      up->child[TREE_RIGHT] = left;
-      if( left != NULL )
-  left->parent = up;
-      left = up;
-    }
+    
+    up->child[dir] = split[opp_dir];
+    if( split[opp_dir] != NULL )
+      split[opp_dir]->parent = up;
+    split[opp_dir] = up;
+
     prev = up;
     up = upup;
   }
 
-# ifdef DEBUG
-  if( the_tree->root != prev )
-  {
-    /*  fprintf(stderr, " *** bug in splay: the_node not in the_tree *** " ); */
-    abort();
+  the_node->child[TREE_LEFT] = split[TREE_LEFT];
+  the_node->child[TREE_RIGHT] = split[TREE_RIGHT];
+  if ( split[TREE_LEFT] != NULL ) {
+    split[TREE_LEFT]->parent = the_node;
   }
-# endif
-
-  the_node->child[TREE_LEFT] = left;
-  the_node->child[TREE_RIGHT] = right;
-  if( left != NULL )
-    left->parent = the_node;
-  if( right != NULL )
-    right->parent = the_node;
+  if ( split[TREE_RIGHT] != NULL ) {
+    split[TREE_RIGHT]->parent = the_node;
+  }
   the_tree->root = the_node;
   the_node->parent = &the_tree->permanent_null;
-
 } /* splay */
 /* /sptree.c */
 

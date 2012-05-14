@@ -79,13 +79,13 @@ Splay_Node *_Splay_Successor( Splay_Node *the_node );
 Splay_Node *_Splay_Dequeue( Splay_Control *the_tree );
 void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node );
 
+void _Splay_Print_stats( Splay_Control *the_tree );
+
 static void inline _Splay_Initialize_empty(
   Splay_Control *the_tree,
   Splay_Compare_function compare_function
 )
 {
-  the_tree->lookups = 0;
-  the_tree->lkpcmps = 0;
   the_tree->enqs = 0;
   the_tree->enqcmps = 0;
   the_tree->splays = 0;
