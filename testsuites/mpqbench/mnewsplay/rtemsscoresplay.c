@@ -158,6 +158,7 @@ Splay_Node *_Splay_Successor( Splay_Node *the_node )
  *  subtree (if there is one); on the way to the leftmost node, rotations
  *  are performed to shorten the left branch of the tree
  */
+// FIXME: take direction argument.
 Splay_Node *_Splay_Dequeue( Splay_Control *the_tree )
 {
   Splay_Node * deq;    /* one to return */
@@ -274,28 +275,21 @@ void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node )
 
   split[TREE_LEFT] = the_node->child[TREE_LEFT];
   split[TREE_RIGHT] = the_node->child[TREE_RIGHT];
-  prev = the_node;
-  up = prev->parent;
+  up = the_node->parent;
+  dir = the_node != up->child[0];
 
   the_tree->splays++;
 
-  while( up->parent != NULL )
-  {
+  /* bottom-up splaying:
+   * walk up the tree towards the root, splaying all to the left of
+   * the_node into the left subtree, all to right into the right subtree */
+  while( up->parent != NULL ) {
     the_tree->splayloops++;
 
-    /* walk up the tree towards the root, splaying all to the left of
-       the_node into the left subtree, all to right into the right subtree */
-
     upup = up->parent;
-    if ( up->child[TREE_LEFT] == prev ) {
-      dir = TREE_LEFT;
-    } else {
-      dir = TREE_RIGHT;
-    }
     opp_dir = !dir;
 
     if ( upup->parent != NULL && upup->child[dir] == up ) {
-      // rotate(upup, opp_dir)
       _Splay_Rotate(upup, opp_dir);
     }
     
@@ -304,7 +298,7 @@ void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node )
       split[opp_dir]->parent = up;
     split[opp_dir] = up;
 
-    prev = up;
+    dir = up != up->parent->child[0];
     up = up->parent;
   }
 
@@ -346,19 +340,6 @@ Splay_Node *_Splay_Find(Splay_Control *tree, Splay_Node *search_node)
 }
 
 /**
- * spget_successor
- *
- * Find the in-order successor of the_node. Assumes it exists
- */
-static Splay_Node* spget_successor( Splay_Node *the_node ) {
-  the_node = the_node->child[TREE_RIGHT];
-  while ( the_node->child[TREE_LEFT] ) {
-    the_node = the_node->child[TREE_LEFT];
-  }
-  return the_node;
-}
-
-/**
  *  _Splay_Extract
  *
  *  Searches for and removes a particular key in the tree.
@@ -387,7 +368,7 @@ Splay_Node* _Splay_Extract(Splay_Control *tree, Splay_Node *search_node)
       tree->root = left;
     } else {
       /* replace node with its successor */
-      Splay_Node *suc = spget_successor(node);
+      Splay_Node *suc = _Splay_Successor(node);
       right = node->child[TREE_RIGHT];
       left = node->child[TREE_LEFT];
       if ( suc != node->child[TREE_RIGHT] ) {
