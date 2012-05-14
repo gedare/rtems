@@ -37,6 +37,13 @@ static void inline rtems_splay_initialize_empty(
   _Splay_Initialize_empty(the_tree, compare_function);
 }
 
+static void inline rtems_splay_is_empty(
+  rtems_splay_control *the_tree
+)
+{
+  return _Splay_Is_empty(the_tree);
+}
+
 static inline rtems_splay_node * rtems_splay_insert(
   rtems_splay_control *the_tree, rtems_splay_node *the_node 
 )
@@ -44,7 +51,14 @@ static inline rtems_splay_node * rtems_splay_insert(
   return _Splay_Insert(the_tree, the_node);
 }
 
-static inline rtems_splay_node *rtems_splay_dequeue(
+static inline rtems_splay_node *rtems_splay_min(
+  rtems_splay_control *the_tree
+)
+{
+  return the_tree->first[TREE_LEFT];
+}
+
+static inline rtems_splay_node *rtems_splay_get_min(
   rtems_splay_control *the_tree
 )
 {

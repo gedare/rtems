@@ -32,13 +32,14 @@ static int splay_compare(rtems_splay_node *n1, rtems_splay_node *n2)
 
 void newsplay_initialize(rtems_task_argument tid, int size ) {
   int i;
+  rtems_splay_compare_function cf = &splay_compare;
 
   rtems_chain_initialize_empty ( &freelist[tid] );
   for ( i = 0; i < size; i++ ) {
     rtems_chain_append(&freelist[tid], &the_nodes[i][tid].link);
   }
 
-  rtems_splay_initialize_empty(&the_tree[tid], splay_compare);
+  rtems_splay_initialize_empty(&the_tree[tid], cf);
 }
 
 void newsplay_insert( rtems_task_argument tid, long kv ) {
@@ -55,10 +56,8 @@ long newsplay_min(rtems_task_argument tid ) {
   node *n;
   pq_node *p;
 
-  stn = rtems_splay_dequeue( &the_tree[tid] ); // TODO: peek without remove
+  stn = rtems_splay_min( &the_tree[tid] ); // TODO: peek without remove
   if ( stn ) {
-    rtems_splay_insert(&the_tree[tid], stn); // FIXME ^
-    assert ( stn == the_tree[tid].first[TREE_LEFT] ); 
     n = ST_NODE_TO_NODE(stn);
     p = &n->data;
     kv = PQ_NODE_TO_KV(p);
@@ -73,7 +72,7 @@ long newsplay_pop_min( rtems_task_argument tid) {
   pq_node *p;
   rtems_splay_node *stn;
 
-  stn = rtems_splay_dequeue( &the_tree[tid] ); // TODO: use O(1) dequeue
+  stn = rtems_splay_get_min( &the_tree[tid] );
 
   if ( stn ) {
     n = ST_NODE_TO_NODE(stn);
