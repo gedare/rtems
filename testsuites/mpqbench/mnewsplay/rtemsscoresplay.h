@@ -76,7 +76,7 @@ Splay_Node *_Splay_Find(Splay_Control *the_tree, Splay_Node *search_node);
 Splay_Node* _Splay_Extract(Splay_Control *the_tree, Splay_Node *the_node);
 Splay_Node *_Splay_Successor( Splay_Node *the_node );
 
-Splay_Node *_Splay_Dequeue( Splay_Control *the_tree );
+Splay_Node *_Splay_Dequeue( Splay_Control *the_tree, Splay_Direction dir );
 void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node );
 
 void _Splay_Print_stats( Splay_Control *the_tree );

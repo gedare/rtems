@@ -48,7 +48,7 @@ static inline rtems_splay_node *rtems_splay_dequeue(
   rtems_splay_control *the_tree
 )
 {
-  return _Splay_Dequeue(the_tree);
+  return _Splay_Dequeue(the_tree, TREE_LEFT);
 }
 
 static inline void rtems_splay_splay(

@@ -15,6 +15,35 @@ void _Splay_Print_stats( Splay_Control *the_tree )
   printf("splayloops:\t%d\n", the_tree->splayloops);
 }
 
+Splay_Node *_Splay_Successor( Splay_Node *the_node )
+{
+  return _RBTree_Next_unprotected(the_node, TREE_RIGHT);
+}
+
+// FIXME: copied from RBTree. share it
+static void _Splay_Rotate(
+    Splay_Node *the_node,
+    Splay_Direction dir
+    )
+{
+  Splay_Node *c;
+  if (the_node == NULL) return;
+  if (the_node->child[!dir] == NULL) return;
+
+  c = the_node->child[!dir];
+  the_node->child[!dir] = c->child[dir];
+
+  if (c->child[dir])
+    c->child[dir]->parent = the_node;
+
+  c->child[dir] = the_node;
+
+  the_node->parent->child[the_node != the_node->parent->child[0]] = c;
+
+  c->parent = the_node->parent;
+  the_node->parent = c;
+}
+
 /*
  *  The implementation used here is based on the implementation
  *  which was used in the tests of splay trees reported in:
@@ -149,11 +178,6 @@ Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node )
   return the_node;
 } /* _Splay_Insert */
 
-Splay_Node *_Splay_Successor( Splay_Node *the_node )
-{
-  return _RBTree_Next_unprotected(the_node, TREE_RIGHT);
-}
-
 /*----------------
  *
  *  _Splay_Dequeue() -- return and remove head node from a subtree.
@@ -163,94 +187,64 @@ Splay_Node *_Splay_Successor( Splay_Node *the_node )
  *  subtree (if there is one); on the way to the leftmost node, rotations
  *  are performed to shorten the left branch of the tree
  */
-// FIXME: take direction argument. add non-splaying version
-Splay_Node *_Splay_Dequeue( Splay_Control *the_tree )
+// FIXME: add non-splaying version
+Splay_Node *_Splay_Dequeue( Splay_Control *the_tree, Splay_Direction dir )
 {
-  Splay_Node * deq;    /* one to return */
-  Splay_Node * next;   /* the next thing to deal with */
-  Splay_Node * left;  /* the left child of next */
-  Splay_Node * farleft;    /* the left child of left */
-  Splay_Node * farfarleft;  /* the left child of farleft */
+  Splay_Node * deq;
+  Splay_Node * next;
+  Splay_Node * c;
+  Splay_Node * cc;
+  Splay_Direction opp_dir;
 
+  opp_dir = !dir;
   next = the_tree->root;
 
   if( next == NULL ) {
     return NULL;
   }
 
-  left = next->child[TREE_LEFT];
-  if( left == NULL ) {
-    deq = next;
-    the_tree->first[TREE_LEFT] = _Splay_Successor(deq);
-    the_tree->root = next->child[TREE_RIGHT];
+  // handle root as special case.
+  c = next->child[dir];
+  if( c == NULL ) {
+    the_tree->first[dir] = _Splay_Successor(next);
+    the_tree->root = next->child[opp_dir];
 
     if( the_tree->root != NULL )
       the_tree->root->parent = &the_tree->permanent_null;
-  } else for(;;)  /* left is not null */
-  {
-    /* next is not it, left is not NULL, might be it */
-    farleft = left->child[TREE_LEFT];
-    if( farleft == NULL )
-    {
-      deq = left;
-      the_tree->first[TREE_LEFT] = _Splay_Successor(deq);
-      next->child[TREE_LEFT] = left->child[TREE_RIGHT];
-      if( left->child[TREE_RIGHT] != NULL )
-        left->child[TREE_RIGHT]->parent = next;
-      break;
-    }
-
-    /* next, left are not it, farleft is not NULL, might be it */
-    farfarleft = farleft->child[TREE_LEFT];
-    if( farfarleft == NULL )
-    {
-      deq = farleft;
-      the_tree->first[TREE_LEFT] = _Splay_Successor(deq);
-      left->child[TREE_LEFT] = farleft->child[TREE_RIGHT];
-      if( farleft->child[TREE_RIGHT] != NULL )
-        farleft->child[TREE_RIGHT]->parent = left;
-      break;
-    }
-
-    /* next, left, farleft are not it, rotate */
-    next->child[TREE_LEFT] = farleft;
-    farleft->parent = next;
-    left->child[TREE_LEFT] = farleft->child[TREE_RIGHT];
-    if( farleft->child[TREE_RIGHT] != NULL )
-      farleft->child[TREE_RIGHT]->parent = left;
-    farleft->child[TREE_RIGHT] = left;
-    left->parent = farleft;
-    next = farleft;
-    left = farfarleft;
+    return next;
   }
 
-  return( deq );
+  // loop invariants: next is not null, c is not null.
+  while ( 1 ) {
+    /* next is not it, c is not NULL, might be it */
+    cc = c->child[dir];
+    if( cc == NULL ) {
+      deq = c;
+      the_tree->first[dir] = _Splay_Successor(deq);
+      next->child[dir] = c->child[opp_dir];
+      if( c->child[opp_dir] != NULL )
+        c->child[opp_dir]->parent = next;
+      break;
+    }
 
+    /* next, c are not it, cc is not NULL, might be it */
+    if( cc->child[dir] == NULL ) {
+      deq = cc;
+      the_tree->first[dir] = _Splay_Successor(deq);
+      c->child[dir] = cc->child[opp_dir];
+      if( cc->child[opp_dir] != NULL )
+        cc->child[opp_dir]->parent = c;
+      break;
+    }
+
+    /* next, c, cc are not it, rotate */
+    _Splay_Rotate(c, opp_dir);
+    next = cc;
+    c = cc->child[dir];
+  }
+
+  return deq;
 } /* _Splay_Dequeue */
-
-// FIXME: copied from RBTree. share it
-static void _Splay_Rotate(
-    Splay_Node *the_node,
-    Splay_Direction dir
-    )
-{
-  Splay_Node *c;
-  if (the_node == NULL) return;
-  if (the_node->child[!dir] == NULL) return;
-
-  c = the_node->child[!dir];
-  the_node->child[!dir] = c->child[dir];
-
-  if (c->child[dir])
-    c->child[dir]->parent = the_node;
-
-  c->child[dir] = the_node;
-
-  the_node->parent->child[the_node != the_node->parent->child[0]] = c;
-
-  c->parent = the_node->parent;
-  the_node->parent = c;
-}
 
 /*----------------
  *
