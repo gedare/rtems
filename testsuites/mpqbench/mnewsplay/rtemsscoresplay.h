@@ -76,7 +76,6 @@ Splay_Node* _Splay_Extract(Splay_Control *the_tree, Splay_Node *search_node);
 Splay_Node *_Splay_Successor( Splay_Node *the_node );
 
 Splay_Node *_Splay_Dequeue( Splay_Control *the_tree );
-Splay_Node *_Splay_Insert_before(Splay_Control *the_tree, Splay_Node *the_node);
 void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node );
 
 static void inline _Splay_Initialize_empty(

@@ -51,14 +51,6 @@ static inline rtems_splay_node *rtems_splay_dequeue(
   return _Splay_Dequeue(the_tree);
 }
 
-static inline rtems_splay_node *rtems_splay_insert_before(
-  rtems_splay_control *the_tree,
-  rtems_splay_node *the_node
-)
-{
-  return _Splay_Insert_before(the_tree, the_node);
-}
-
 static inline void rtems_splay_splay(
   rtems_splay_control *the_tree,
   rtems_splay_node *the_node 
