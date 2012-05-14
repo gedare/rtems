@@ -15,11 +15,11 @@ static rtems_splay_control the_tree[NUM_APERIODIC_TASKS];
 node the_nodes[NUM_NODES][NUM_APERIODIC_TASKS];
 rtems_chain_control freelist[NUM_APERIODIC_TASKS];
 
-node *alloc_node(rtems_task_argument tid) {
+static node *alloc_node(rtems_task_argument tid) {
   node *n = rtems_chain_get_unprotected( &freelist[tid] );
   return n;
 }
-void free_node(rtems_task_argument tid, node *n) {
+static void free_node(rtems_task_argument tid, node *n) {
   rtems_chain_append_unprotected( &freelist[tid], n );
 }
 

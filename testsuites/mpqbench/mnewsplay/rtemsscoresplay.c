@@ -53,10 +53,11 @@ bool _Splay_Is_empty( Splay_Control *the_tree )
  */
 Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node )
 {
-  Splay_Node * left;  /* the rightmost node in the left tree */
-  Splay_Node * right;  /* the leftmost node in the right tree */
   Splay_Node * next;  /* the root of the unsplit part */
   Splay_Node * temp;
+  Splay_Node *split[2];
+  Splay_Direction dir, opp_dir;
+  int compare_result;
 
   the_tree->enqs++;
   the_node->parent = NULL;
@@ -71,8 +72,8 @@ Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node )
   }
   
   /* difficult enq */
-  left = the_node;
-  right = the_node;
+  split[0] = the_node;
+  split[1] = the_node;
 
   /* the_node's left and right children will hold the right and left
      splayed trees resulting from splitting on the_node->key;
@@ -80,104 +81,50 @@ Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node )
 
   the_tree->enqcmps++;
 
-  /* figure out which side to start on */
-  if ( the_tree->compare_function(next, the_node) > 0 )
-    goto two;
+  while ( 1 ) {
+    compare_result = the_tree->compare_function(next, the_node);
+    dir = (compare_result > 0);
+    opp_dir = !dir;
 
-one:  /* assert next->key <= key */
-
-  do  /* walk to the right in the left tree */
-  {
-    temp = next->child[TREE_RIGHT];
-    if( temp == NULL )
-    {
-      left->child[TREE_RIGHT] = next;
-      next->parent = left;
-      right->child[TREE_LEFT] = NULL;
-      goto done;  /* job done, entire tree split */
+    temp = next->child[opp_dir];
+    if ( temp == NULL ) {
+      split[dir]->child[opp_dir] = next;
+      next->parent = split[dir];
+      split[opp_dir]->child[dir] = NULL;
+      break;
     }
-
     the_tree->enqcmps++;
-    if( the_tree->compare_function(temp, the_node) > 0 )
-    {
-      left->child[TREE_RIGHT] = next;
-      next->parent = left;
-      left = next;
+    compare_result = the_tree->compare_function(temp, the_node);
+    if ( (compare_result > 0) != dir ) {
+      split[dir]->child[opp_dir] = next;
+      next->parent = split[dir];
+      split[dir] = next;
       next = temp;
-      goto two;  /* change sides */
+      continue;
     }
-
-    next->child[TREE_RIGHT] = temp->child[TREE_LEFT];
-    if( temp->child[TREE_LEFT] != NULL )
-      temp->child[TREE_LEFT]->parent = next;
-    left->child[TREE_RIGHT] = temp;
-    temp->parent = left;
-    temp->child[TREE_LEFT] = next;
+    next->child[opp_dir] = temp->child[dir];
+    if ( temp->child[dir] != NULL ) {
+      temp->child[dir]->parent = next;
+    }
+    split[dir]->child[opp_dir] = temp;
+    temp->parent = split[dir];
+    temp->child[dir] = next;
     next->parent = temp;
-    left = temp;
-    next = temp->child[TREE_RIGHT];
-    if( next == NULL )
-    {
-      right->child[TREE_LEFT] = NULL;
-      goto done;  /* job done, entire tree split */
+    split[dir] = temp;
+    next = temp->child[opp_dir];
+    if ( next == NULL ) {
+      split[opp_dir]->child[dir] = NULL;
+      break;
     }
-
     the_tree->enqcmps++;
+  }
 
-  } while( the_tree->compare_function(next, the_node) <= 0 );  /* change sides */
-
-two:  /* assert next->key > key */
-
-  do  /* walk to the left in the right tree */
-  {
-    temp = next->child[TREE_LEFT];
-    if( temp == NULL )
-    {
-      right->child[TREE_LEFT] = next;
-      next->parent = right;
-      left->child[TREE_RIGHT] = NULL;
-      goto done;  /* job done, entire tree split */
-    }
-
-    the_tree->enqcmps++;
-    if( the_tree->compare_function(temp, the_node) <= 0 )
-    {
-      right->child[TREE_LEFT] = next;
-      next->parent = right;
-      right = next;
-      next = temp;
-      goto one;  /* change sides */
-    }
-    next->child[TREE_LEFT] = temp->child[TREE_RIGHT];
-    if( temp->child[TREE_RIGHT] != NULL )
-      temp->child[TREE_RIGHT]->parent = next;
-    right->child[TREE_LEFT] = temp;
-    temp->parent = right;
-    temp->child[TREE_RIGHT] = next;
-    next->parent = temp;
-    right = temp;
-    next = temp->child[TREE_LEFT];
-    if( next == NULL )
-    {
-      left->child[TREE_RIGHT] = NULL;
-      goto done;  /* job done, entire tree split */
-    }
-
-    the_tree->enqcmps++;
-
-  } while( the_tree->compare_function(next, the_node) > 0 );  /* change sides */
-
-  goto one;
-
-done:  /* split is done, branches of the_node need reversal */
-
-  temp = the_node->child[TREE_LEFT];
-  the_node->child[TREE_LEFT] = the_node->child[TREE_RIGHT];
-  the_node->child[TREE_RIGHT] = temp;
-
-  return( the_node );
-
-} /* _Splay_Insert */
+  // swap the_node->left with the_node->right
+  temp = the_node->child[dir];
+  the_node->child[dir] = the_node->child[opp_dir];
+  the_node->child[opp_dir] = temp;
+  return the_node;
+ } /* _Splay_Insert */
 
 
 /*----------------
