@@ -351,10 +351,10 @@ Splay_Node *_Splay_Find(Splay_Control *tree, Splay_Node *search_node)
  *  Searches for and removes a particular key in the tree.
  *  If a node is pruned then return it. Return NULL if key is not found.
  */
-// FIXME: use exact node. add non-splaying version
-Splay_Node* _Splay_Extract(Splay_Control *tree, Splay_Node *search_node)
+// FIXME: add non-splaying version
+Splay_Node* _Splay_Extract(Splay_Control *tree, Splay_Node *the_node)
 {
-  Splay_Node *node = _Splay_Find(tree, search_node);
+  Splay_Node *node = _Splay_Find(tree, the_node);
   Splay_Node *new_root = NULL;
   Splay_Node *left;
   Splay_Node *right;

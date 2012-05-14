@@ -68,10 +68,10 @@ static inline rtems_splay_node *rtems_splay_find(
 
 static inline rtems_splay_node* rtems_splay_extract(
   rtems_splay_control *the_tree,
-  rtems_splay_node *search_node
+  rtems_splay_node *the_node
 )
 {
-  return _Splay_Extract(the_tree, search_node);
+  return _Splay_Extract(the_tree, the_node);
 }
 
 #ifdef __cplusplus

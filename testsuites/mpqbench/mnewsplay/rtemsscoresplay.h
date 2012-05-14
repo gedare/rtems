@@ -73,7 +73,7 @@ typedef struct
 bool _Splay_Is_empty( Splay_Control *the_tree );
 Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node );
 Splay_Node *_Splay_Find(Splay_Control *the_tree, Splay_Node *search_node);
-Splay_Node* _Splay_Extract(Splay_Control *the_tree, Splay_Node *search_node);
+Splay_Node* _Splay_Extract(Splay_Control *the_tree, Splay_Node *the_node);
 Splay_Node *_Splay_Successor( Splay_Node *the_node );
 
 Splay_Node *_Splay_Dequeue( Splay_Control *the_tree );
