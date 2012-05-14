@@ -1,4 +1,8 @@
 
+/*
+ * Gedare Bloom
+ */
+
 #include <rtems/system.h>
 #include "rtemsscoresplay.h"
 
@@ -134,6 +138,7 @@ Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node )
   temp = the_node->child[dir];
   the_node->child[dir] = the_node->child[opp_dir];
   the_node->child[opp_dir] = temp;
+
   // update min/max
   if ( !the_node->child[dir] ) {
     the_tree->first[dir] = the_node;
@@ -158,7 +163,7 @@ Splay_Node *_Splay_Successor( Splay_Node *the_node )
  *  subtree (if there is one); on the way to the leftmost node, rotations
  *  are performed to shorten the left branch of the tree
  */
-// FIXME: take direction argument.
+// FIXME: take direction argument. add non-splaying version
 Splay_Node *_Splay_Dequeue( Splay_Control *the_tree )
 {
   Splay_Node * deq;    /* one to return */
@@ -321,7 +326,7 @@ void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node )
  *  Searches for a particular key in the tree returning the first one found.
  *  If a node is found splay it and return it. Returns NULL if none is found.
  */
-// FIXME: should splay when the node is not found?
+// FIXME: should splay when the node is not found? add non-splaying version
 Splay_Node *_Splay_Find(Splay_Control *tree, Splay_Node *search_node)
 {
   Splay_Node *iter = tree->root;
@@ -346,7 +351,7 @@ Splay_Node *_Splay_Find(Splay_Control *tree, Splay_Node *search_node)
  *  Searches for and removes a particular key in the tree.
  *  If a node is pruned then return it. Return NULL if key is not found.
  */
-// FIXME: use exact node.
+// FIXME: use exact node. add non-splaying version
 Splay_Node* _Splay_Extract(Splay_Control *tree, Splay_Node *search_node)
 {
   Splay_Node *node = _Splay_Find(tree, search_node);
