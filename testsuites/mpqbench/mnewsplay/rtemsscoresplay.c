@@ -321,6 +321,7 @@ void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node )
  *  Searches for a particular key in the tree returning the first one found.
  *  If a node is found splay it and return it. Returns NULL if none is found.
  */
+// FIXME: should splay when the node is not found?
 Splay_Node *_Splay_Find(Splay_Control *tree, Splay_Node *search_node)
 {
   Splay_Node *iter = tree->root;
@@ -345,6 +346,7 @@ Splay_Node *_Splay_Find(Splay_Control *tree, Splay_Node *search_node)
  *  Searches for and removes a particular key in the tree.
  *  If a node is pruned then return it. Return NULL if key is not found.
  */
+// FIXME: use exact node.
 Splay_Node* _Splay_Extract(Splay_Control *tree, Splay_Node *search_node)
 {
   Splay_Node *node = _Splay_Find(tree, search_node);
