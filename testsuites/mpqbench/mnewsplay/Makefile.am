@@ -9,8 +9,7 @@ mnewsplay_SOURCES = ../shared/init.c ../shared/pqbench.h \
  									../shared/workload.c ../shared/workload.h \
 									../shared/params.h ../shared/params.i ../shared/tasks.i \
 									pqbench.c system.h \
-									mnewsplay.c mnewsplay.h \
-									rtemssapisplay.h rtemsscoresplay.h rtemsscoresplay.c
+									mnewsplay.c mnewsplay.h
 
 #dist_rtems_tests_DATA = mnewsplay.scn
 #dist_rtems_tests_DATA += mnewsplay.doc

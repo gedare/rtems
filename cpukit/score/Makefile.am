@@ -40,6 +40,7 @@ include_rtems_score_HEADERS += include/rtems/score/schedulercbs.h
 include_rtems_score_HEADERS += include/rtems/score/scheduleredf.h
 include_rtems_score_HEADERS += include/rtems/score/schedulerpriority.h
 include_rtems_score_HEADERS += include/rtems/score/schedulersimple.h
+include_rtems_score_HEADERS += include/rtems/score/splay.h
 include_rtems_score_HEADERS += include/rtems/score/stack.h
 include_rtems_score_HEADERS += include/rtems/score/states.h
 include_rtems_score_HEADERS += include/rtems/score/sysstate.h
@@ -262,6 +263,9 @@ libscore_a_SOURCES += src/pheapallocate.c \
 libscore_a_SOURCES += src/rbtree.c \
     src/rbtreeextract.c src/rbtreefind.c src/rbtreefindheader.c \
     src/rbtreeget.c src/rbtreeinsert.c src/rbtreeiterate.c src/rbtreenext.c
+
+## SPLAY_C_FILES
+libscore_a_SOURCES += src/splay.c
 
 ## THREAD_C_FILES
 libscore_a_SOURCES += src/thread.c src/threadchangepriority.c \

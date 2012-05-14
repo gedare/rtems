@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 #include <rtems/system.h>
-#include "rtemsscoresplay.h"
+#include <rtems/score/splay.h>
 
 typedef Splay_Node rtems_splay_node;
 typedef Splay_Control rtems_splay_control;

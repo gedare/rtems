@@ -1,18 +1,27 @@
-
 /*
- * Gedare Bloom
+ *  Copyright (c) 2012 Gedare Bloom.
+ *
+ *  The license and distribution terms for this file may be
+ *  found in the file LICENSE in this distribution or at
+ *  http://www.rtems.com/license/LICENSE.
  */
 
 #include <rtems/system.h>
-#include "rtemsscoresplay.h"
+#include <rtems/score/splay.h>
 
-void _Splay_Print_stats( Splay_Control *the_tree )
+void _Splay_Initialize_empty(
+  Splay_Control *the_tree,
+  Splay_Compare_function compare_function
+)
 {
-  printf("Splay Tree Stats\n\t");
-  printf("enqs:\t%d\n", the_tree->enqs);
-  printf("enqcmps:\t%d\n", the_tree->enqcmps);
-  printf("splays:\t%d\n", the_tree->splays);
-  printf("splayloops:\t%d\n", the_tree->splayloops);
+  the_tree->enqs = 0;
+  the_tree->enqcmps = 0;
+  the_tree->splays = 0;
+  the_tree->splayloops = 0;
+  the_tree->root = NULL;
+  the_tree->first[0] = the_tree->first[1] = NULL;
+  the_tree->compare_function = compare_function;
+  the_tree->permanent_null = NULL;
 }
 
 Splay_Node *_Splay_Successor( Splay_Node *the_node )

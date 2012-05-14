@@ -14,6 +14,7 @@ include_rtems_HEADERS += include/rtems/mptables.h
 include_rtems_HEADERS += include/rtems/cbs.h
 include_rtems_HEADERS += include/rtems/rbheap.h
 include_rtems_HEADERS += include/rtems/rbtree.h
+include_rtems_HEADERS += include/rtems/splay.h
 include_rtems_HEADERS += include/rtems/sptables.h
 
 EXTRA_DIST = include/rtems/README

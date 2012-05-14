@@ -13,7 +13,7 @@
 #include "rtems/chain.h"
 #include "rtems/rtems/types.h"
 
-#include "rtemssapisplay.h"
+#include <rtems/splay.h>
 
 typedef struct {
   int key;

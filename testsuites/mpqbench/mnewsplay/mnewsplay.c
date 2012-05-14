@@ -104,7 +104,6 @@ long newsplay_search( rtems_task_argument tid, int k) {
   } else {
     kv = (long)-1;
   }
-  _Splay_Print_stats(&the_tree[tid]);
   return kv;
 }
 

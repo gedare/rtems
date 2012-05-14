@@ -69,7 +69,10 @@ typedef struct
     int    splayloops;
 } Splay_Control;
 
-
+void _Splay_Initialize_empty(
+    Splay_Control *the_tree,
+    Splay_Compare_function compare_function
+);
 bool _Splay_Is_empty( Splay_Control *the_tree );
 Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node );
 Splay_Node *_Splay_Find(Splay_Control *the_tree, Splay_Node *search_node);
@@ -80,21 +83,6 @@ Splay_Node *_Splay_Dequeue( Splay_Control *the_tree, Splay_Direction dir );
 void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node );
 
 void _Splay_Print_stats( Splay_Control *the_tree );
-
-static void inline _Splay_Initialize_empty(
-  Splay_Control *the_tree,
-  Splay_Compare_function compare_function
-)
-{
-  the_tree->enqs = 0;
-  the_tree->enqcmps = 0;
-  the_tree->splays = 0;
-  the_tree->splayloops = 0;
-  the_tree->root = NULL;
-  the_tree->first[0] = the_tree->first[1] = NULL;
-  the_tree->compare_function = compare_function;
-  the_tree->permanent_null = NULL;
-}
 
 #ifdef __cplusplus
 }
