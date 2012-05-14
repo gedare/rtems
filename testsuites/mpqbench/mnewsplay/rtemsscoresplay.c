@@ -60,7 +60,7 @@ Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node )
   int compare_result;
 
   the_tree->enqs++;
-  the_node->parent = NULL;
+  the_node->parent = &the_tree->permanent_null;
   next = the_tree->root;
   the_tree->root = the_node;
   
@@ -124,6 +124,7 @@ Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node )
   temp = the_node->child[dir];
   the_node->child[dir] = the_node->child[opp_dir];
   the_node->child[opp_dir] = temp;
+  // update min/max
   if ( !the_node->child[dir] ) {
     the_tree->first[dir] = the_node;
   }
@@ -136,33 +137,7 @@ Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node )
 // copy from rbtree next... modify a bit to deal with different parenting
 Splay_Node *_Splay_Successor( Splay_Node *the_node )
 {
-  Splay_Direction dir = TREE_RIGHT;
-  Splay_Direction opp_dir = !dir;
-
-  Splay_Node *current = the_node->child[dir];
-  Splay_Node *next = NULL;
-
-  if ( current != NULL ) {
-    next = current;
-    while ( (current = current->child [opp_dir]) != NULL ) {
-      next = current;
-    }
-  } else {
-    Splay_Node *parent = the_node->parent;
-    if ( parent && the_node == parent->child[opp_dir] ) {
-      next = parent;
-    } else {
-      while ( parent && the_node == parent->child[dir] ) {
-        the_node = parent;
-        parent = parent->parent;
-      }
-      if ( parent ) {
-        next = parent;
-      }
-    }
-  }
-
-  return next;
+  return _RBTree_Next_unprotected(the_node, TREE_RIGHT);
 }
 
 /*----------------
@@ -195,7 +170,7 @@ Splay_Node *_Splay_Dequeue( Splay_Control *the_tree )
     the_tree->root = next->child[TREE_RIGHT];
 
     if( the_tree->root != NULL )
-      the_tree->root->parent = NULL;
+      the_tree->root->parent = &the_tree->permanent_null;
   } else for(;;)  /* left is not null */
   {
     /* next is not it, left is not NULL, might be it */
@@ -269,7 +244,7 @@ void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node )
 
   the_tree->splays++;
 
-  while( up != NULL )
+  while( up->parent != NULL )
   {
     the_tree->splayloops++;
 
@@ -279,7 +254,7 @@ void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node )
     upup = up->parent;
     if( up->child[TREE_LEFT] == prev )  /* up is to the right of the_node */
     {
-      if( upup != NULL && upup->child[TREE_LEFT] == up )  /* rotate */
+      if( upup->parent != NULL && upup->child[TREE_LEFT] == up )  /* rotate */
       {
   upupup = upup->parent;
   upup->child[TREE_LEFT] = up->child[TREE_RIGHT];
@@ -287,7 +262,7 @@ void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node )
     upup->child[TREE_LEFT]->parent = upup;
   up->child[TREE_RIGHT] = upup;
   upup->parent = up;
-  if( upupup == NULL )
+  if( upupup->parent == NULL )
     the_tree->root = up;
   else if( upupup->child[TREE_LEFT] == upup )
     upupup->child[TREE_LEFT] = up;
@@ -304,7 +279,7 @@ void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node )
     }
     else  /* up is to the left of the_node */
     {
-      if( upup != NULL && upup->child[TREE_RIGHT] == up )  /* rotate */
+      if( upup->parent != NULL && upup->child[TREE_RIGHT] == up )  /* rotate */
       {
   upupup = upup->parent;
   upup->child[TREE_RIGHT] = up->child[TREE_LEFT];
@@ -312,7 +287,7 @@ void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node )
     upup->child[TREE_RIGHT]->parent = upup;
   up->child[TREE_LEFT] = upup;
   upup->parent = up;
-  if( upupup == NULL )
+  if( upupup->parent == NULL )
     the_tree->root = up;
   else if( upupup->child[TREE_RIGHT] == upup )
     upupup->child[TREE_RIGHT] = up;
@@ -345,7 +320,7 @@ void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node )
   if( right != NULL )
     right->parent = the_node;
   the_tree->root = the_node;
-  the_node->parent = NULL;
+  the_node->parent = &the_tree->permanent_null;
 
 } /* splay */
 /* /sptree.c */
@@ -406,13 +381,13 @@ Splay_Node* _Splay_Extract(Splay_Control *tree, Splay_Node *search_node)
       /* replace with right child if it exists */
       right = node->child[TREE_RIGHT];
       if ( right ) {
-        right->parent = NULL;
+        right->parent = &tree->permanent_null;
       }
       tree->root = right;
     } else if ( node->child[TREE_RIGHT] == NULL ) {
       /* replace with left child, which exists */
       left = node->child[TREE_LEFT];
-      left->parent = NULL;
+      left->parent = &tree->permanent_null;
       tree->root = left;
     } else {
       /* replace node with its successor */

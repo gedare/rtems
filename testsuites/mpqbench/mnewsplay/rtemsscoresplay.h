@@ -52,6 +52,7 @@ typedef int (*Splay_Compare_function)(
 
 typedef struct
 {
+  Splay_Node *permanent_null;
     Splay_Node * root;    /* root node */
     Splay_Node *first[2];
     Splay_Compare_function compare_function;
@@ -92,6 +93,7 @@ static void inline _Splay_Initialize_empty(
   the_tree->root = NULL;
   the_tree->first[0] = the_tree->first[1] = NULL;
   the_tree->compare_function = compare_function;
+  the_tree->permanent_null = NULL;
 }
 
 #ifdef __cplusplus
