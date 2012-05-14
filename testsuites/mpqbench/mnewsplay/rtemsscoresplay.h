@@ -53,8 +53,7 @@ typedef int (*Splay_Compare_function)(
 typedef struct
 {
     Splay_Node * root;    /* root node */
-    Splay_Node * min;
-    Splay_Node * max;
+    Splay_Node *first[2];
     Splay_Compare_function compare_function;
 
     /* Statistics, not strictly necessary, but handy for tuning  */
@@ -74,8 +73,9 @@ bool _Splay_Is_empty( Splay_Control *the_tree );
 Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node );
 Splay_Node *_Splay_Find(Splay_Control *the_tree, Splay_Node *search_node);
 Splay_Node* _Splay_Extract(Splay_Control *the_tree, Splay_Node *search_node);
+Splay_Node *_Splay_Successor( Splay_Node *the_node );
 
-Splay_Node *_Splay_Dequeue( Splay_Node **node_pointer );
+Splay_Node *_Splay_Dequeue( Splay_Control *the_tree );
 Splay_Node *_Splay_Insert_before(Splay_Control *the_tree, Splay_Node *the_node);
 void _Splay_Splay( Splay_Control *the_tree, Splay_Node *the_node );
 
@@ -91,7 +91,7 @@ static void inline _Splay_Initialize_empty(
   the_tree->splays = 0;
   the_tree->splayloops = 0;
   the_tree->root = NULL;
-  the_tree->min = the_tree->max = NULL;
+  the_tree->first[0] = the_tree->first[1] = NULL;
   the_tree->compare_function = compare_function;
 }
 

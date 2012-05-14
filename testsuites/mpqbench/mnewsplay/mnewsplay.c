@@ -55,9 +55,10 @@ long newsplay_min(rtems_task_argument tid ) {
   node *n;
   pq_node *p;
 
-  stn = rtems_splay_dequeue( &the_tree[tid].root ); // TODO: peek without remove
+  stn = rtems_splay_dequeue( &the_tree[tid] ); // TODO: peek without remove
   if ( stn ) {
     rtems_splay_insert(&the_tree[tid], stn); // FIXME ^
+    assert ( stn == the_tree[tid].first[TREE_LEFT] ); 
     n = ST_NODE_TO_NODE(stn);
     p = &n->data;
     kv = PQ_NODE_TO_KV(p);
@@ -72,7 +73,7 @@ long newsplay_pop_min( rtems_task_argument tid) {
   pq_node *p;
   rtems_splay_node *stn;
 
-  stn = rtems_splay_dequeue( &the_tree[tid].root ); // TODO: use O(1) dequeue
+  stn = rtems_splay_dequeue( &the_tree[tid] ); // TODO: use O(1) dequeue
 
   if ( stn ) {
     n = ST_NODE_TO_NODE(stn);

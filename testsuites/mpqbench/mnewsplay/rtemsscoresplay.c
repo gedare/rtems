@@ -68,6 +68,7 @@ Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node )
   {
     the_node->child[TREE_LEFT] = NULL;
     the_node->child[TREE_RIGHT] = NULL;
+    the_tree->first[TREE_LEFT] = the_tree->first[TREE_RIGHT] = the_node;
     return the_node;
   }
   
@@ -123,9 +124,46 @@ Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node )
   temp = the_node->child[dir];
   the_node->child[dir] = the_node->child[opp_dir];
   the_node->child[opp_dir] = temp;
+  if ( !the_node->child[dir] ) {
+    the_tree->first[dir] = the_node;
+  }
+  if ( !the_node->child[opp_dir] ) {
+    the_tree->first[opp_dir] = the_node;
+  }
   return the_node;
- } /* _Splay_Insert */
+} /* _Splay_Insert */
 
+// copy from rbtree next... modify a bit to deal with different parenting
+Splay_Node *_Splay_Successor( Splay_Node *the_node )
+{
+  Splay_Direction dir = TREE_RIGHT;
+  Splay_Direction opp_dir = !dir;
+
+  Splay_Node *current = the_node->child[dir];
+  Splay_Node *next = NULL;
+
+  if ( current != NULL ) {
+    next = current;
+    while ( (current = current->child [opp_dir]) != NULL ) {
+      next = current;
+    }
+  } else {
+    Splay_Node *parent = the_node->parent;
+    if ( parent && the_node == parent->child[opp_dir] ) {
+      next = parent;
+    } else {
+      while ( parent && the_node == parent->child[dir] ) {
+        the_node = parent;
+        parent = parent->parent;
+      }
+      if ( parent ) {
+        next = parent;
+      }
+    }
+  }
+
+  return next;
+}
 
 /*----------------
  *
@@ -136,7 +174,7 @@ Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node )
  *  subtree (if there is one); on the way to the leftmost node, rotations
  *  are performed to shorten the left branch of the tree
  */
-Splay_Node *_Splay_Dequeue( Splay_Node **np )
+Splay_Node *_Splay_Dequeue( Splay_Control *the_tree )
 {
   Splay_Node * deq;    /* one to return */
   Splay_Node * next;   /* the next thing to deal with */
@@ -144,58 +182,56 @@ Splay_Node *_Splay_Dequeue( Splay_Node **np )
   Splay_Node * farleft;    /* the left child of left */
   Splay_Node * farfarleft;  /* the left child of farleft */
 
-  if( np == NULL || *np == NULL )
-  {
-    deq = NULL;
+  next = the_tree->root;
+
+  if( next == NULL ) {
+    return NULL;
   }
-  else
+
+  left = next->child[TREE_LEFT];
+  if( left == NULL ) {
+    deq = next;
+    the_tree->first[TREE_LEFT] = _Splay_Successor(deq);
+    the_tree->root = next->child[TREE_RIGHT];
+
+    if( the_tree->root != NULL )
+      the_tree->root->parent = NULL;
+  } else for(;;)  /* left is not null */
   {
-    next = *np;
-    left = next->child[TREE_LEFT];
-    if( left == NULL )
+    /* next is not it, left is not NULL, might be it */
+    farleft = left->child[TREE_LEFT];
+    if( farleft == NULL )
     {
-      deq = next;
-      *np = next->child[TREE_RIGHT];
-
-      if( *np != NULL )
-  (*np)->parent = NULL;
-
+      deq = left;
+      the_tree->first[TREE_LEFT] = _Splay_Successor(deq);
+      next->child[TREE_LEFT] = left->child[TREE_RIGHT];
+      if( left->child[TREE_RIGHT] != NULL )
+        left->child[TREE_RIGHT]->parent = next;
+      break;
     }
-    else for(;;)  /* left is not null */
+
+    /* next, left are not it, farleft is not NULL, might be it */
+    farfarleft = farleft->child[TREE_LEFT];
+    if( farfarleft == NULL )
     {
-      /* next is not it, left is not NULL, might be it */
-      farleft = left->child[TREE_LEFT];
-      if( farleft == NULL )
-      {
-  deq = left;
-  next->child[TREE_LEFT] = left->child[TREE_RIGHT];
-  if( left->child[TREE_RIGHT] != NULL )
-    left->child[TREE_RIGHT]->parent = next;
-  break;
-      }
-
-      /* next, left are not it, farleft is not NULL, might be it */
-      farfarleft = farleft->child[TREE_LEFT];
-      if( farfarleft == NULL )
-      {
-  deq = farleft;
-  left->child[TREE_LEFT] = farleft->child[TREE_RIGHT];
-  if( farleft->child[TREE_RIGHT] != NULL )
-    farleft->child[TREE_RIGHT]->parent = left;
-  break;
-      }
-
-      /* next, left, farleft are not it, rotate */
-      next->child[TREE_LEFT] = farleft;
-      farleft->parent = next;
+      deq = farleft;
+      the_tree->first[TREE_LEFT] = _Splay_Successor(deq);
       left->child[TREE_LEFT] = farleft->child[TREE_RIGHT];
       if( farleft->child[TREE_RIGHT] != NULL )
-  farleft->child[TREE_RIGHT]->parent = left;
-      farleft->child[TREE_RIGHT] = left;
-      left->parent = farleft;
-      next = farleft;
-      left = farfarleft;
+        farleft->child[TREE_RIGHT]->parent = left;
+      break;
     }
+
+    /* next, left, farleft are not it, rotate */
+    next->child[TREE_LEFT] = farleft;
+    farleft->parent = next;
+    left->child[TREE_LEFT] = farleft->child[TREE_RIGHT];
+    if( farleft->child[TREE_RIGHT] != NULL )
+      farleft->child[TREE_RIGHT]->parent = left;
+    farleft->child[TREE_RIGHT] = left;
+    left->parent = farleft;
+    next = farleft;
+    left = farfarleft;
   }
 
   return( deq );

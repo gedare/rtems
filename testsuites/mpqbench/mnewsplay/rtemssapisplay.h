@@ -45,10 +45,10 @@ static inline rtems_splay_node * rtems_splay_insert(
 }
 
 static inline rtems_splay_node *rtems_splay_dequeue(
-  rtems_splay_node **node_pointer
+  rtems_splay_control *the_tree
 )
 {
-  return _Splay_Dequeue(node_pointer);
+  return _Splay_Dequeue(the_tree);
 }
 
 static inline rtems_splay_node *rtems_splay_insert_before(
