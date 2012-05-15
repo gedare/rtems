@@ -1,5 +1,6 @@
 
 #include <hwpqlib.h>
+#include <rtems/score/wkspace.h>
 
 // TODO: extra hwpq state can be tracked here.
 hwpqlib_context_t hwpqlib_context = {
@@ -21,8 +22,7 @@ void hwpqlib_initialize( int hwpq_id, int num_pqs )
       &hwpqlib_context.hwpq_context
   );
 
-  pq_context = 
-    _Workspace_Allocate(
+  pq_context = _Workspace_Allocate(
       num_pqs * sizeof(hwpqlib_pq_context_t)
     );
   if (!pq_context) {
@@ -42,17 +42,16 @@ void hwpqlib_initialize( int hwpq_id, int num_pqs )
 void hwpqlib_pq_initialize( hwpqlib_spillpq_t type, int qid, int size ) {
   switch(type) {
     case HWPQLIB_SPILLPQ_UNITEDLIST:
-      SPARC64_SET_UNITEDLISTPQ_OPERATIONS(qid);
+      sparc64_spillpq_initialize(qid, &sparc64_unitedlistpq_ops, size); 
       break;
 
     case HWPQLIB_SPILLPQ_SPLITHEAP:
-      SPARC64_SET_SPLITHEAPPQ_OPERATIONS(qid);
+      sparc64_spillpq_initialize(qid, &sparc64_splitheappq_ops, size); 
       break;
 
     default:
       break;
   }
-  sparc64_spillpq_initialize(qid, size);
 }
 
 void hwpqlib_insert( int pq_id, int key, int value ) {

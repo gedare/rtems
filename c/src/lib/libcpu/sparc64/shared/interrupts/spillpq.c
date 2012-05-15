@@ -25,9 +25,14 @@ int sparc64_spillpq_hwpq_context_initialize( int hwpq_id, hwpq_context_t *ctx )
   }
 }
 
-int sparc64_spillpq_initialize( int queue_idx, size_t max_pq_size )
+int sparc64_spillpq_initialize(
+    int queue_idx,
+    sparc64_spillpq_operations* ops,
+    size_t max_pq_size
+)
 {
   int rv;
+  spillpq[queue_idx].ops = ops;
   rv = spillpq[queue_idx].ops->initialize(queue_idx, max_pq_size);
   return rv;
 }

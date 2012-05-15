@@ -8,7 +8,6 @@
 
 /* test interface */
 void pq_initialize( rtems_task_argument tid, int size ) {
-  SPARC64_SET_SPLITSKIPLIST_OPERATIONS(tid);
-  sparc64_spillpq_initialize(tid, size);
+  sparc64_spillpq_initialize(tid, &sparc64_splitskiplist_ops, size);
 }
 
