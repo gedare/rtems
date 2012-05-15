@@ -27,12 +27,14 @@ int sparc64_spillpq_hwpq_context_initialize( int hwpq_id, hwpq_context_t *ctx )
 
 int sparc64_spillpq_initialize(
     int queue_idx,
+    int policy,
     sparc64_spillpq_operations* ops,
     size_t max_pq_size
 )
 {
   int rv;
   spillpq[queue_idx].ops = ops;
+  spillpq[queue_idx].policy = policy;
   rv = spillpq[queue_idx].ops->initialize(queue_idx, max_pq_size);
   return rv;
 }
@@ -169,7 +171,11 @@ int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_context)
     // fill up to cs_count[trap_idx]
     HWDS_SET_CURRENT_ID(trap_idx);
     hwpq_context->current_qid = trap_idx;
-    spillpq[trap_idx].ops->fill(trap_idx, spillpq[trap_idx].cs_count);
+    if ( spillpq[trap_idx].policy & SPILLPQ_POLICY_RT ) {
+      spillpq[trap_idx].ops->fill(trap_idx, spillpq[trap_idx].cs_count);
+    } else {
+      ; // do nothing
+    }
     kv = spillpq_cs_payload[trap_idx];
     HWDS_SET_PAYLOAD(trap_idx, kv);
   }

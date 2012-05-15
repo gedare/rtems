@@ -42,11 +42,11 @@ void hwpqlib_initialize( int hwpq_id, int num_pqs )
 void hwpqlib_pq_initialize( hwpqlib_spillpq_t type, int qid, int size ) {
   switch(type) {
     case HWPQLIB_SPILLPQ_UNITEDLIST:
-      sparc64_spillpq_initialize(qid, &sparc64_unitedlistpq_ops, size); 
+      sparc64_spillpq_initialize(qid, SPILLPQ_POLICY_DEFAULT, &sparc64_unitedlistpq_ops, size); 
       break;
 
     case HWPQLIB_SPILLPQ_SPLITHEAP:
-      sparc64_spillpq_initialize(qid, &sparc64_splitheappq_ops, size); 
+      sparc64_spillpq_initialize(qid, SPILLPQ_POLICY_DEFAULT, &sparc64_splitheappq_ops, size); 
       break;
 
     default:

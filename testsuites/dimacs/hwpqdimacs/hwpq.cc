@@ -29,7 +29,7 @@ void HWPQ::reInit()
 HWPQ::HWPQ(int size)
 {
   // FIXME: queue number, ops
-  sparc64_spillpq_initialize(4, &sparc64_unitedlistpq_ops, size);
+  sparc64_spillpq_initialize(4, SPILLPQ_POLICY_DEFAULT, &sparc64_unitedlistpq_ops, size);
   Init();
 }
 
