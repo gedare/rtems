@@ -25,7 +25,7 @@ static int rbtree_compare(
   return key1 - key2;
 }
 
-#define USE_RB_ASSERT
+//#define USE_RB_ASSERT
 static int rb_assert ( rtems_rbtree_node *root )
 {
   int lh, rh;
