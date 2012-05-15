@@ -30,39 +30,39 @@ static int rbtree_compare(
 }
 
 
-int sparc64_splitrbtree_initialize( int tid, size_t max_pq_size )
+int sparc64_splitrbtree_initialize( int qid, size_t max_pq_size )
 {
   int i;
   uint64_t reg = 0;
-  freelist_initialize(&free_nodes[tid], sizeof(pq_node), max_pq_size);
+  freelist_initialize(&free_nodes[qid], sizeof(pq_node), max_pq_size);
 
-  rtems_rbtree_initialize_empty(&trees[tid], &rbtree_compare, false);
-  spillpq_queue_max_size[tid] = max_pq_size;
+  rtems_rbtree_initialize_empty(&trees[qid], &rbtree_compare, false);
+  spillpq[qid].max_size = max_pq_size;
 
   return 0;
 }
 
-uint64_t sparc64_splitrbtree_insert(int tid, uint64_t kv)
+uint64_t sparc64_splitrbtree_insert(int qid, uint64_t kv)
 {
   pq_node *new_node;
-  new_node = freelist_get_node(&free_nodes[tid]);
+  new_node = freelist_get_node(&free_nodes[qid]);
   if (!new_node) {
-    printk("%d\tUnable to allocate new node during insert\n", tid);
+    printk("%d\tUnable to allocate new node during insert\n", qid);
     while (1);
   }
   new_node->key = kv_key(kv);
   new_node->val = kv_value(kv); // FIXME: not full 64-bits
 
-  rtems_rbtree_insert_unprotected( &trees[tid], &new_node->rbt_node );
+  rtems_rbtree_insert_unprotected( &trees[qid], &new_node->rbt_node );
   return 0;
 }
 
-uint64_t sparc64_splitrbtree_first(int tid, uint64_t kv)
+uint64_t sparc64_splitrbtree_first(int qid, uint64_t kv)
 {
   pq_node *p;
   rtems_rbtree_node *first;
   
-  first = rtems_rbtree_min(&trees[tid]);
+  first = rtems_rbtree_min(&trees[qid]);
   if ( first ) {
     p = rtems_rbtree_container_of(first, pq_node, rbt_node);
     kv = pq_node_to_kv(p);
@@ -72,55 +72,55 @@ uint64_t sparc64_splitrbtree_first(int tid, uint64_t kv)
   return kv;
 }
 
-uint64_t sparc64_splitrbtree_pop(int tid, uint64_t kv)
+uint64_t sparc64_splitrbtree_pop(int qid, uint64_t kv)
 {
   rtems_rbtree_node *first;
   pq_node *p;
-  first = rtems_rbtree_get_min_unprotected(&trees[tid]);
+  first = rtems_rbtree_get_min_unprotected(&trees[qid]);
   if ( first ) {
     p = rtems_rbtree_container_of(first, pq_node, rbt_node);
     kv = pq_node_to_kv(p);
-    freelist_put_node(&free_nodes[tid], p);
+    freelist_put_node(&free_nodes[qid], p);
   } else {
     kv = (uint64_t)-1;
   }
   return kv;
 }
 
-static rtems_rbtree_node* search_helper(int tid, uint64_t kv)
+static rtems_rbtree_node* search_helper(int qid, uint64_t kv)
 {
   rtems_rbtree_node *n;
   pq_node search_node;
 
   search_node.key = kv_key(kv);
-  return rtems_rbtree_find_unprotected(&trees[tid], &search_node.rbt_node);
+  return rtems_rbtree_find_unprotected(&trees[qid], &search_node.rbt_node);
 }
 
-uint64_t sparc64_splitrbtree_extract(int tid, uint64_t kv )
+uint64_t sparc64_splitrbtree_extract(int qid, uint64_t kv )
 {
   rtems_rbtree_node *n;
   pq_node *p;
 
-  n = search_helper(tid, kv);
+  n = search_helper(qid, kv);
 
   if ( n ) {
     p = rtems_rbtree_container_of(n, pq_node, rbt_node);
-    rtems_rbtree_extract_unprotected(&trees[tid], n);
+    rtems_rbtree_extract_unprotected(&trees[qid], n);
     kv = pq_node_to_kv(p);
-    freelist_put_node(&free_nodes[tid], p);
+    freelist_put_node(&free_nodes[qid], p);
   } else {
-    DPRINTK("%d: Failed extract: %d\t%X\n", tid, kv_key(kv), kv_value(kv));
+    DPRINTK("%d: Failed extract: %d\t%X\n", qid, kv_key(kv), kv_value(kv));
     kv = (uint64_t)-1;
   }
 
   return kv;
 }
 
-uint64_t sparc64_splitrbtree_search(int tid, uint64_t kv )
+uint64_t sparc64_splitrbtree_search(int qid, uint64_t kv )
 {
   rtems_rbtree_node *n;
   pq_node *p;
-  n = search_helper(tid, kv);
+  n = search_helper(qid, kv);
 
   if ( n ) {
     p = rtems_rbtree_container_of(n, pq_node, rbt_node);
@@ -132,27 +132,27 @@ uint64_t sparc64_splitrbtree_search(int tid, uint64_t kv )
 }
 
 static inline uint64_t 
-sparc64_splitrbtree_spill_node(int tid)
+sparc64_splitrbtree_spill_node(int qid)
 {
   uint64_t kv;
 
-  HWDS_SPILL(tid, kv);
+  HWDS_SPILL(qid, kv);
   if (!kv) {
-    DPRINTK("%d\tNothing to spill!\n", tid);
+    DPRINTK("%d\tNothing to spill!\n", qid);
   } else {
-    sparc64_splitrbtree_insert(tid, kv);
+    sparc64_splitrbtree_insert(qid, kv);
   }
 
   return kv;
 }
 
-uint64_t sparc64_splitrbtree_handle_spill( int tid, uint64_t count )
+uint64_t sparc64_splitrbtree_handle_spill( int qid, uint64_t count )
 {
   int i = 0;
 
   // pop elements off tail of hwpq, merge into software pq
   while ( i < count ) {
-    if (!sparc64_splitrbtree_spill_node(tid))
+    if (!sparc64_splitrbtree_spill_node(qid))
       break;
     i++;
   }
@@ -161,19 +161,19 @@ uint64_t sparc64_splitrbtree_handle_spill( int tid, uint64_t count )
 }
 
 static inline uint64_t
-sparc64_splitrbtree_fill_node(int tid, int count)
+sparc64_splitrbtree_fill_node(int qid, int count)
 {
   uint32_t exception;
   uint64_t kv;
 
-  kv = sparc64_splitrbtree_pop(tid, 0);
+  kv = sparc64_splitrbtree_pop(qid, 0);
 
   // add node to hwpq
-  HWDS_FILL(tid, kv_key(kv), kv_value(kv), exception); 
+  HWDS_FILL(qid, kv_key(kv), kv_value(kv), exception); 
 
   if (exception) {
     DPRINTK("Spilling (%d,%X) while filling\n");
-    return sparc64_splitrbtree_handle_spill(tid, count);
+    return sparc64_splitrbtree_handle_spill(qid, count);
   }
 
   return 0;
@@ -183,19 +183,19 @@ sparc64_splitrbtree_fill_node(int tid, int count)
  * Current algorithm pulls nodes from the head of the sorted sw pq
  * and fills them into the hw pq.
  */
-uint64_t sparc64_splitrbtree_handle_fill(int tid, uint64_t count )
+uint64_t sparc64_splitrbtree_handle_fill(int qid, uint64_t count )
 {
   int i = 0;
 
-  while (!rtems_rbtree_is_empty( &trees[tid] ) && i < count) {
+  while (!rtems_rbtree_is_empty( &trees[qid] ) && i < count) {
     i++;
-    sparc64_splitrbtree_fill_node(tid, count);
+    sparc64_splitrbtree_fill_node(qid, count);
   }
 
   return 0;
 }
 
-uint64_t sparc64_splitrbtree_drain( int tid, uint64_t ignored )
+uint64_t sparc64_splitrbtree_drain( int qid, uint64_t ignored )
 {
   return 0;
 }

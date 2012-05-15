@@ -37,8 +37,6 @@ typedef struct {
 
 #define NUM_QUEUES (10) // FIXME:number of queues...
 extern sparc64_spillpq_operations *spillpq_ops[NUM_QUEUES];
-extern size_t spillpq_queue_max_size[NUM_QUEUES]; /* FIXME: swpq_context */
-
 extern int spillpq_cs_count[NUM_QUEUES]; // num of nodes in queue when switched.
 
 // HWPQ context
@@ -46,6 +44,16 @@ typedef struct {
   int max_size;
   int current_qid;
 } hwpq_context_t;
+
+typedef struct {
+  sparc64_spillpq_operations *ops;
+  int max_size;
+  int cs_count;
+  int policy; // TODO
+} spillpq_context_t;
+
+extern spillpq_context_t spillpq[NUM_QUEUES];
+
 
 extern hwpq_context_t *hwpq_context;
 extern int sparc64_spillpq_hwpq_context_initialize( int, hwpq_context_t* );

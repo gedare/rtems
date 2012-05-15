@@ -302,32 +302,32 @@ uint64_t sparc64_unitedskiplist_initialize( int qid, size_t max_pq_size )
     }
   }
 
-  spillpq_queue_max_size[qid] = max_pq_size;
+  spillpq[qid].max_size = max_pq_size;
   DPRINTK("%d\tSize: %ld\n", qid, reg);
   return 0;
 }
 
-uint64_t sparc64_unitedskiplist_insert(int tid, uint64_t kv)
+uint64_t sparc64_unitedskiplist_insert(int qid, uint64_t kv)
 {
   pq_node *new_node;
-  new_node = freelist_get_node(&free_nodes[tid]);
+  new_node = freelist_get_node(&free_nodes[qid]);
   if (!new_node) {
-    printk("%d\tUnable to allocate new node during insert\n", tid);
+    printk("%d\tUnable to allocate new node during insert\n", qid);
     while (1);
   }
   new_node->key = kv_key(kv);
   new_node->val = kv_value(kv); // FIXME: not full 64-bits
 
-  insert_helper(tid, new_node);
+  insert_helper(qid, new_node);
   return 0;
 }
 
-uint64_t sparc64_unitedskiplist_first(int tid, uint64_t kv)
+uint64_t sparc64_unitedskiplist_first(int qid, uint64_t kv)
 {
   pq_node *p;
   Chain_Control *spill_pq;
   Chain_Node *first;
-  spill_pq = &the_skiplist[tid].lists[0];
+  spill_pq = &the_skiplist[qid].lists[0];
   
   first = _Chain_First(spill_pq);
   if ( !_Chain_Is_tail(spill_pq, first) ) {
@@ -339,13 +339,13 @@ uint64_t sparc64_unitedskiplist_first(int tid, uint64_t kv)
   return kv;
 }
 
-uint64_t sparc64_unitedskiplist_pop(int tid, uint64_t kv)
+uint64_t sparc64_unitedskiplist_pop(int qid, uint64_t kv)
 {
   pq_node *p;
   Chain_Control *spill_pq;
   Chain_Node *first;
   int i;
-  spill_pq = &the_skiplist[tid].lists[0];
+  spill_pq = &the_skiplist[qid].lists[0];
   
   first = _Chain_First(spill_pq);
 
@@ -355,7 +355,7 @@ uint64_t sparc64_unitedskiplist_pop(int tid, uint64_t kv)
     for ( i = 0; i <= p->height; i++ ) {
       _Chain_Extract_unprotected(&p->link[i]);
     }
-    freelist_put_node(&free_nodes[tid], p);
+    freelist_put_node(&free_nodes[qid], p);
   } else {
     kv = (uint64_t)-1;
   }

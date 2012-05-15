@@ -145,7 +145,7 @@ int sparc64_splitheappq_initialize( int qid, size_t max_pq_size )
   sparc64_splitheappq_heap_allocate(qid, max_pq_size);
 
   _Chain_Initialize_empty(&queues[qid]);
-  spillpq_queue_max_size[qid] = max_pq_size;
+  spillpq[qid].max_size = max_pq_size;
 
   return 0;
 }

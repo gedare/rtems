@@ -1,8 +1,10 @@
 #include "spillpq.h"
 #include "gabdebug.h"
 
+
+spillpq_context_t spillpq[NUM_QUEUES];
+
 sparc64_spillpq_operations *spillpq_ops[NUM_QUEUES];
-size_t spillpq_queue_max_size[NUM_QUEUES];
 int spillpq_cs_count[NUM_QUEUES];
 uint64_t spillpq_cs_payload[NUM_QUEUES];
 
