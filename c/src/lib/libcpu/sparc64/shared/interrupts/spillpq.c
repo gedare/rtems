@@ -3,7 +3,6 @@
 
 
 spillpq_context_t spillpq[NUM_QUEUES];
-int spillpq_cs_count[NUM_QUEUES];
 uint64_t spillpq_cs_payload[NUM_QUEUES];
 
 hwpq_context_t *hwpq_context = NULL;
@@ -21,7 +20,7 @@ int sparc64_spillpq_hwpq_context_initialize( int hwpq_id, hwpq_context_t *ctx )
   hwpq_context = ctx;
 
   for ( i = 0; i < NUM_QUEUES; i++ ) {
-    spillpq_cs_count[i] = 0;
+    spillpq[i].cs_count = 0;
     spillpq_cs_payload[i] = 0;
   }
 }
@@ -158,14 +157,14 @@ int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_context)
     if ( rv != size ) {
       printk("failed to spill whole queue!\n");
     }
-    spillpq_cs_count[from_idx] = rv;
+    spillpq[from_idx].cs_count = rv;
   }
   if ( trap_idx < NUM_QUEUES && spillpq[trap_idx].ops ) {
     // FIXME: choose how much to fill
     // fill up to cs_count[trap_idx]
     HWDS_SET_CURRENT_ID(trap_idx);
     hwpq_context->current_qid = trap_idx;
-    spillpq[trap_idx].ops->fill(trap_idx, spillpq_cs_count[trap_idx]);
+    spillpq[trap_idx].ops->fill(trap_idx, spillpq[trap_idx].cs_count);
     kv = spillpq_cs_payload[trap_idx];
     HWDS_SET_PAYLOAD(trap_idx, kv);
   }

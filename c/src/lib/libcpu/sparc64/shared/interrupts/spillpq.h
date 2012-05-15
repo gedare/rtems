@@ -36,7 +36,6 @@ typedef struct {
 
 
 #define NUM_QUEUES (10) // FIXME:number of queues...
-extern int spillpq_cs_count[NUM_QUEUES]; // num of nodes in queue when switched.
 
 // HWPQ context
 typedef struct {
