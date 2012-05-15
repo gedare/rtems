@@ -9,7 +9,7 @@ extern "C" {
 extern sparc64_spillpq_operations sparc64_splitrbtree_ops;
 
 #define SPARC64_SET_SPLITRBTREE_OPERATIONS(id) \
-  (spillpq_ops[id] = &sparc64_splitrbtree_ops)
+  (spillpq[id].ops = &sparc64_splitrbtree_ops)
 
 
 #ifdef __cplusplus

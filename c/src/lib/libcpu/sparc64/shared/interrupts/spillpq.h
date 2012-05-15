@@ -36,7 +36,6 @@ typedef struct {
 
 
 #define NUM_QUEUES (10) // FIXME:number of queues...
-extern sparc64_spillpq_operations *spillpq_ops[NUM_QUEUES];
 extern int spillpq_cs_count[NUM_QUEUES]; // num of nodes in queue when switched.
 
 // HWPQ context

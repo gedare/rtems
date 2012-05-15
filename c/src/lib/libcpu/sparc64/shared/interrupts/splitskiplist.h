@@ -9,7 +9,7 @@ extern "C" {
 extern sparc64_spillpq_operations sparc64_splitskiplist_ops;
 
 #define SPARC64_SET_SPLITSKIPLIST_OPERATIONS(id) \
-  (spillpq_ops[id] = &sparc64_splitskiplist_ops)
+  (spillpq[id].ops = &sparc64_splitskiplist_ops)
 
 #ifdef __cplusplus
 }
