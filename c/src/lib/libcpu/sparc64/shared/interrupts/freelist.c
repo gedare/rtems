@@ -4,12 +4,17 @@
 void freelist_initialize(
     Freelist_Control *fc,
     size_t node_size,
-    size_t bump_count
+    size_t bump_count,
+    freelist_callout callout
 ) {
   _Chain_Initialize_empty( &fc->freelist );
   fc->node_size = node_size;
   fc->bump_count = bump_count;
   fc->free_count = 0;
+  if (!callout)
+    fc->callout = freelist_do_nothing;
+  else
+    fc->callout = callout;
   freelist_bump(fc);
 }
 
@@ -31,6 +36,7 @@ size_t freelist_bump(Freelist_Control *fc)
   for ( i = 0; i < count; i++ ) {
     _Chain_Append_unprotected( &fc->freelist, (size_t)nodes+i*size );
   }
+  fc->callout(fc, nodes);
   return count;
 }
 
@@ -49,3 +55,6 @@ void freelist_put_node(Freelist_Control *fc, void *n) {
   fc->free_count++;
 }
 
+void freelist_do_nothing(Freelist_Control *fc, void *nodes) {
+  return;
+}

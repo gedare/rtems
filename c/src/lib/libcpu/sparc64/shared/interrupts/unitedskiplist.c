@@ -276,7 +276,7 @@ uint64_t sparc64_unitedskiplist_initialize( int qid, size_t max_pq_size )
   pq_node *pnode;
   Chain_Node *n;
 
-  freelist_initialize(&free_nodes[qid], sizeof(pq_node), max_pq_size);
+  freelist_initialize(&free_nodes[qid], sizeof(pq_node), max_pq_size, NULL);
 
   // FIXME: MAXLEVEL
   sl->lists = malloc(sizeof(Chain_Control)*(MAXLEVEL+1));

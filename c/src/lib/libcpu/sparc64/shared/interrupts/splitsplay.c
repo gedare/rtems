@@ -38,7 +38,7 @@ static int sparc64_splitsplay_compare(
 int sparc64_splitsplay_initialize( int qid, size_t max_pq_size )
 {
   rtems_splay_compare_function cf = sparc64_splitsplay_compare;
-  freelist_initialize(&free_nodes[qid], sizeof(pq_node), max_pq_size);
+  freelist_initialize(&free_nodes[qid], sizeof(pq_node), max_pq_size, NULL);
 
 
   rtems_splay_initialize_empty(&trees[qid], cf);

@@ -59,7 +59,7 @@ uint64_t sparc64_unitedlistpq_initialize( int qid, size_t max_pq_size )
 {
   int i;
   uint64_t reg = 0;
-  freelist_initialize(&free_nodes[qid], sizeof(pq_node), max_pq_size);
+  freelist_initialize(&free_nodes[qid], sizeof(pq_node), max_pq_size, NULL);
 
   _Chain_Initialize_empty(&queues[qid]);
   spillpq[qid].max_size = max_pq_size;
