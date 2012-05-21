@@ -293,13 +293,11 @@ uint64_t sparc64_unitedskiplist_initialize( int qid, size_t max_pq_size )
 
   // precompute node heights
   // FIXME: add initializer callout to freelist..
-  for ( i = 0; i < max_pq_size; i++ ) {
-    n = _Chain_First(&free_nodes[qid].freelist);
-    while (!_Chain_Is_tail(&free_nodes[qid].freelist, n)) {
-      pnode = (pq_node*)n;
-      pnode->height = randomLevel();
-      n = _Chain_Next(n);
-    }
+  n = _Chain_First(&free_nodes[qid].freelist);
+  while (!_Chain_Is_tail(&free_nodes[qid].freelist, n)) {
+    pnode = (pq_node*)n;
+    pnode->height = randomLevel();
+    n = _Chain_Next(n);
   }
 
   spillpq[qid].max_size = max_pq_size;
