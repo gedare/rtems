@@ -88,6 +88,13 @@ static inline rtems_splay_node* rtems_splay_extract(
   return _Splay_Extract(the_tree, the_node);
 }
 
+static inline void rtems_splay_print_stats(
+  rtems_splay_control *the_tree
+)
+{
+  _Splay_Print_stats(the_tree);
+}
+
 #ifdef __cplusplus
 }
 #endif

@@ -9,6 +9,16 @@
 #include <rtems/system.h>
 #include <rtems/score/splay.h>
 
+void _Splay_Print_stats( Splay_Control *the_tree )
+{
+  printk("Splay Tree Stats\n\t");
+  printk("enqs:\t%d\n", the_tree->enqs);
+  printk("enqcmps:\t%d\n", the_tree->enqcmps);
+  printk("splays:\t%d\n", the_tree->splays);
+  printk("splayloops:\t%d\n", the_tree->splayloops);
+}
+
+
 void _Splay_Initialize_empty(
   Splay_Control *the_tree,
   Splay_Compare_function compare_function
@@ -134,7 +144,12 @@ Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node )
   the_tree->enqcmps++;
 
   while ( 1 ) {
+#if 0
     compare_result = the_tree->compare_function(next, the_node);
+#else
+    compare_result = next->key - the_node->key;
+#endif
+//    dir = next->key > the_node->key;
     dir = (compare_result > 0); // use >= for prepending tied nodes
     opp_dir = !dir;
 
@@ -146,8 +161,13 @@ Splay_Node * _Splay_Insert( Splay_Control *the_tree, Splay_Node *the_node )
       break;
     }
     the_tree->enqcmps++;
+#if 1
     compare_result = the_tree->compare_function(temp, the_node);
+#else
+    compare_result = temp->key - the_node->key;
+#endif
     if ( (compare_result > 0) != dir ) {
+//    if ( (temp->key > the_node->key) != dir ) {
       // switch sides
       split[dir]->child[opp_dir] = next;
       next->parent = split[dir];
@@ -334,6 +354,7 @@ Splay_Node *_Splay_Find(Splay_Control *tree, Splay_Node *search_node)
 {
   Splay_Node *iter = tree->root;
   while ( iter ) {
+#if 1
     if(tree->compare_function(iter, search_node) > 0) {
       iter = iter->child[TREE_LEFT];
     }
@@ -344,6 +365,18 @@ Splay_Node *_Splay_Find(Splay_Control *tree, Splay_Node *search_node)
       _Splay_Splay(tree, iter);
       break;
     }
+#else
+    if(iter->key > search_node->key) {
+      iter = iter->child[TREE_LEFT];
+    }
+    else if(iter->key < search_node->key) {
+      iter = iter->child[TREE_RIGHT];
+    }
+    else {
+      _Splay_Splay(tree, iter);
+      break;
+    }
+#endif
   }
   return iter;
 }

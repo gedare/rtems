@@ -47,6 +47,7 @@ void newsplay_insert( rtems_task_argument tid, long kv ) {
   pq_node *pn = &n->data;
   pn->key = kv_key(kv);
   pn->val = kv_value(kv);
+  n->st_node.key = kv_key(kv);
   rtems_splay_insert( &the_tree[tid], &n->st_node );
 }
 
@@ -94,6 +95,7 @@ long newsplay_search( rtems_task_argument tid, int k) {
   node search_node;
   tree = &the_tree[tid];
   search_node.data.key = k;
+  search_node.st_node.key = k;
   
   stn = rtems_splay_find(tree, &search_node.st_node);
   if ( stn ) {
@@ -103,6 +105,7 @@ long newsplay_search( rtems_task_argument tid, int k) {
   } else {
     kv = (long)-1;
   }
+//  rtems_splay_print_stats(tree);
   return kv;
 }
 
@@ -114,6 +117,7 @@ long newsplay_extract( rtems_task_argument tid, int k) {
   pq_node *p;
   node search_node;
   search_node.data.key = k;
+  search_node.st_node.key = k;
 
   tree = &the_tree[tid];
   stn = rtems_splay_extract(tree, &search_node.st_node);

@@ -43,6 +43,7 @@ struct Splay_Node_struct
 {
     Splay_Node  * parent;
     Splay_Node  * child[2];
+    int key;
 };
 
 typedef int (*Splay_Compare_function)(

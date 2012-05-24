@@ -97,7 +97,7 @@ void work( rtems_task_argument tid  ) {
 #endif
   for ( i = 0; i < PQ_WORK_OPS; i++ ) {
     execute(tid, PQ_WARMUP_OPS + i);
-#ifdef WARMUP
+#ifdef RESET_EACH_WORK_OP
     MAGIC(1);
 #endif
   }

@@ -734,6 +734,7 @@ long splay_search( rtems_task_argument tid, int k) {
   } else {
     kv = (long)-1;
   }
+//  _Splay_Print(tree);
   return kv;
 }
 
