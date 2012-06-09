@@ -52,7 +52,6 @@ void sparc64_hwpq_exception_handler(
   int softint_bit = ((vector&~SPARC_SYNCHRONOUS_TRAP_BIT_MASK) - 0x40);
   int mask = (1<<softint_bit);
 //  int synchronous = vector & SPARC_SYNCHRONOUS_TRAP_BIT_MASK;
-
   level = sparc_disable_interrupts(); // necessary?
 
   // acknowledge the interrupt (allows isr to schedule another at this level)

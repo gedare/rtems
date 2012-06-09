@@ -7,9 +7,7 @@
 #include "params.h"
 #include "params.i"
 
-#ifdef WARMUP
 #include <libcpu/spillpq.h> // bad
-#endif
 
 #include <stdlib.h>
 
@@ -52,7 +50,7 @@ void warmup( rtems_task_argument tid ) {
 
   // insert some minimum priority elements (to prime the hwpq) and
   // fill up the hwpq to full capacity for measuring exceptions
-  if (spillpq_ops[tid]) {
+  if (spillpq[tid].ops) {
     long n;
     PQ_arg a;
     int s, c;
@@ -70,7 +68,7 @@ void warmup( rtems_task_argument tid ) {
     }
     HWDS_GET_CURRENT_SIZE(tid, c);
     if ( s > c )
-      spillpq_ops[tid]->fill(tid, s-c-1);
+      spillpq[tid].ops->fill(tid, s-c-1);
     HWDS_GET_CURRENT_SIZE(tid, c);
     printk("s: %d\tc: %d\n",s,c);
   }
@@ -85,7 +83,7 @@ void work( rtems_task_argument tid  ) {
 
 #ifdef DOMEASURE
 #ifdef WARMUP
-  if (spillpq_ops[tid]) {
+  if (spillpq[tid].ops) {
     measure(tid, PQ_WARMUP_OPS);
   }
 #else

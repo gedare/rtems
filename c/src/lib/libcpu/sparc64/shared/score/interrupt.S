@@ -260,7 +260,6 @@ PUBLIC(_ISR_Handler)
     mov      %g2, %o0               ! o0 = 1st arg = vector number
     call     %g1, 0
     nop                             ! delay slot
-
     /*
      *  Redisable traps so we can finish up the interrupt processing.
      *  This is a conservative place to do this.
