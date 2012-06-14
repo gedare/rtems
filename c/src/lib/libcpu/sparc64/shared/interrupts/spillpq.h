@@ -44,10 +44,15 @@ typedef struct {
 } hwpq_context_t;
 
 typedef struct {
+  bool realtime;
+  bool pinned;
+} spillpq_policy_t;
+
+typedef struct {
   sparc64_spillpq_operations *ops;
   int max_size;
   int cs_count;
-  int policy; // TODO
+  spillpq_policy_t policy; // TODO
 } spillpq_context_t;
 
 extern spillpq_context_t spillpq[NUM_QUEUES];
@@ -55,12 +60,14 @@ extern spillpq_context_t spillpq[NUM_QUEUES];
 #define SPILLPQ_POLICY_DEFAULT  (0)
 #define SPILLPQ_POLICY_RT       (1)
 
+#define SPILLPQ_POLICY_PIN      (2)
+
 extern hwpq_context_t *hwpq_context;
 extern int sparc64_spillpq_hwpq_context_initialize( int, hwpq_context_t* );
 
 extern int sparc64_spillpq_initialize(
   int queue_idx,
-  int policy,
+  spillpq_policy_t *policy,
   sparc64_spillpq_operations *ops,
   size_t max_pq_size
 );

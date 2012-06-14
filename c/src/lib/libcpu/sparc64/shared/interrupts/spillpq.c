@@ -27,14 +27,14 @@ int sparc64_spillpq_hwpq_context_initialize( int hwpq_id, hwpq_context_t *ctx )
 
 int sparc64_spillpq_initialize(
     int queue_idx,
-    int policy,
+    spillpq_policy_t *policy,
     sparc64_spillpq_operations* ops,
     size_t max_pq_size
 )
 {
   int rv;
   spillpq[queue_idx].ops = ops;
-  spillpq[queue_idx].policy = policy;
+  spillpq[queue_idx].policy = *policy;
   rv = spillpq[queue_idx].ops->initialize(queue_idx, max_pq_size);
   return rv;
 }
@@ -88,6 +88,8 @@ int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_context)
   trap_operation = (trap_context)&~(~0 << (16 + 1)); // what is the op?
   
   HWDS_GET_PAYLOAD(queue_idx, kv);
+#define PMASK (1UL<<31)
+  kv &= ~PMASK;
 
   switch (trap_operation) {
     case 1:
@@ -110,7 +112,7 @@ int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_context)
       printk("Unknown operation to emulate: %d\n", trap_operation);
       break;
   }
-
+  rv |= PMASK;
   HWDS_SET_PAYLOAD(queue_idx, rv);
   return rv;
 }
@@ -157,8 +159,11 @@ int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_context)
   HWDS_GET_CURRENT_SIZE(from_idx, size);
   HWDS_GET_PAYLOAD(from_idx, kv); // SAVE PAYLOAD
   spillpq_cs_payload[from_idx] = kv;
-  // FIXME: choose whether or not to context switch.
   if ( from_idx < NUM_QUEUES && spillpq[from_idx].ops ) {
+    // Policy point: Pinning
+    if ( spillpq[from_idx].policy.pinned ) {
+      return sparc64_spillpq_handle_failover(trap_idx, trap_context);
+    }
     // spill all of from_idx
     rv = spillpq[from_idx].ops->spill(from_idx, size);
     if ( rv != size ) {
@@ -167,16 +172,17 @@ int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_context)
     spillpq[from_idx].cs_count = rv;
   }
   if ( trap_idx < NUM_QUEUES && spillpq[trap_idx].ops ) {
-    // FIXME: choose how much to fill
-    // fill up to cs_count[trap_idx]
+    // Policy point: choose how much to fill
+    // fill up to cs_count[trap_idx]; for SPILLPQ_POLICY_RT fill all
+    // otherwise filling nothing
     HWDS_SET_CURRENT_ID(trap_idx);
     hwpq_context->current_qid = trap_idx;
-    if ( spillpq[trap_idx].policy & SPILLPQ_POLICY_RT ) {
+    if ( spillpq[trap_idx].policy.realtime ) {
       spillpq[trap_idx].ops->fill(trap_idx, spillpq[trap_idx].cs_count);
     } else {
       ; // do nothing
     }
-    kv = spillpq_cs_payload[trap_idx];
+    kv = spillpq_cs_payload[trap_idx]; // RESTORE PAYLOAD
     HWDS_SET_PAYLOAD(trap_idx, kv);
   }
   return rv;

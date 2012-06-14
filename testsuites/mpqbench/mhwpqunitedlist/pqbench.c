@@ -8,6 +8,11 @@
 
 /* test interface */
 void pq_initialize( rtems_task_argument tid, int size ) {
-  sparc64_spillpq_initialize(tid, SPILLPQ_POLICY_DEFAULT, &sparc64_unitedlistpq_ops, size);
+  sparc64_spillpq_initialize(
+      tid,
+      &pqbench_policy,
+      &sparc64_unitedlistpq_ops,
+      size
+  );
 }
 

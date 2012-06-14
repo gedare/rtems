@@ -2,6 +2,10 @@
 #ifndef _WORKLOAD_H_
 #define _WORKLOAD_H_
 #include <rtems.h>
+
+#include <libcpu/spillpq.h> // bad
+extern spillpq_policy_t pqbench_policy;
+
 void initialize( rtems_task_argument tid );
 
 void warmup( rtems_task_argument tid );

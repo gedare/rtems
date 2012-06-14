@@ -6,14 +6,15 @@ extern "C" {
 #endif
 
 //#define GAB_PRINT
-//#define GAB_DEBUG
-//#define GAB_CHECK
+#define GAB_DEBUG
+#define GAB_CHECK
 
 #if defined(GAB_PRINT) || defined(GAB_DEBUG) || defined(GAB_CHECK)
 #include <stdio.h>
 #endif
 #include <rtems.h>
 #include "rtems/rtems/types.h"
+#include "workload.h"
 #include "params.h"
 
 #define kv_value(kv) (kv & ~((~0UL)<<(sizeof(long)*4L)))

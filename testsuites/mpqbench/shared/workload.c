@@ -8,6 +8,11 @@
 #include "params.i"
 
 #include <libcpu/spillpq.h> // bad
+// FIXME: separate for each task
+spillpq_policy_t pqbench_policy = {
+  .realtime = false,
+  .pinned = false
+};
 
 #include <stdlib.h>
 
