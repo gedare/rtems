@@ -45,9 +45,9 @@ void warmup( rtems_task_argument tid ) {
   int i = 0;
 
 #if defined GAB_PRINT
-  printf("%d\tWarmup: %d\n",tid, PQ_WARMUP_OPS);
+  printf("%d\tWarmup: %d\n",tid, PQ_WARMUP_OPS[tid]);
 #endif
-  for ( i = 0; i < PQ_WARMUP_OPS; i++ ) {
+  for ( i = 0; i < PQ_WARMUP_OPS[tid]; i++ ) {
     execute(tid, i);
   }
 
@@ -83,23 +83,23 @@ void warmup( rtems_task_argument tid ) {
 void work( rtems_task_argument tid  ) {
   int i = 0;
 #if defined(GAB_PRINT)
-  printf("%d\tWork: %d\n",tid, PQ_WORK_OPS);
+  printf("%d\tWork: %d\n",tid, PQ_WORK_OPS[tid]);
 #endif
 
 #ifdef DOMEASURE
 #ifdef WARMUP
   if (spillpq[tid].ops) {
-    measure(tid, PQ_WARMUP_OPS);
+    measure(tid, PQ_WARMUP_OPS[tid]);
   }
 #else
-  measure(tid, PQ_WARMUP_OPS);
+  measure(tid, PQ_WARMUP_OPS[tid]);
 #endif
 #endif
 #ifdef WARMUP
   MAGIC(1);
 #endif
-  for ( i = 0; i < PQ_WORK_OPS; i++ ) {
-    execute(tid, PQ_WARMUP_OPS + i);
+  for ( i = 0; i < PQ_WORK_OPS[tid]; i++ ) {
+    execute(tid, PQ_WARMUP_OPS[tid] + i);
 #ifdef RESET_EACH_WORK_OP
     MAGIC(1);
 #endif
@@ -113,7 +113,7 @@ void work( rtems_task_argument tid  ) {
 static int execute( rtems_task_argument tid, int current_op ) {
   long n;
 
-  switch (ops[current_op]) {
+  switch (ops[tid][current_op]) {
     case f:
       n = pq_first(tid);
 #if defined(GAB_PRINT)
@@ -122,83 +122,83 @@ static int execute( rtems_task_argument tid, int current_op ) {
 #endif
       break;
     case i:
-      n = pq_node_initialize( &args[current_op] );
+      n = pq_node_initialize( &args[tid][current_op] );
       pq_insert( tid, n );
 #if defined(GAB_PRINT)
       printf("%d\tPQ insert (args=%d,%d):\t",
-          tid, args[current_op].key, args[current_op].val);
+          tid, args[tid][current_op].key, args[tid][current_op].val);
       pq_print_node(n);
 #endif
       break;
     case p:
       n = pq_pop(tid);
 #if defined(GAB_DEBUG)
-      if ( kv_key(n) != args[current_op].key ) {
+      if ( kv_key(n) != args[tid][current_op].key ) {
         printf("%d\tInvalid node popped (args=%d,%d):\t",
-            tid, args[current_op].key, args[current_op].val);
+            tid, args[tid][current_op].key, args[tid][current_op].val);
         pq_print_node(n);
       }
 #endif
 #if defined(GAB_PRINT) && defined(GAB_DEBUG)
-      if ( kv_value(n) != args[current_op].val ) {
+      if ( kv_value(n) != args[tid][current_op].val ) {
         printf("%d\tUnexpected node (non-FIFO/stable) popped (args=%d,%d):\t",
-            tid,args[current_op].key, args[current_op].val);
+            tid,args[tid][current_op].key, args[tid][current_op].val);
         pq_print_node(n);
       }
 #endif
 #if defined(GAB_PRINT)
-      printf("%d\tPQ pop (args=%d,%d):\t",tid, args[current_op].key, args[current_op].val);
+      printf("%d\tPQ pop (args=%d,%d):\t",tid, args[tid][current_op].key, args[tid][current_op].val);
       pq_print_node(n);
 #endif
       break;
     case h:
         n = pq_pop(tid);
 #if defined(GAB_DEBUG)
-      if ( kv_key(n) != args[current_op].val ) {
-        printf("%d\tInvalid node popped (args=%d,%d):\t",tid, args[current_op].key, args[current_op].val);
+      if ( kv_key(n) != args[tid][current_op].val ) {
+        printf("%d\tInvalid node popped (args=%d,%d):\t",tid, args[tid][current_op].key, args[tid][current_op].val);
         pq_print_node(n);
       }
 #endif
-      n = pq_add_to_key(n, args[current_op].key);/* add to prio */
+      n = pq_add_to_key(n, args[tid][current_op].key);/* add to prio */
 #if defined(GAB_PRINT)
-      printf("%d\tPQ hold (args=%d,%d):\t",tid, args[current_op].key, args[current_op].val);
+      printf("%d\tPQ hold (args=%d,%d):\t",tid, args[tid][current_op].key, args[tid][current_op].val);
       pq_print_node(n);
 #endif
       pq_insert(tid,n);
       break;
     case s:
-      n = pq_search(tid, args[current_op].key); // UNIQUE!
+      n = pq_search(tid, args[tid][current_op].key); // UNIQUE!
 #if defined(GAB_DEBUG)
-      if (kv_value(n) != args[current_op].val) {
+      if (kv_value(n) != args[tid][current_op].val) {
         printf("%d\tInvalid node found (args=%d,%d):\t",
-            tid, args[current_op].key, args[current_op].val);
+            tid, args[tid][current_op].key, args[tid][current_op].val);
         pq_print_node(n);
       }
 #endif
 #if defined(GAB_PRINT)
       printf("%d\tPQ search (args=%d,%d):\t",
-          tid, args[current_op].key, args[current_op].val);
+          tid, args[tid][current_op].key, args[tid][current_op].val);
       pq_print_node(n);
 #endif
       break;
     case x:
-      n = pq_extract(tid, args[current_op].key);
+      n = pq_extract(tid, args[tid][current_op].key);
 #if defined(GAB_DEBUG)
-      if (kv_value(n) != args[current_op].val) {
+      if (kv_value(n) != args[tid][current_op].val) {
         printf("%d\tInvalid node found (args=%d,%d):\t",
-            tid, args[current_op].key, args[current_op].val);
+            tid, args[tid][current_op].key, args[tid][current_op].val);
         pq_print_node(n);
       }
 #endif
 #if defined(GAB_PRINT)
       printf("%d\tPQ extract (args=%d,%d):\t",
-          tid, args[current_op].key, args[current_op].val);
+          tid, args[tid][current_op].key, args[tid][current_op].val);
       pq_print_node(n);
 #endif
       break;
     default:
 #if defined(GAB_PRINT)
-      printf("%d\tInvalid Op: %d\n",tid,ops[current_op]);
+      printf("%d\tInvalid Op: %d\n",tid,ops[tid][current_op]);
 #endif
       break;
   }
@@ -241,7 +241,8 @@ static int measure( rtems_task_argument tid, int current_op )
 
   // measure dequeue
 #ifdef MEASURE_DEQUEUE
-  n = pq_add_to_key(n, args[current_op++].key);
+  n = pq_add_to_key(n, args[tid][current_op].key);
+  current_op++;
   pq_insert(tid, n);
 #ifndef WARMUP
   asm volatile("break_start_opal:");
@@ -253,7 +254,8 @@ static int measure( rtems_task_argument tid, int current_op )
 
   // measure enqueue
 #ifdef MEASURE_ENQUEUE
-  n = pq_add_to_key(n, args[current_op++].key);
+  n = pq_add_to_key(n, args[tid][current_op].key);
+  current_op++;
   pq_insert(tid, n);
   n = pq_node_initialize( &a );
 #ifndef WARMUP
@@ -266,9 +268,11 @@ static int measure( rtems_task_argument tid, int current_op )
 
   // measure spill exception
 #ifdef MEASURE_SPILL 
-  n = pq_add_to_key(n, args[current_op++].key);
+  n = pq_add_to_key(n, args[tid][current_op].key);
+  current_op++;
   pq_insert(tid, n);
-  n = pq_add_to_key(n, args[current_op++].key);
+  n = pq_add_to_key(n, args[tid][current_op].key);
+  current_op++;
   pq_insert(tid, n);
   n = pq_node_initialize( &a );
 #ifndef WARMUP
