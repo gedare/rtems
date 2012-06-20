@@ -10,7 +10,7 @@
 #include <libcpu/spillpq.h> // bad
 // FIXME: separate for each task
 spillpq_policy_t pqbench_policy = {
-  .realtime = false,
+  .realtime = true,
   .pinned = false
 };
 

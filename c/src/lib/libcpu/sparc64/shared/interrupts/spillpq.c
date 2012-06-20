@@ -4,6 +4,7 @@
 
 spillpq_context_t spillpq[NUM_QUEUES];
 uint64_t spillpq_cs_payload[NUM_QUEUES];
+uint64_t spillpq_cs_trap_payload[NUM_QUEUES];
 
 hwpq_context_t *hwpq_context = NULL;
 
@@ -22,6 +23,7 @@ int sparc64_spillpq_hwpq_context_initialize( int hwpq_id, hwpq_context_t *ctx )
   for ( i = 0; i < NUM_QUEUES; i++ ) {
     spillpq[i].cs_count = 0;
     spillpq_cs_payload[i] = 0;
+    spillpq_cs_trap_payload[i] = 0;
   }
 }
 
@@ -87,9 +89,7 @@ int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_context)
   trap_idx = ((trap_context)&(~0))>>20; // what is trying to be used?
   trap_operation = (trap_context)&~(~0 << (16 + 1)); // what is the op?
   
-  HWDS_GET_PAYLOAD(queue_idx, kv);
-#define PMASK (1UL<<31)
-  kv &= ~PMASK;
+  HWDS_GET_TRAP_PAYLOAD(queue_idx, kv);
 
   switch (trap_operation) {
     case 1:
@@ -112,8 +112,7 @@ int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_context)
       printk("Unknown operation to emulate: %d\n", trap_operation);
       break;
   }
-  rv |= PMASK;
-  HWDS_SET_PAYLOAD(queue_idx, rv);
+  HWDS_SET_TRAP_PAYLOAD(queue_idx, rv);
   return rv;
 }
 
@@ -156,14 +155,18 @@ int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_context)
   DPRINTK("context switch\tfrom: %d\tto: %d\tduring: %d\n",
       from_idx, trap_idx, trap_operation);
   
-  HWDS_GET_CURRENT_SIZE(from_idx, size);
-  HWDS_GET_PAYLOAD(from_idx, kv); // SAVE PAYLOAD
-  spillpq_cs_payload[from_idx] = kv;
   if ( from_idx < NUM_QUEUES && spillpq[from_idx].ops ) {
     // Policy point: Pinning
     if ( spillpq[from_idx].policy.pinned ) {
       return sparc64_spillpq_handle_failover(trap_idx, trap_context);
     }
+
+    HWDS_GET_CURRENT_SIZE(from_idx, size);
+    HWDS_GET_PAYLOAD(from_idx, kv); // SAVE PAYLOAD
+    spillpq_cs_payload[from_idx] = kv;
+    HWDS_GET_TRAP_PAYLOAD(from_idx, kv); // SAVE PAYLOAD
+    spillpq_cs_trap_payload[from_idx] = kv;
+
     // spill all of from_idx
     rv = spillpq[from_idx].ops->spill(from_idx, size);
     if ( rv != size ) {
@@ -184,6 +187,8 @@ int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_context)
     }
     kv = spillpq_cs_payload[trap_idx]; // RESTORE PAYLOAD
     HWDS_SET_PAYLOAD(trap_idx, kv);
+    kv = spillpq_cs_trap_payload[trap_idx];
+    HWDS_SET_TRAP_PAYLOAD(trap_idx, kv);
   }
   return rv;
 }
