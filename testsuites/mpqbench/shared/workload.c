@@ -8,10 +8,17 @@
 #include "params.i"
 
 #include <libcpu/spillpq.h> // bad
-// FIXME: separate for each task
-spillpq_policy_t pqbench_policy = {
-  .realtime = true,
-  .pinned = false
+// FIXME: separate for each task. generate in script engine
+spillpq_policy_t pqbench_policy[NUM_TASKS] = {{
+    .realtime = true,
+    .pinned = true
+  }, {
+    .realtime = true,
+    .pinned = false
+  }, {
+    .realtime = true,
+    .pinned = false
+  }
 };
 
 #include <stdlib.h>

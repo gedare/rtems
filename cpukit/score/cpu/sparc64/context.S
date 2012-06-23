@@ -247,6 +247,7 @@ PUBLIC(_CPU_Context_restore_heir)
 
     flushw
 
+! FIXME: queue id
     or %g0, 20, %l0
     ldx [%o1 + HWDS_TRAP_PAYLOAD_OFFSET], %l1
     impdep2 %l1, %l0, %g0

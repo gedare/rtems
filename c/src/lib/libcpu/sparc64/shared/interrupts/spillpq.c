@@ -89,7 +89,7 @@ int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_context)
   trap_idx = ((trap_context)&(~0))>>20; // what is trying to be used?
   trap_operation = (trap_context)&~(~0 << (16 + 1)); // what is the op?
   
-  HWDS_GET_TRAP_PAYLOAD(queue_idx, kv);
+  HWDS_GET_PAYLOAD(queue_idx, kv);
 
   switch (trap_operation) {
     case 1:

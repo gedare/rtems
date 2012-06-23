@@ -4,7 +4,8 @@
 #include <rtems.h>
 
 #include <libcpu/spillpq.h> // bad
-extern spillpq_policy_t pqbench_policy;
+#include "params.h"
+extern spillpq_policy_t pqbench_policy[NUM_TASKS];
 
 void initialize( rtems_task_argument tid );
 

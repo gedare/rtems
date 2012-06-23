@@ -10,7 +10,7 @@
 void pq_initialize( rtems_task_argument tid, int size ) {
   sparc64_spillpq_initialize(
       tid,
-      &pqbench_policy,
+      &pqbench_policy[tid],
       &sparc64_unitedlistpq_ops,
       size
   );

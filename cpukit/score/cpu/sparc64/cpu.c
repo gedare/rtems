@@ -107,6 +107,9 @@ void _CPU_Context_Initialize(
 
     /* PSTATE used to be built here, but is no longer included in context */
 
+    /* HWDS specific fields */
+    the_context->hwds_trap_payload = (uint64_t)-2;
+
   /*
    *  Since THIS thread is being created, there is no way that THIS
    *  thread can have an _ISR_Dispatch stack frame on its stack.

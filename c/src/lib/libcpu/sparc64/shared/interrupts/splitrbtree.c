@@ -53,6 +53,7 @@ uint64_t sparc64_splitrbtree_insert(int qid, uint64_t kv)
   new_node->key = kv_key(kv);
   new_node->val = kv_value(kv); // FIXME: not full 64-bits
 
+  DPRINTK("%d: Insert (%d, %d)\n", qid, new_node->key, new_node->val);
   rtems_rbtree_insert_unprotected( &trees[qid], &new_node->rbt_node );
   return 0;
 }
