@@ -392,7 +392,7 @@ extern "C" {
         ); \
   } while (0)
 
-#define HWDS_SET_TRAP_RESULT( _queue, _kv ) \
+#define HWDS_SET_TRAP_PAYLOAD( _queue, _kv ) \
   do { \
     __asm__ __volatile__ ( \
         "sll  %0, 20, %%l0\n\t" \

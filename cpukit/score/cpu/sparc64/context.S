@@ -228,6 +228,11 @@ PUBLIC(_CPU_Context_switch)
 !      rdpr    %pstate, %o2
 !      stx     %o2, [%o0 + PSTATE_OFFSET]      ! save status register
 
+
+      or %g0, 19, %l0
+      impdep2 %g0, %l0, %l1
+      stx %l1, [%o0 + HWDS_TRAP_PAYLOAD_OFFSET]
+
       /*
        *  This is entered from _CPU_Context_restore with:
        *    o1 = context to restore
@@ -242,6 +247,9 @@ PUBLIC(_CPU_Context_restore_heir)
 
     flushw
 
+    or %g0, 20, %l0
+    ldx [%o1 + HWDS_TRAP_PAYLOAD_OFFSET], %l1
+    impdep2 %l1, %l0, %g0
 
 
     ! skip g0
