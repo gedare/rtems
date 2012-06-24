@@ -23,7 +23,7 @@ int sparc64_spillpq_hwpq_context_initialize( int hwpq_id, hwpq_context_t *ctx )
   for ( i = 0; i < NUM_QUEUES; i++ ) {
     spillpq[i].cs_count = 0;
     spillpq_cs_payload[i] = 0;
-    spillpq_cs_trap_payload[i] = 0;
+    spillpq_cs_trap_payload[i] = (uint64_t)-2;
   }
 }
 
