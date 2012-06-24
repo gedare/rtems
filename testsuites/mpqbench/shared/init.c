@@ -115,6 +115,10 @@ rtems_task PQ_Workload_Task(rtems_task_argument argument)
   rtems_task_wake_after( 5 );
 #endif
   // FIXME: how to reset stats for warmup phase?
+#ifdef RESET_AFTER_WARMUP
+  MAGIC(1);
+  rtems_task_wake_after( 5 );
+#endif
 
   /* workload */
   work(argument - 1);

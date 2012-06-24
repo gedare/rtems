@@ -44,8 +44,16 @@ typedef struct {
 } hwpq_context_t;
 
 typedef struct {
+
+  // shorthand for a realtime policy.
   bool realtime;
+  
+  // specify that once loaded this hwds does not get switched involuntarily
   bool pinned;
+
+  // upper limit for filling, spilling
+  int fill_max;
+  int spill_max;
 } spillpq_policy_t;
 
 typedef struct {

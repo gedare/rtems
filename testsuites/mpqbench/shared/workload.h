@@ -15,6 +15,7 @@ void work( rtems_task_argument tid );
 
 // WARMUP must be defined for opal to work properly currently.
 #define WARMUP
+#define RESET_AFTER_WARMUP
 //#define RESET_EACH_WORK_OP
 
 // Measurement directives...

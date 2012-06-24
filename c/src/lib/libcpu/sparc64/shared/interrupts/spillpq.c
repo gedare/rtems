@@ -118,17 +118,27 @@ int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_context)
 
 int sparc64_spillpq_handle_spill(int queue_idx)
 {
-  /* FIXME: make count arg more flexible */
   int rv;
-  rv = spillpq[queue_idx].ops->spill(queue_idx, hwpq_context->max_size/2);
+  int amt = spillpq[queue_idx].policy.spill_max;
+
+  if ( amt == 0 )
+    rv = spillpq[queue_idx].ops->spill(queue_idx, hwpq_context->max_size/2);
+  else
+    rv = spillpq[queue_idx].ops->spill(queue_idx, amt);
+
   return rv;
 }
 
 int sparc64_spillpq_handle_fill(int queue_idx)
 {
-  /* FIXME: make count arg more flexible */
   int rv;
-  rv = spillpq[queue_idx].ops->fill(queue_idx, hwpq_context->max_size/2);
+  int amt = spillpq[queue_idx].policy.fill_max;
+
+  if ( amt == 0 )
+    rv = spillpq[queue_idx].ops->fill(queue_idx, hwpq_context->max_size/2);
+  else
+    rv = spillpq[queue_idx].ops->fill(queue_idx, amt);
+
   return rv;
 }
 

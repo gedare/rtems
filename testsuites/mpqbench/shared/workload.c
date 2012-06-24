@@ -10,14 +10,20 @@
 #include <libcpu/spillpq.h> // bad
 // FIXME: separate for each task. generate in script engine
 spillpq_policy_t pqbench_policy[NUM_TASKS] = {{
-    .realtime = true,
-    .pinned = true
+    .realtime = false,
+    .pinned = false,
+    .fill_max = 0,
+    .spill_max = 0
   }, {
-    .realtime = true,
-    .pinned = false
+    .realtime = false,
+    .pinned = false,
+    .fill_max = 1,
+    .spill_max = 1
   }, {
-    .realtime = true,
-    .pinned = false
+    .realtime = false,
+    .pinned = false,
+    .fill_max = 0,
+    .spill_max = 0
   }
 };
 
@@ -101,9 +107,6 @@ void work( rtems_task_argument tid  ) {
 #else
   measure(tid, PQ_WARMUP_OPS[tid]);
 #endif
-#endif
-#ifdef WARMUP
-  MAGIC(1);
 #endif
   for ( i = 0; i < PQ_WORK_OPS[tid]; i++ ) {
     execute(tid, PQ_WARMUP_OPS[tid] + i);
