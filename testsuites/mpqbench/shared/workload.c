@@ -8,24 +8,8 @@
 #include "params.i"
 
 #include <libcpu/spillpq.h> // bad
-// FIXME: separate for each task. generate in script engine
-spillpq_policy_t pqbench_policy[NUM_TASKS] = {{
-    .realtime = false,
-    .pinned = false,
-    .fill_max = 0,
-    .spill_max = 0
-  }, {
-    .realtime = false,
-    .pinned = false,
-    .fill_max = 1,
-    .spill_max = 1
-  }, {
-    .realtime = false,
-    .pinned = false,
-    .fill_max = 0,
-    .spill_max = 0
-  }
-};
+
+spillpq_policy_t pqbench_policy[NUM_TASKS];
 
 #include <stdlib.h>
 
@@ -50,6 +34,14 @@ static void drain_and_check(rtems_task_argument tid);
 static int measure( rtems_task_argument tid, int current_op );
 
 void initialize(rtems_task_argument tid ) {
+  int i;
+  // FIXME: separate for each task. generate in script engine
+  for ( i = 0; i < NUM_TASKS; i++ ) {
+    pqbench_policy[i].realtime = false;
+    pqbench_policy[i].pinned = false;
+    pqbench_policy[i].fill_max = 0;
+    pqbench_policy[i].spill_max = 0;
+  }
   /* initialize structures */
   pq_initialize(tid, PQ_MAX_SIZE);
 }
