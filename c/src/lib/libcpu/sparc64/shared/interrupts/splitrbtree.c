@@ -117,21 +117,6 @@ uint64_t sparc64_splitrbtree_extract(int qid, uint64_t kv )
   return kv;
 }
 
-uint64_t sparc64_splitrbtree_search(int qid, uint64_t kv )
-{
-  rtems_rbtree_node *n;
-  pq_node *p;
-  n = search_helper(qid, kv);
-
-  if ( n ) {
-    p = rtems_rbtree_container_of(n, pq_node, rbt_node);
-    kv = pq_node_to_kv(p);
-  } else {
-    kv = (uint64_t)-1;
-  }
-  return kv;
-}
-
 static inline uint64_t 
 sparc64_splitrbtree_spill_node(int qid)
 {
@@ -144,6 +129,30 @@ sparc64_splitrbtree_spill_node(int qid)
     sparc64_splitrbtree_insert(qid, kv);
   }
 
+  return kv;
+}
+
+uint64_t sparc64_splitrbtree_search(int qid, uint64_t kv )
+{
+  rtems_rbtree_node *n;
+  pq_node *p;
+  int exception;
+  n = search_helper(qid, kv);
+
+  if ( n ) {
+    p = rtems_rbtree_container_of(n, pq_node, rbt_node);
+    kv = pq_node_to_kv(p);
+    /* Remove the searched-for item and fill it into the HWDS, spilling
+     * an excess value if necessary. TODO: parametrize. */
+    rtems_rbtree_extract_unprotected(&trees[qid], n);
+    freelist_put_node(&free_nodes[qid], p);
+    HWDS_FILL(qid, kv_key(kv), kv_value(kv), exception); 
+    if (exception) {
+      sparc64_splitrbtree_spill_node(qid);
+    }
+  } else {
+    kv = (uint64_t)-1;
+  }
   return kv;
 }
 

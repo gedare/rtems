@@ -21,7 +21,7 @@
 #define CONFIGURE_RTEMS_INIT_TASKS_TABLE
 #if defined(GAB_TIMESLICE)
 #define CONFIGURE_TICKS_PER_TIMESLICE       1
-#define CONFIGURE_MICROSECONDS_PER_TICK   RTEMS_MILLISECONDS_TO_MICROSECONDS(200)
+#define CONFIGURE_MICROSECONDS_PER_TICK   RTEMS_MILLISECONDS_TO_MICROSECONDS(10)
 #endif
 #define CONFIGURE_INIT
 #include "system.h"
@@ -116,7 +116,7 @@ rtems_task PQ_Workload_Task(rtems_task_argument argument)
 #endif
   // FIXME: how to reset stats for warmup phase?
 #ifdef RESET_AFTER_WARMUP
-  MAGIC(1);
+  
   rtems_task_wake_after( 0 );
 #endif
 
