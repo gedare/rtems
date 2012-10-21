@@ -10,10 +10,14 @@ void pq_initialize( rtems_task_argument tid, int size ) {
     hwpqlib_initialize(0, NUM_TASKS);
 
   // FIXME: how to determine the spillpq structure?
-  if ( tid%2 == 0 )
-    hwpqlib_pq_initialize( HWPQLIB_SPILLPQ_UNITEDLIST, tid, size );
-  else
-    hwpqlib_pq_initialize( HWPQLIB_SPILLPQ_SPLITHEAP, tid, size );
+  //if ( tid%2 == 0 )
+  //  hwpqlib_pq_initialize( HWPQLIB_SPILLPQ_UNITEDLIST, tid, size );
+  //else
+  //  hwpqlib_pq_initialize( HWPQLIB_SPILLPQ_SPLITHEAP, tid, size );
+  
+  
+  //hwpqlib_pq_initialize( HWPQLIB_SPILLPQ_UNITEDLIST, tid, size );
+  hwpqlib_pq_initialize( HWPQLIB_SPILLPQ_SPLITRBTREE, tid, size );
 
 }
 

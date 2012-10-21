@@ -5,11 +5,13 @@
 #include "spillpq.h"
 #include "unitedlistpq.h"
 #include "splitheappq.h"
+#include "splitrbtree.h"
 
 // The kinds of hwpq spill structures that are supported.
 typedef enum {
   HWPQLIB_SPILLPQ_UNITEDLIST,
   HWPQLIB_SPILLPQ_SPLITHEAP,
+  HWPQLIB_SPILLPQ_SPLITRBTREE,
   HWPQLIB_SPILLPQ_NONE
 } hwpqlib_spillpq_t;
 

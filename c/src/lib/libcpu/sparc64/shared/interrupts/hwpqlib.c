@@ -49,6 +49,10 @@ void hwpqlib_pq_initialize( hwpqlib_spillpq_t type, int qid, int size ) {
       sparc64_spillpq_initialize(qid, SPILLPQ_POLICY_DEFAULT, &sparc64_splitheappq_ops, size); 
       break;
 
+    case HWPQLIB_SPILLPQ_SPLITRBTREE:
+      sparc64_spillpq_initialize(qid, SPILLPQ_POLICY_DEFAULT, &sparc64_splitrbtree_ops, size); 
+      break;
+
     default:
       break;
   }
