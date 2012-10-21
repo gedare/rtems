@@ -65,7 +65,7 @@ AM_CONDITIONAL(LIBCHIP,[test "$RTEMS_BSP_FAMILY" != "posix"])
 AC_CONFIG_FILES([Makefile
 mbptree/Makefile
 mdetskiplist/Makefile
-mhwpq/Makefile
+mhwpqlib/Makefile
 mhwpqsplitheap/Makefile
 mhwpqsplitrbtree/Makefile
 mhwpqsplitskiplist/Makefile
