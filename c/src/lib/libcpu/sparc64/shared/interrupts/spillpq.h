@@ -72,6 +72,7 @@ extern spillpq_context_t spillpq[NUM_QUEUES];
 
 extern hwpq_context_t *hwpq_context;
 extern int sparc64_spillpq_hwpq_context_initialize( int, hwpq_context_t* );
+extern int sparc64_spillpq_hwpq_set_max_size(int queue_idx, int size);
 
 extern int sparc64_spillpq_initialize(
   int queue_idx,

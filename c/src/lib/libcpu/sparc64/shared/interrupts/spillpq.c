@@ -27,6 +27,11 @@ int sparc64_spillpq_hwpq_context_initialize( int hwpq_id, hwpq_context_t *ctx )
   }
 }
 
+int sparc64_spillpq_hwpq_set_max_size(int queue_idx, int size)
+{
+  HWDS_SET_SIZE_LIMIT(queue_idx, size); // FIXME: error checking, hwpq ctxt..
+}
+
 int sparc64_spillpq_initialize(
     int queue_idx,
     spillpq_policy_t *policy,
