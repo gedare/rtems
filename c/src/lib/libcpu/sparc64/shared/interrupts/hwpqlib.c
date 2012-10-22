@@ -45,9 +45,24 @@ void hwpqlib_pq_initialize(int qid, spillpq_policy_t *policy,
   sparc64_spillpq_initialize(qid, policy, ops, size);
 }
 
+static inline bool is_available( int pq_id ) {
+  if ( hwpqlib_context.hwpq_context.current_qid == pq_id ) {
+    return true;
+  }
+}
+
+static inline bool check_access(pq_id) {
+  if ( !is_available(pq_id) ){
+    return false;
+  }
+  return true;
+}
+
 void hwpqlib_insert( int pq_id, int key, int value ) {
   hwpqlib_context.pq_context[pq_id].current_size++;
-  HWDS_ENQUEUE(pq_id, key, value);
+  if ( check_access(pq_id) ) {
+    HWDS_ENQUEUE(pq_id, key, value);
+  }
 }
 
 uint64_t hwpqlib_first( int pq_id ) {

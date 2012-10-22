@@ -49,6 +49,8 @@ void sparc64_hwpq_exception_handler(
   uint64_t context;
   uint32_t queue_idx;
   uint32_t trap_context;
+  uint32_t trap_operation;
+  uint32_t trap_idx;
   int softint_bit = ((vector&~SPARC_SYNCHRONOUS_TRAP_BIT_MASK) - 0x40);
   int mask = (1<<softint_bit);
 //  int synchronous = vector & SPARC_SYNCHRONOUS_TRAP_BIT_MASK;
@@ -77,7 +79,14 @@ void sparc64_hwpq_exception_handler(
       sparc64_spillpq_handle_failover(queue_idx, trap_context);
       break;
     case 4:
-      sparc64_spillpq_context_switch(queue_idx, trap_context);
+      trap_idx = ((trap_context)&(~0))>>20;
+      // Policy point: Pinning
+      if ( from_idx < NUM_QUEUES && spillpq[from_idx].ops ) {
+        if ( spillpq[from_idx].policy.pinned ) {
+          sparc64_spillpq_handle_failover(trap_idx, trap_context);
+        }
+      }
+      sparc64_spillpq_context_switch(queue_idx, trap_idx);
       break;
 
     default:

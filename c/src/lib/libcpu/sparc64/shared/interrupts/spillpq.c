@@ -107,10 +107,10 @@ uint64_t sparc64_spillpq_pop(int queue_idx, uint64_t kv)
 int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_context)
 {
   uint32_t trap_operation;
-  uint32_t trap_idx;
+  //uint32_t trap_idx;
   uint64_t kv;
   int rv = 0;
-  trap_idx = ((trap_context)&(~0))>>20; // what is trying to be used?
+  //trap_idx = ((trap_context)&(~0))>>20; // what is trying to be used?
   trap_operation = (trap_context)&~(~0 << (16 + 1)); // what is the op?
   
   HWDS_GET_PAYLOAD(queue_idx, kv);
@@ -175,29 +175,14 @@ int sparc64_spillpq_drain( int queue_idx )
   return rv;
 }
 
-int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_context)
+int sparc64_spillpq_context_switch( int from_idx, int to_idx)
 {
-  uint32_t trap_operation;
-  uint32_t trap_idx;
-  Chain_Control *spill_pq;
-  Chain_Node *iter;
   int rv = 0;
   int size = 0;
   uint64_t kv;
-  
-  trap_idx = ((trap_context)&(~0))>>20;
-  trap_operation = (trap_context)&~(~0 << (16 + 1));
-  
-  DPRINTK("context switch\tfrom: %d\tto: %d\tduring: %d\n",
-      from_idx, trap_idx, trap_operation);
-  
-  if ( from_idx < NUM_QUEUES && spillpq[from_idx].ops ) {
-    // Policy point: Pinning
-    if ( spillpq[from_idx].policy.pinned ) {
-      return sparc64_spillpq_handle_failover(trap_idx, trap_context);
-    }
-    STAT_INC(from_idx, switches);
 
+  if ( from_idx < NUM_QUEUES && spillpq[from_idx].ops ) {
+    STAT_INC(from_idx, switches);
     HWDS_GET_CURRENT_SIZE(from_idx, size);
     HWDS_GET_PAYLOAD(from_idx, kv); // SAVE PAYLOAD
     spillpq_cs_payload[from_idx] = kv;
