@@ -57,10 +57,22 @@ typedef struct {
 } spillpq_policy_t;
 
 typedef struct {
+  int spills;
+  int fills;
+  int switches;
+  int firsts;
+  int inserts;
+  int extracts;
+  int searches;
+  int pops;
+} spillpq_stats_t;
+
+typedef struct {
   sparc64_spillpq_operations *ops;
   int max_size;
   int cs_count;
-  spillpq_policy_t policy; // TODO
+  spillpq_policy_t policy;
+  spillpq_stats_t stats;
 } spillpq_context_t;
 
 extern spillpq_context_t spillpq[NUM_QUEUES];

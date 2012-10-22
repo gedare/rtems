@@ -1,10 +1,12 @@
 #include "spillpq.h"
 #include "gabdebug.h"
 
-
 spillpq_context_t spillpq[NUM_QUEUES];
 uint64_t spillpq_cs_payload[NUM_QUEUES];
 uint64_t spillpq_cs_trap_payload[NUM_QUEUES];
+
+#define STAT_ZERO(id, stat) spillpq[id].stats.stat = 0
+#define STAT_INC(id, stat) spillpq[id].stats.stat++
 
 hwpq_context_t *hwpq_context = NULL;
 
@@ -22,10 +24,19 @@ int sparc64_spillpq_hwpq_context_initialize( int hwpq_id, hwpq_context_t *ctx )
 
   for ( i = 0; i < NUM_QUEUES; i++ ) {
     spillpq[i].cs_count = 0;
+    STAT_ZERO(i,spills);
+    STAT_ZERO(i,fills);
+    STAT_ZERO(i,switches);
+    STAT_ZERO(i,firsts);
+    STAT_ZERO(i,inserts);
+    STAT_ZERO(i,extracts);
+    STAT_ZERO(i,searches);
+    STAT_ZERO(i,pops);
     spillpq_cs_payload[i] = 0;
     spillpq_cs_trap_payload[i] = (uint64_t)-2;
   }
 }
+
 
 int sparc64_spillpq_hwpq_set_max_size(int queue_idx, int size)
 {
@@ -49,6 +60,7 @@ int sparc64_spillpq_initialize(
 uint64_t sparc64_spillpq_first(int queue_idx, uint64_t ignored)
 {
   uint64_t rv;
+  STAT_INC(queue_idx, firsts);
   rv = spillpq[queue_idx].ops->first(queue_idx, 0);
   return rv;
 }
@@ -56,23 +68,28 @@ uint64_t sparc64_spillpq_first(int queue_idx, uint64_t ignored)
 uint64_t sparc64_spillpq_insert(int queue_idx, uint64_t kv)
 {
   uint64_t rv;
+  int amt = 1;
+  STAT_INC(queue_idx, inserts);
   rv = spillpq[queue_idx].ops->insert(queue_idx, kv);
-  HWDS_ADJUST_SPILL_COUNT(queue_idx, (int32_t)1);
+  HWDS_ADJUST_SPILL_COUNT(queue_idx, amt);
   return rv;
 }
 
 uint64_t sparc64_spillpq_extract(int queue_idx, uint64_t kv)
 {
   uint64_t rv;
+  int amt = -1;
+  STAT_INC(queue_idx, extracts);
   rv = spillpq[queue_idx].ops->extract(queue_idx, kv);
   if (rv != (uint64_t)-1)
-    HWDS_ADJUST_SPILL_COUNT(queue_idx, (int32_t)-1); // adjust spill count.
+    HWDS_ADJUST_SPILL_COUNT(queue_idx, amt); // adjust spill count.
   return rv;
 }
 
 uint64_t sparc64_spillpq_search(int queue_idx, uint64_t kv)
 {
   uint64_t rv;
+  STAT_INC(queue_idx, searches);
   rv = spillpq[queue_idx].ops->search(queue_idx, kv);
   return rv;
 }
@@ -80,8 +97,10 @@ uint64_t sparc64_spillpq_search(int queue_idx, uint64_t kv)
 uint64_t sparc64_spillpq_pop(int queue_idx, uint64_t kv)
 {
   uint64_t rv;
+  int amt = -1;
+  STAT_INC(queue_idx, firsts);
   rv = spillpq[queue_idx].ops->pop(queue_idx, 0);
-  HWDS_ADJUST_SPILL_COUNT(queue_idx, (int32_t)-1); // adjust spill count.
+  HWDS_ADJUST_SPILL_COUNT(queue_idx, amt); // adjust spill count.
   return rv;
 }
 
@@ -125,6 +144,7 @@ int sparc64_spillpq_handle_spill(int queue_idx)
 {
   int rv;
   int amt = spillpq[queue_idx].policy.spill_max;
+  STAT_INC(queue_idx, spills);
 
   if ( amt == 0 )
     rv = spillpq[queue_idx].ops->spill(queue_idx, hwpq_context->max_size/2);
@@ -138,6 +158,7 @@ int sparc64_spillpq_handle_fill(int queue_idx)
 {
   int rv;
   int amt = spillpq[queue_idx].policy.fill_max;
+  STAT_INC(queue_idx, fills);
 
   if ( amt == 0 )
     rv = spillpq[queue_idx].ops->fill(queue_idx, hwpq_context->max_size/2);
@@ -175,6 +196,7 @@ int sparc64_spillpq_context_switch( int from_idx, uint32_t trap_context)
     if ( spillpq[from_idx].policy.pinned ) {
       return sparc64_spillpq_handle_failover(trap_idx, trap_context);
     }
+    STAT_INC(from_idx, switches);
 
     HWDS_GET_CURRENT_SIZE(from_idx, size);
     HWDS_GET_PAYLOAD(from_idx, kv); // SAVE PAYLOAD
