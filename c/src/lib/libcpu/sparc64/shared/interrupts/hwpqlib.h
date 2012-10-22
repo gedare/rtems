@@ -33,7 +33,7 @@ extern hwpqlib_context_t hwpqlib_context;
 void hwpqlib_initialize( int hwpq_id, int num_pqs );
 
 // Initialize spillpq callouts
-void hwpqlib_pq_initialize( hwpqlib_spillpq_t type, int qid, int size );
+void hwpqlib_pq_initialize(int qid, spillpq_policy_t*,sparc64_spillpq_operations*, int size );
 
 // Interposition functions for PQ operations
 void hwpqlib_insert( int pq_id, int key, int value );

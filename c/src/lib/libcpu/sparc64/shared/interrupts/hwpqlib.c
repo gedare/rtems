@@ -39,23 +39,10 @@ void hwpqlib_initialize( int hwpq_id, int num_pqs )
   hwpqlib_context.num_pqs = num_pqs;
 }
 
-void hwpqlib_pq_initialize( hwpqlib_spillpq_t type, int qid, int size ) {
-  switch(type) {
-    case HWPQLIB_SPILLPQ_UNITEDLIST:
-      sparc64_spillpq_initialize(qid, SPILLPQ_POLICY_DEFAULT, &sparc64_unitedlistpq_ops, size); 
-      break;
-
-    case HWPQLIB_SPILLPQ_SPLITHEAP:
-      sparc64_spillpq_initialize(qid, SPILLPQ_POLICY_DEFAULT, &sparc64_splitheappq_ops, size); 
-      break;
-
-    case HWPQLIB_SPILLPQ_SPLITRBTREE:
-      sparc64_spillpq_initialize(qid, SPILLPQ_POLICY_DEFAULT, &sparc64_splitrbtree_ops, size); 
-      break;
-
-    default:
-      break;
-  }
+void hwpqlib_pq_initialize(int qid, spillpq_policy_t *policy,
+    sparc64_spillpq_operations *ops, int size )
+{
+  sparc64_spillpq_initialize(qid, policy, ops, size);
 }
 
 void hwpqlib_insert( int pq_id, int key, int value ) {

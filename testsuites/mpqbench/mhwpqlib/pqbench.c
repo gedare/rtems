@@ -17,7 +17,7 @@ void pq_initialize( rtems_task_argument tid, int size ) {
   
   
   //hwpqlib_pq_initialize( HWPQLIB_SPILLPQ_UNITEDLIST, tid, size );
-  hwpqlib_pq_initialize( HWPQLIB_SPILLPQ_SPLITRBTREE, tid, size );
+  hwpqlib_pq_initialize(tid, &pqbench_policy[tid], &sparc64_splitrbtree_ops, size);
 
 }
 
