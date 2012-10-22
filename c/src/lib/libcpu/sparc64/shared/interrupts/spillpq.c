@@ -71,7 +71,7 @@ uint64_t sparc64_spillpq_insert(int queue_idx, uint64_t kv)
   int amt = 1;
   STAT_INC(queue_idx, inserts);
   rv = spillpq[queue_idx].ops->insert(queue_idx, kv);
-  HWDS_ADJUST_SPILL_COUNT(queue_idx, amt);
+//  HWDS_ADJUST_SPILL_COUNT(queue_idx, amt);
   return rv;
 }
 
@@ -81,8 +81,8 @@ uint64_t sparc64_spillpq_extract(int queue_idx, uint64_t kv)
   int amt = -1;
   STAT_INC(queue_idx, extracts);
   rv = spillpq[queue_idx].ops->extract(queue_idx, kv);
-  if (rv != (uint64_t)-1)
-    HWDS_ADJUST_SPILL_COUNT(queue_idx, amt); // adjust spill count.
+//  if (rv != (uint64_t)-1)
+  //  HWDS_ADJUST_SPILL_COUNT(queue_idx, amt); // adjust spill count.
   return rv;
 }
 
@@ -100,7 +100,7 @@ uint64_t sparc64_spillpq_pop(int queue_idx, uint64_t kv)
   int amt = -1;
   STAT_INC(queue_idx, firsts);
   rv = spillpq[queue_idx].ops->pop(queue_idx, 0);
-  HWDS_ADJUST_SPILL_COUNT(queue_idx, amt); // adjust spill count.
+//  HWDS_ADJUST_SPILL_COUNT(queue_idx, amt); // adjust spill count.
   return rv;
 }
 
