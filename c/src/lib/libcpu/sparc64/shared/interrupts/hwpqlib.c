@@ -33,7 +33,7 @@ void hwpqlib_initialize( int hwpq_id, int num_pqs )
   // initialize pq contexts
   for ( i = 0; i < num_pqs; i++ ) {
     pq_context[i].current_size = 0;
-    pq_context[i].allowed = true;
+    pq_context[i].allowed = false;
   }
 
   hwpqlib_context.pq_context = pq_context;
@@ -67,45 +67,65 @@ static inline int check_access(pq_id) {
 }
 
 uint64_t hwpqlib_insert( int pq_id, uint64_t kv ) {
-  hwpqlib_status_t status;
-  hwpqlib_context.pq_context[pq_id].current_size++;
-  status = check_access(pq_id);
+  int amt = 1;
+  uint64_t rv = 0;
+  hwpqlib_status_t status = check_access(pq_id);
   if ( status == HWPQLIB_STATUS_OK )
     HWDS_ENQUEUE(pq_id, kv_key(kv), kv_value(kv));
   else
-    sparc64_spillpq_insert(pq_id, kv);
+    rv = sparc64_spillpq_insert(pq_id, kv);
+  hwpqlib_context.pq_context[pq_id].current_size++;
+  return rv;
 }
 
 uint64_t hwpqlib_first( int pq_id, uint64_t kv ) {
   uint64_t rv;
-  HWDS_FIRST(pq_id, rv);
+  hwpqlib_status_t status = check_access(pq_id);
+  if ( status == HWPQLIB_STATUS_OK )
+    HWDS_FIRST(pq_id, rv);
+  else
+    rv = sparc64_spillpq_first(pq_id, kv);
   return rv;
 }
 
 uint64_t hwpqlib_pop( int pq_id, uint64_t kv ) {
   uint64_t rv;
   int key;
+  hwpqlib_status_t status = check_access(pq_id);
   // TODO: why not just one op for pop?
-  HWDS_FIRST(pq_id, rv);
-  if ( rv != (uint64_t)-1 ) {
-    key = kv_key(rv);
-    hwpqlib_context.pq_context[pq_id].current_size--;
-    HWDS_EXTRACT(pq_id, key, rv);
+  if ( status == HWPQLIB_STATUS_OK ) {
+    HWDS_FIRST(pq_id, rv);
+    if ( rv != (uint64_t)-1 ) {
+      key = kv_key(rv);
+      hwpqlib_context.pq_context[pq_id].current_size--;
+      HWDS_EXTRACT(pq_id, key, rv);
+    }
+  } else {
+    rv = sparc64_spillpq_pop(pq_id, kv);
   }
   return rv;
 }
 
 uint64_t hwpqlib_search( int pq_id, uint64_t kv) {
   uint64_t rv;
-  HWDS_SEARCH(pq_id, kv_key(kv), rv);
+  hwpqlib_status_t status = check_access(pq_id);
+  if ( status == HWPQLIB_STATUS_OK )
+    HWDS_SEARCH(pq_id, kv_key(kv), rv);
+  else
+    rv = sparc64_spillpq_search(pq_id, kv);
   return rv;
 }
 
 uint64_t hwpqlib_extract( int pq_id, uint64_t kv) {
   uint64_t rv;
-  HWDS_EXTRACT(pq_id, kv_key(kv), rv);
-  if ( rv == (uint64_t)-1 ) {
-    HWDS_GET_PAYLOAD(pq_id, rv);
+  hwpqlib_status_t status = check_access(pq_id);
+  if ( status == HWPQLIB_STATUS_OK ) {
+    HWDS_EXTRACT(pq_id, kv_key(kv), rv);
+    if ( rv == (uint64_t)-1 ) {
+      HWDS_GET_PAYLOAD(pq_id, rv);
+    }
+  } else {
+    rv = sparc64_spillpq_extract(pq_id, kv);
   }
   return rv;
 }

@@ -6,8 +6,8 @@ extern "C" {
 #endif
 
 //#define GAB_PRINT
-//#define GAB_DEBUG
-//#define GAB_CHECK
+#define GAB_DEBUG
+#define GAB_CHECK
 
 #if defined(GAB_PRINT) || defined(GAB_DEBUG) || defined(GAB_CHECK)
 #include <stdio.h>
