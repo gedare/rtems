@@ -70,14 +70,13 @@ static inline int check_access(pq_id) {
   if ( !is_available(pq_id) ) {
     return HWPQLIB_STATUS_NOT_AVAILABLE;
   }
-/*
-  if (hwpqlib_context.pq_context[pq_id].current_size > hwpqlib_context.hwpq_context.max_size * 2) {
+  if (hwpqlib_context.pq_context[pq_id].current_size > hwpqlib_context.hwpq_context.max_size * 3) {
     evict(pq_id);
     return HWPQLIB_STATUS_NOT_ALLOWED;
   }
-*/
   if ( spillpq[pq_id].stats.extracts > 0 ) {
     evict(pq_id);
+    return HWPQLIB_STATUS_NOT_ALLOWED;
   }
   return HWPQLIB_STATUS_OK;
 }
