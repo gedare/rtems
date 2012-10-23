@@ -101,6 +101,8 @@ extern int sparc64_spillpq_handle_spill(int queue_idx); /* FIXME: count */
 extern int sparc64_spillpq_handle_fill(int queue_idx);
 extern int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_ctx);
 extern int sparc64_spillpq_drain( int queue_id );
+extern int sparc64_spillpq_context_save( int queue_idx );
+extern int sparc64_spillpq_context_restore( int queue_idx );
 extern int sparc64_spillpq_context_switch( int from_idx, int trap_idx );
 
 extern uint64_t sparc64_spillpq_null_handler(int qid, uint64_t arg);

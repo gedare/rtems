@@ -173,42 +173,54 @@ int sparc64_spillpq_drain( int queue_idx )
   return rv;
 }
 
+int sparc64_spillpq_context_save(int queue_idx) {
+  uint64_t kv;
+  int rv;
+  int size = 0;
+  STAT_INC(queue_idx, switches);
+  HWDS_GET_CURRENT_SIZE(queue_idx, size);
+  HWDS_GET_PAYLOAD(queue_idx, kv); // SAVE PAYLOAD
+  spillpq_cs_payload[queue_idx] = kv;
+  HWDS_GET_TRAP_PAYLOAD(queue_idx, kv); // SAVE PAYLOAD
+  spillpq_cs_trap_payload[queue_idx] = kv;
+
+  // spill all of queue_idx
+  rv = spillpq[queue_idx].ops->spill(queue_idx, size);
+  if ( rv != size ) {
+    printk("failed to spill whole queue!\n");
+  }
+  spillpq[queue_idx].cs_count = rv;
+
+  return rv;
+}
+
+int sparc64_spillpq_context_restore(int queue_idx) {
+  uint64_t kv;
+  // Policy point: choose how much to fill
+  // fill up to cs_count[queue_idx]; for SPILLPQ_POLICY_RT fill all
+  // otherwise filling nothing
+  HWDS_SET_CURRENT_ID(queue_idx);
+  hwpq_context->current_qid = queue_idx;
+  if ( spillpq[queue_idx].policy.realtime ) {
+    spillpq[queue_idx].ops->fill(queue_idx, spillpq[queue_idx].cs_count);
+  } else {
+    ; // do nothing
+  }
+  kv = spillpq_cs_payload[queue_idx]; // RESTORE PAYLOAD
+  HWDS_SET_PAYLOAD(queue_idx, kv);
+  kv = spillpq_cs_trap_payload[queue_idx];
+  HWDS_SET_TRAP_PAYLOAD(queue_idx, kv);
+}
+
 int sparc64_spillpq_context_switch( int from_idx, int to_idx)
 {
   int rv = 0;
-  int size = 0;
-  uint64_t kv;
 
   if ( from_idx < NUM_QUEUES && spillpq[from_idx].ops ) {
-    STAT_INC(from_idx, switches);
-    HWDS_GET_CURRENT_SIZE(from_idx, size);
-    HWDS_GET_PAYLOAD(from_idx, kv); // SAVE PAYLOAD
-    spillpq_cs_payload[from_idx] = kv;
-    HWDS_GET_TRAP_PAYLOAD(from_idx, kv); // SAVE PAYLOAD
-    spillpq_cs_trap_payload[from_idx] = kv;
-
-    // spill all of from_idx
-    rv = spillpq[from_idx].ops->spill(from_idx, size);
-    if ( rv != size ) {
-      printk("failed to spill whole queue!\n");
-    }
-    spillpq[from_idx].cs_count = rv;
+    rv = sparc64_spillpq_context_save(from_idx);
   }
   if ( to_idx < NUM_QUEUES && spillpq[to_idx].ops ) {
-    // Policy point: choose how much to fill
-    // fill up to cs_count[to_idx]; for SPILLPQ_POLICY_RT fill all
-    // otherwise filling nothing
-    HWDS_SET_CURRENT_ID(to_idx);
-    hwpq_context->current_qid = to_idx;
-    if ( spillpq[to_idx].policy.realtime ) {
-      spillpq[to_idx].ops->fill(to_idx, spillpq[to_idx].cs_count);
-    } else {
-      ; // do nothing
-    }
-    kv = spillpq_cs_payload[to_idx]; // RESTORE PAYLOAD
-    HWDS_SET_PAYLOAD(to_idx, kv);
-    kv = spillpq_cs_trap_payload[to_idx];
-    HWDS_SET_TRAP_PAYLOAD(to_idx, kv);
+    sparc64_spillpq_context_restore(to_idx);
   }
   return rv;
 }

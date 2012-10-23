@@ -33,7 +33,7 @@ void hwpqlib_initialize( int hwpq_id, int num_pqs )
   // initialize pq contexts
   for ( i = 0; i < num_pqs; i++ ) {
     pq_context[i].current_size = 0;
-    pq_context[i].allowed = false;
+    pq_context[i].allowed = true;
   }
 
   hwpqlib_context.pq_context = pq_context;
@@ -64,6 +64,12 @@ static inline int check_access(pq_id) {
     return HWPQLIB_STATUS_NOT_AVAILABLE;
   }
   return HWPQLIB_STATUS_OK;
+}
+
+static inline void evict(pq_id) {
+  if ( is_available(pq_id) ) {
+    sparc64_spillpq_context_save(pq_id);
+  }
 }
 
 uint64_t hwpqlib_insert( int pq_id, uint64_t kv ) {
