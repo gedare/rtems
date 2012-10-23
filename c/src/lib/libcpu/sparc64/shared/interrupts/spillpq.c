@@ -107,10 +107,8 @@ uint64_t sparc64_spillpq_pop(int queue_idx, uint64_t kv)
 int sparc64_spillpq_handle_failover(int queue_idx, uint32_t trap_context)
 {
   uint32_t trap_operation;
-  //uint32_t trap_idx;
   uint64_t kv;
   int rv = 0;
-  //trap_idx = ((trap_context)&(~0))>>20; // what is trying to be used?
   trap_operation = (trap_context)&~(~0 << (16 + 1)); // what is the op?
   
   HWDS_GET_PAYLOAD(queue_idx, kv);
@@ -196,21 +194,21 @@ int sparc64_spillpq_context_switch( int from_idx, int to_idx)
     }
     spillpq[from_idx].cs_count = rv;
   }
-  if ( trap_idx < NUM_QUEUES && spillpq[trap_idx].ops ) {
+  if ( to_idx < NUM_QUEUES && spillpq[to_idx].ops ) {
     // Policy point: choose how much to fill
-    // fill up to cs_count[trap_idx]; for SPILLPQ_POLICY_RT fill all
+    // fill up to cs_count[to_idx]; for SPILLPQ_POLICY_RT fill all
     // otherwise filling nothing
-    HWDS_SET_CURRENT_ID(trap_idx);
-    hwpq_context->current_qid = trap_idx;
-    if ( spillpq[trap_idx].policy.realtime ) {
-      spillpq[trap_idx].ops->fill(trap_idx, spillpq[trap_idx].cs_count);
+    HWDS_SET_CURRENT_ID(to_idx);
+    hwpq_context->current_qid = to_idx;
+    if ( spillpq[to_idx].policy.realtime ) {
+      spillpq[to_idx].ops->fill(to_idx, spillpq[to_idx].cs_count);
     } else {
       ; // do nothing
     }
-    kv = spillpq_cs_payload[trap_idx]; // RESTORE PAYLOAD
-    HWDS_SET_PAYLOAD(trap_idx, kv);
-    kv = spillpq_cs_trap_payload[trap_idx];
-    HWDS_SET_TRAP_PAYLOAD(trap_idx, kv);
+    kv = spillpq_cs_payload[to_idx]; // RESTORE PAYLOAD
+    HWDS_SET_PAYLOAD(to_idx, kv);
+    kv = spillpq_cs_trap_payload[to_idx];
+    HWDS_SET_TRAP_PAYLOAD(to_idx, kv);
   }
   return rv;
 }

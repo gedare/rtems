@@ -81,8 +81,8 @@ void sparc64_hwpq_exception_handler(
     case 4:
       trap_idx = ((trap_context)&(~0))>>20;
       // Policy point: Pinning
-      if ( from_idx < NUM_QUEUES && spillpq[from_idx].ops ) {
-        if ( spillpq[from_idx].policy.pinned ) {
+      if ( queue_idx < NUM_QUEUES && spillpq[queue_idx].ops ) {
+        if ( spillpq[queue_idx].policy.pinned ) {
           sparc64_spillpq_handle_failover(trap_idx, trap_context);
         }
       }
