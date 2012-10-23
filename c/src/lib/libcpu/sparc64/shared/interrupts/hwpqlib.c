@@ -56,6 +56,13 @@ static inline bool is_allowed( int pq_id ) {
   return hwpqlib_context.pq_context[pq_id].allowed;
 }
 
+static inline void evict(pq_id) {
+  if ( is_available(pq_id) ) {
+    sparc64_spillpq_context_save(pq_id);
+  }
+  hwpqlib_context.pq_context[pq_id].allowed = false;
+}
+
 static inline int check_access(pq_id) {
   if ( !is_allowed(pq_id) ) {
     return HWPQLIB_STATUS_NOT_ALLOWED;
@@ -63,13 +70,16 @@ static inline int check_access(pq_id) {
   if ( !is_available(pq_id) ) {
     return HWPQLIB_STATUS_NOT_AVAILABLE;
   }
-  return HWPQLIB_STATUS_OK;
-}
-
-static inline void evict(pq_id) {
-  if ( is_available(pq_id) ) {
-    sparc64_spillpq_context_save(pq_id);
+/*
+  if (hwpqlib_context.pq_context[pq_id].current_size > hwpqlib_context.hwpq_context.max_size * 2) {
+    evict(pq_id);
+    return HWPQLIB_STATUS_NOT_ALLOWED;
   }
+*/
+  if ( spillpq[pq_id].stats.extracts > 0 ) {
+    evict(pq_id);
+  }
+  return HWPQLIB_STATUS_OK;
 }
 
 uint64_t hwpqlib_insert( int pq_id, uint64_t kv ) {
@@ -79,7 +89,7 @@ uint64_t hwpqlib_insert( int pq_id, uint64_t kv ) {
   if ( status == HWPQLIB_STATUS_OK )
     HWDS_ENQUEUE(pq_id, kv_key(kv), kv_value(kv));
   else
-    rv = sparc64_spillpq_insert(pq_id, kv);
+    rv = sparc64_spillpq_insert(pq_id, kv); // FIXME: isr_disable?
   hwpqlib_context.pq_context[pq_id].current_size++;
   return rv;
 }
