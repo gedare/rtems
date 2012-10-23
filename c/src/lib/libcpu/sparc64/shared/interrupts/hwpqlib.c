@@ -67,6 +67,8 @@ static inline void set_size(int pq_id, int size) {
   sparc64_spillpq_hwpq_set_max_size(pq_id, size);
 }
 
+#define CSIZE hwpqlib_context.pq_context[pq_id].current_size
+#define MSIZE hwpqlib_context.hwpq_context.max_size
 static inline int check_access(int pq_id) {
   if ( !is_allowed(pq_id) ) {
     return HWPQLIB_STATUS_NOT_ALLOWED;
@@ -74,14 +76,26 @@ static inline int check_access(int pq_id) {
   if ( !is_available(pq_id) ) {
     return HWPQLIB_STATUS_NOT_AVAILABLE;
   }
-  if (hwpqlib_context.pq_context[pq_id].current_size > hwpqlib_context.hwpq_context.max_size * 3) {
+  /* When the ds size is overly large just use sw */
+  /*
+  if (CSIZE > MSIZE * 4) {
     evict(pq_id);
     return HWPQLIB_STATUS_NOT_ALLOWED;
   }
+  */
+  /* Unordered accesses are expensive, so penalize them. */
+  /*
   if ( spillpq[pq_id].stats.extracts > 0 ) {
     evict(pq_id);
     return HWPQLIB_STATUS_NOT_ALLOWED;
   }
+  */
+  /* Shrink the max size to reduce the cost of context saving */
+  /*
+  if ( spillpq[pq_id].stats.switches > 20 ) {
+    set_size(pq_id, MSIZE/2);
+  }
+  */
   return HWPQLIB_STATUS_OK;
 }
 
