@@ -63,6 +63,9 @@ static inline void evict(int pq_id) {
   hwpqlib_context.pq_context[pq_id].allowed = false;
 }
 
+static inline void set_size(int pq_id, int size) {
+  sparc64_spillpq_hwpq_set_max_size(pq_id, size);
+}
 
 static inline int check_access(int pq_id) {
   if ( !is_allowed(pq_id) ) {
