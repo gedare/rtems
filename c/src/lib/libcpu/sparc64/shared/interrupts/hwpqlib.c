@@ -56,14 +56,15 @@ static inline bool is_allowed( int pq_id ) {
   return hwpqlib_context.pq_context[pq_id].allowed;
 }
 
-static inline void evict(pq_id) {
+static inline void evict(int pq_id) {
   if ( is_available(pq_id) ) {
     sparc64_spillpq_context_save(pq_id);
   }
   hwpqlib_context.pq_context[pq_id].allowed = false;
 }
 
-static inline int check_access(pq_id) {
+
+static inline int check_access(int pq_id) {
   if ( !is_allowed(pq_id) ) {
     return HWPQLIB_STATUS_NOT_ALLOWED;
   }
