@@ -15,9 +15,16 @@ typedef enum {
   HWPQLIB_SPILLPQ_NONE
 } hwpqlib_spillpq_t;
 
+typedef enum {
+  HWPQLIB_STATUS_OK,
+  HWPQLIB_STATUS_NOT_ALLOWED,
+  HWPQLIB_STATUS_NOT_AVAILABLE
+} hwpqlib_status_t;
+
 typedef struct {
   int current_size;
   /* threads? */
+  bool allowed;
 } hwpqlib_pq_context_t;
 
 typedef struct {
@@ -36,9 +43,9 @@ void hwpqlib_initialize( int hwpq_id, int num_pqs );
 void hwpqlib_pq_initialize(int qid, spillpq_policy_t*,sparc64_spillpq_operations*, int size );
 
 // Interposition functions for PQ operations
-void hwpqlib_insert( int pq_id, int key, int value );
-uint64_t hwpqlib_first( int pq_id );
-uint64_t hwpqlib_pop( int pq_id );
-uint64_t hwpqlib_search( int pq_id, int key);
-uint64_t hwpqlib_extract( int pq_id, int key);
+uint64_t hwpqlib_insert( int pq_id, uint64_t kv );
+uint64_t hwpqlib_first( int pq_id, uint64_t unused );
+uint64_t hwpqlib_pop( int pq_id, uint64_t unused );
+uint64_t hwpqlib_search( int pq_id, uint64_t kv);
+uint64_t hwpqlib_extract( int pq_id, uint64_t kv);
 

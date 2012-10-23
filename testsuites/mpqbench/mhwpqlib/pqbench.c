@@ -4,6 +4,8 @@
 /* PQ implementation */
 #include <libcpu/hwpqlib.h> /* bad */
 
+#define ARG_TO_LONG(n) ((((long)n->key) << (sizeof(long)*4L)) | (long)n->val)
+
 /* test interface */
 void pq_initialize( rtems_task_argument tid, int size ) {
   if (hwpqlib_context.pq_context == NULL)
@@ -22,21 +24,21 @@ void pq_initialize( rtems_task_argument tid, int size ) {
 }
 
 void pq_insert( rtems_task_argument tid, long p ) {
-  hwpqlib_insert(tid, kv_key(p), kv_value(p));
+  hwpqlib_insert(tid, p);
 }
 
 long pq_first(  rtems_task_argument tid ) {
-  return hwpqlib_first( tid );
+  return hwpqlib_first( tid, 0UL );
 }
 
 long pq_pop( rtems_task_argument tid ) {
-  return hwpqlib_pop( tid );
+  return hwpqlib_pop( tid, 0UL );
 }
 
 long pq_search( rtems_task_argument tid, int key ) {
-  return hwpqlib_search(tid, key);
+  return hwpqlib_search(tid, (long)key<<(sizeof(long)*4L));
 }
 
 long pq_extract( rtems_task_argument tid, int key ) {
-  return hwpqlib_extract(tid, key);
+  return hwpqlib_extract(tid, (long)key<<(sizeof(long)*4L));
 }

@@ -33,6 +33,7 @@ void hwpqlib_initialize( int hwpq_id, int num_pqs )
   // initialize pq contexts
   for ( i = 0; i < num_pqs; i++ ) {
     pq_context[i].current_size = 0;
+    pq_context[i].allowed = true;
   }
 
   hwpqlib_context.pq_context = pq_context;
@@ -51,51 +52,61 @@ static inline bool is_available( int pq_id ) {
   }
 }
 
-static inline bool check_access(pq_id) {
-  if ( !is_available(pq_id) ){
-    return false;
-  }
-  return true;
+static inline bool is_allowed( int pq_id ) {
+  return hwpqlib_context.pq_context[pq_id].allowed;
 }
 
-void hwpqlib_insert( int pq_id, int key, int value ) {
+static inline int check_access(pq_id) {
+  if ( !is_allowed(pq_id) ) {
+    return HWPQLIB_STATUS_NOT_ALLOWED;
+  }
+  if ( !is_available(pq_id) ) {
+    return HWPQLIB_STATUS_NOT_AVAILABLE;
+  }
+  return HWPQLIB_STATUS_OK;
+}
+
+uint64_t hwpqlib_insert( int pq_id, uint64_t rv ) {
+  hwpqlib_status_t status;
   hwpqlib_context.pq_context[pq_id].current_size++;
-  if ( check_access(pq_id) ) {
-    HWDS_ENQUEUE(pq_id, key, value);
-  }
+  status = check_access(pq_id);
+  if ( status == HWPQLIB_STATUS_OK )
+    HWDS_ENQUEUE(pq_id, kv_key(rv), kv_value(rv));
+  else
+    sparc64_spillpq_insert(pq_id, rv);
 }
 
-uint64_t hwpqlib_first( int pq_id ) {
-  uint64_t kv;
-  HWDS_FIRST(pq_id, kv);
-  return kv;
+uint64_t hwpqlib_first( int pq_id, uint64_t kv ) {
+  uint64_t rv;
+  HWDS_FIRST(pq_id, rv);
+  return rv;
 }
 
-uint64_t hwpqlib_pop( int pq_id ) {
-  uint64_t kv;
+uint64_t hwpqlib_pop( int pq_id, uint64_t kv ) {
+  uint64_t rv;
   int key;
   // TODO: why not just one op for pop?
-  HWDS_FIRST(pq_id, kv);
-  if ( kv != (uint64_t)-1 ) {
-    key = kv_key(kv);
+  HWDS_FIRST(pq_id, rv);
+  if ( rv != (uint64_t)-1 ) {
+    key = kv_key(rv);
     hwpqlib_context.pq_context[pq_id].current_size--;
-    HWDS_EXTRACT(pq_id, key, kv);
+    HWDS_EXTRACT(pq_id, key, rv);
   }
-  return kv;
+  return rv;
 }
 
-uint64_t hwpqlib_search( int pq_id, int key) {
-  uint64_t kv;
-  HWDS_SEARCH(pq_id, key, kv);
-  return kv;
+uint64_t hwpqlib_search( int pq_id, uint64_t kv) {
+  uint64_t rv;
+  HWDS_SEARCH(pq_id, kv_key(kv), rv);
+  return rv;
 }
 
-uint64_t hwpqlib_extract( int pq_id, int key) {
-  uint64_t kv;
-  HWDS_EXTRACT(pq_id, key, kv);
-  if ( kv == (uint64_t)-1 ) {
-    HWDS_GET_PAYLOAD(pq_id, kv);
+uint64_t hwpqlib_extract( int pq_id, uint64_t kv) {
+  uint64_t rv;
+  HWDS_EXTRACT(pq_id, kv_key(kv), rv);
+  if ( rv == (uint64_t)-1 ) {
+    HWDS_GET_PAYLOAD(pq_id, rv);
   }
-  return kv;
+  return rv;
 }
 
