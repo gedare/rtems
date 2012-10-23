@@ -66,14 +66,14 @@ static inline int check_access(pq_id) {
   return HWPQLIB_STATUS_OK;
 }
 
-uint64_t hwpqlib_insert( int pq_id, uint64_t rv ) {
+uint64_t hwpqlib_insert( int pq_id, uint64_t kv ) {
   hwpqlib_status_t status;
   hwpqlib_context.pq_context[pq_id].current_size++;
   status = check_access(pq_id);
   if ( status == HWPQLIB_STATUS_OK )
-    HWDS_ENQUEUE(pq_id, kv_key(rv), kv_value(rv));
+    HWDS_ENQUEUE(pq_id, kv_key(kv), kv_value(kv));
   else
-    sparc64_spillpq_insert(pq_id, rv);
+    sparc64_spillpq_insert(pq_id, kv);
 }
 
 uint64_t hwpqlib_first( int pq_id, uint64_t kv ) {
