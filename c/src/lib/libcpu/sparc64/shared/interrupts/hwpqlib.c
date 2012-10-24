@@ -59,8 +59,8 @@ static inline bool is_allowed( int pq_id ) {
 static inline void evict(int pq_id) {
   ISR_Level level;
   _ISR_Disable(level);
-    sparc64_spillpq_context_save(pq_id);
-    spillpq[pq_id].policy.evicted = true;
+    if ( sparc64_spillpq_context_save(pq_id) >= 0 )
+      spillpq[pq_id].policy.evicted = true;
   _ISR_Enable(level);
 }
 
