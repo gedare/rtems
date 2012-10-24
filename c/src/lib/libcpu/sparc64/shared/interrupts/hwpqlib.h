@@ -24,7 +24,6 @@ typedef enum {
 typedef struct {
   int current_size;
   /* threads? */
-  bool allowed;
 } hwpqlib_pq_context_t;
 
 typedef struct {

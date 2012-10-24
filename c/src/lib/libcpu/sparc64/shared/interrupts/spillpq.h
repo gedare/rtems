@@ -49,6 +49,7 @@ typedef struct {
   bool realtime;
   
   bool pinned; // this hwds does not get switched involuntarily
+  bool evicted; // this ds is not permitted to use the hwds
 
   int spill_from;
 

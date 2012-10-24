@@ -33,7 +33,6 @@ void hwpqlib_initialize( int hwpq_id, int num_pqs )
   // initialize pq contexts
   for ( i = 0; i < num_pqs; i++ ) {
     pq_context[i].current_size = 0;
-    pq_context[i].allowed = true;
   }
 
   hwpqlib_context.pq_context = pq_context;
@@ -46,6 +45,7 @@ void hwpqlib_pq_initialize(int qid, spillpq_policy_t *policy,
   sparc64_spillpq_initialize(qid, policy, ops, size);
 }
 
+/* I don't think this is thread-safe. */
 static inline bool is_available( int pq_id ) {
   if ( hwpqlib_context.hwpq_context.current_qid == pq_id ) {
     return true;
@@ -53,14 +53,15 @@ static inline bool is_available( int pq_id ) {
 }
 
 static inline bool is_allowed( int pq_id ) {
-  return hwpqlib_context.pq_context[pq_id].allowed;
+  return spillpq[pq_id].policy.evicted;
 }
 
 static inline void evict(int pq_id) {
-  if ( is_available(pq_id) ) {
+  ISR_Level level;
+  _ISR_Disable(level);
     sparc64_spillpq_context_save(pq_id);
-  }
-  hwpqlib_context.pq_context[pq_id].allowed = false;
+    spillpq[pq_id].policy.evicted = true;
+  _ISR_Enable(level);
 }
 
 static inline void set_size(int pq_id, int size) {
@@ -73,9 +74,11 @@ static inline int check_access(int pq_id) {
   if ( !is_allowed(pq_id) ) {
     return HWPQLIB_STATUS_NOT_ALLOWED;
   }
+  /*
   if ( !is_available(pq_id) ) {
     return HWPQLIB_STATUS_NOT_AVAILABLE;
   }
+  */
   /* When the ds size is overly large just use sw */
   /*
   if (CSIZE > MSIZE * 4) {
@@ -84,12 +87,10 @@ static inline int check_access(int pq_id) {
   }
   */
   /* Unordered accesses are expensive, so penalize them. */
-  /*
   if ( spillpq[pq_id].stats.extracts > 0 ) {
     evict(pq_id);
     return HWPQLIB_STATUS_NOT_ALLOWED;
   }
-  */
   /* Shrink the max size to reduce the cost of context saving */
   /*
   if ( spillpq[pq_id].stats.switches > 20 ) {

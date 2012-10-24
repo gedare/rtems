@@ -39,6 +39,7 @@ void initialize(rtems_task_argument tid ) {
   for ( i = 0; i < NUM_TASKS; i++ ) {
     pqbench_policy[i].realtime = false;
     pqbench_policy[i].pinned = false;
+    pqbench_policy[i].evicted = false;
     pqbench_policy[i].spill_from = 0;
     pqbench_policy[i].fill_max = 0;
     pqbench_policy[i].spill_max = 0;
