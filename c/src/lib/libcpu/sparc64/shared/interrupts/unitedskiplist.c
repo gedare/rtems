@@ -395,7 +395,7 @@ Chain_Node* sparc64_unitedskiplist_spill_node(
 {
   uint64_t kv;
 
-  HWDS_SPILL(queue_idx, kv);
+  HWDS_SPILL(queue_idx, spillpq[queue_idx].policy.spill_from, kv);
   if (!kv) {
     DPRINTK("%d\tNothing to spill!\n",queue_idx);
   } else {

@@ -144,7 +144,7 @@ sparc64_splitsplay_spill_node(int qid)
 {
   uint64_t kv;
 
-  HWDS_SPILL(qid, kv);
+  HWDS_SPILL(qid, spillpq[qid].policy.spill_from, kv);
   if (!kv) {
     DPRINTK("%d\tNothing to spill!\n", qid);
   } else {

@@ -252,15 +252,15 @@ extern "C" {
         : "r" (_queue) : "l0" ); \
   } while (0)  
 
-// spill from tail
-#define HWDS_SPILL( _queue, _ptr ) \
+// spill with _policy 0 for tail, 1 for lru..
+#define HWDS_SPILL( _queue, _policy, _ptr ) \
   do { \
     __asm__ __volatile__ ( \
         "sll  %1, 20, %%l0\n\t" \
         "or   %%l0, 7, %%l0\n\t" \
-        "impdep2  %%g0, %%l0, %0" \
+        "impdep2  %2, %%l0, %0" \
         : "=r" (_ptr) \
-        : "r" (_queue) : "l0" ); \
+        : "r" (_queue), "r" (_policy) : "l0" ); \
   } while (0)  
 
 // fill from spill region

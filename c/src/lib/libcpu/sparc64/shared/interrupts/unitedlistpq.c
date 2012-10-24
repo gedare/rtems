@@ -182,7 +182,7 @@ Chain_Node* sparc64_unitedlistpq_spill_node(
   //Chain_Node *iter;
   //iter = _Chain_Last(spill_pq);
 
-  HWDS_SPILL(queue_idx, kv);
+  HWDS_SPILL(queue_idx, spillpq[queue_idx].policy.spill_from, kv);
   if (!kv) {
     DPRINTK("%d\tNothing to spill!\n",queue_idx);
     return 0;

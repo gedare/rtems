@@ -48,8 +48,9 @@ typedef struct {
   // shorthand for a realtime policy.
   bool realtime;
   
-  // specify that once loaded this hwds does not get switched involuntarily
-  bool pinned;
+  bool pinned; // this hwds does not get switched involuntarily
+
+  int spill_from;
 
   // upper limit for filling, spilling
   int fill_max;
