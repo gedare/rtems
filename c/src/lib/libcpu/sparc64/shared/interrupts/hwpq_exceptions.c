@@ -3,7 +3,7 @@
 #include "spillpq.h"
 #include <rtems/bspIo.h>
 
-hwpq_context_t hwpq_context_default;
+hwpq_context_t hwpq_context_default = {0,-1};
 
 void sparc64_hwpq_initialize()
 {
@@ -80,13 +80,9 @@ void sparc64_hwpq_exception_handler(
       break;
     case 4:
       trap_idx = ((trap_context)&(~0))>>20;
-      // Policy point: Pinning
-      if ( queue_idx < NUM_QUEUES && spillpq[queue_idx].ops ) {
-        if ( spillpq[queue_idx].policy.pinned ) {
-          sparc64_spillpq_handle_failover(trap_idx, trap_context);
-        }
+      if ( sparc64_spillpq_context_switch(queue_idx, trap_idx) < 0 ) {
+        sparc64_spillpq_handle_failover(trap_idx, trap_context);
       }
-      sparc64_spillpq_context_switch(queue_idx, trap_idx);
       break;
 
     default:

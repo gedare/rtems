@@ -14,7 +14,7 @@ int sparc64_spillpq_hwpq_context_initialize( int hwpq_id, hwpq_context_t *ctx )
 {
   int i;
   if ( hwpq_context ) {
-    *ctx = *hwpq_context;
+    *ctx = *hwpq_context; // does this make sense??
   } else {
     uint64_t reg;
     HWDS_GET_SIZE_LIMIT(hwpq_id, reg);
@@ -177,6 +177,13 @@ int sparc64_spillpq_context_save(int queue_idx) {
   uint64_t kv;
   int rv;
   int size = 0;
+  if ( queue_idx >= 0 && queue_idx < NUM_QUEUES && spillpq[queue_idx].ops ) {
+    if ( spillpq[queue_idx].policy.pinned ) {
+      return -1;
+    }
+  } else {
+    return 0;
+  }
   STAT_INC(queue_idx, switches);
   HWDS_GET_CURRENT_SIZE(queue_idx, size);
   HWDS_GET_PAYLOAD(queue_idx, kv); // SAVE PAYLOAD
@@ -190,6 +197,8 @@ int sparc64_spillpq_context_save(int queue_idx) {
     printk("failed to spill whole queue!\n");
   }
   spillpq[queue_idx].cs_count = rv;
+  HWDS_SET_CURRENT_ID(-1);
+  hwpq_context->current_qid = -1;
 
   return rv;
 }
@@ -199,6 +208,10 @@ int sparc64_spillpq_context_restore(int queue_idx) {
   // Policy point: choose how much to fill
   // fill up to cs_count[queue_idx]; for SPILLPQ_POLICY_RT fill all
   // otherwise filling nothing
+  if ( queue_idx >= 0 && queue_idx < NUM_QUEUES && spillpq[queue_idx].ops ) {
+  } else {
+    return -2;
+  }
   HWDS_SET_CURRENT_ID(queue_idx);
   hwpq_context->current_qid = queue_idx;
   if ( spillpq[queue_idx].policy.realtime ) {
@@ -215,13 +228,19 @@ int sparc64_spillpq_context_restore(int queue_idx) {
 int sparc64_spillpq_context_switch( int from_idx, int to_idx)
 {
   int rv = 0;
+  int cq = hwpq_context->current_qid;
+  if ( from_idx == to_idx )
+    return rv;
 
-  if ( from_idx < NUM_QUEUES && spillpq[from_idx].ops ) {
-    rv = sparc64_spillpq_context_save(from_idx);
-  }
-  if ( to_idx < NUM_QUEUES && spillpq[to_idx].ops ) {
+  if ( cq == to_idx )
+    return rv;
+
+  if ( cq >= 0 && cq < NUM_QUEUES && cq != from_idx )
+    return -1;
+
+  rv = sparc64_spillpq_context_save(from_idx);
+  if ( rv >= 0 )
     sparc64_spillpq_context_restore(to_idx);
-  }
   return rv;
 }
 
