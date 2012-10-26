@@ -212,6 +212,9 @@ int sparc64_spillpq_context_restore(int queue_idx) {
   } else {
     return -2;
   }
+  if ( spillpq[queue_idx].policy.evicted ) {
+    return -1;
+  }
   HWDS_SET_CURRENT_ID(queue_idx);
   hwpq_context->current_qid = queue_idx;
   if ( spillpq[queue_idx].policy.realtime ) {
@@ -223,6 +226,7 @@ int sparc64_spillpq_context_restore(int queue_idx) {
   HWDS_SET_PAYLOAD(queue_idx, kv);
   kv = spillpq_cs_trap_payload[queue_idx];
   HWDS_SET_TRAP_PAYLOAD(queue_idx, kv);
+  return 0;
 }
 
 int sparc64_spillpq_context_switch( int from_idx, int to_idx)
@@ -238,9 +242,13 @@ int sparc64_spillpq_context_switch( int from_idx, int to_idx)
   if ( cq >= 0 && cq < NUM_QUEUES && cq != from_idx )
     return -1;
 
+  if ( spillpq[to_idx].policy.evicted ) {
+    return -1;
+  }
+
   rv = sparc64_spillpq_context_save(from_idx);
   if ( rv >= 0 )
-    sparc64_spillpq_context_restore(to_idx);
+    rv = sparc64_spillpq_context_restore(to_idx);
   return rv;
 }
 

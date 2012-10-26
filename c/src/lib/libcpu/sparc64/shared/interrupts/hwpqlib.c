@@ -47,9 +47,10 @@ void hwpqlib_pq_initialize(int qid, spillpq_policy_t *policy,
 
 /* I don't think this is thread-safe. */
 static inline bool is_available( int pq_id ) {
-  if ( hwpqlib_context.hwpq_context.current_qid == pq_id ) {
+  int cq = hwpqlib_context.hwpq_context.current_qid;
+  if ( cq < 0 || cq > hwpqlib_context.num_pqs || cq == pq_id )
     return true;
-  }
+  return !(spillpq[cq].policy.pinned);
 }
 
 static inline bool is_allowed( int pq_id ) {
@@ -74,11 +75,9 @@ static inline int check_access(int pq_id) {
   if ( !is_allowed(pq_id) ) {
     return HWPQLIB_STATUS_NOT_ALLOWED;
   }
-  /*
   if ( !is_available(pq_id) ) {
     return HWPQLIB_STATUS_NOT_AVAILABLE;
   }
-  */
   /* When the ds size is overly large just use sw */
   /*
   if (CSIZE > MSIZE * 4) {
@@ -87,10 +86,11 @@ static inline int check_access(int pq_id) {
   }
   */
   /* Unordered accesses are expensive, so penalize them. */
-  if ( spillpq[pq_id].stats.extracts > 0 ) {
+  /*
+  if ( spillpq[pq_id].stats.extracts > 1 ) {
     evict(pq_id);
     return HWPQLIB_STATUS_NOT_ALLOWED;
-  }
+  }*/
   /* Shrink the max size to reduce the cost of context saving */
   /*
   if ( spillpq[pq_id].stats.switches > 20 ) {
