@@ -100,15 +100,19 @@ static inline int check_access(int pq_id) {
   return HWPQLIB_STATUS_OK;
 }
 
+//#define GAB_EXC
 uint64_t hwpqlib_insert( int pq_id, uint64_t kv ) {
   int amt = 1;
   uint64_t rv = 0;
   int size;
   hwpqlib_status_t status = check_access(pq_id);
   if ( status == HWPQLIB_STATUS_OK ) {
+#if defined(GAB_EXC)
     HWDS_GET_CURRENT_SIZE(pq_id, size);
     if ( size == MSIZE )
-      spillpq[pq_id].ops->spill(pq_id, amt); // FIXME
+      sparc64_spillpq_handle_spill(pq_id);
+//      spillpq[pq_id].ops->spill(pq_id, amt); // FIXME
+#endif
     HWDS_ENQUEUE(pq_id, kv_key(kv), kv_value(kv));
   }
   else
@@ -147,9 +151,24 @@ uint64_t hwpqlib_pop( int pq_id, uint64_t kv ) {
 
 uint64_t hwpqlib_search( int pq_id, uint64_t kv) {
   uint64_t rv;
+  int last_key, key;
   hwpqlib_status_t status = check_access(pq_id);
-  if ( status == HWPQLIB_STATUS_OK )
-    HWDS_SEARCH(pq_id, kv_key(kv), rv);
+  if ( status == HWPQLIB_STATUS_OK ) {
+#if defined(GAB_EXC)
+    key = kv_key(kv);
+    if ( CSIZE > MSIZE ) {
+      HWDS_LAST_PRI(pq_id, last_key);
+    } else {
+      last_key = key;
+    }
+    if ( key <= last_key )
+      HWDS_SEARCH(pq_id, key, rv);
+    else
+      rv = sparc64_spillpq_search(pq_id, kv);
+#else
+      HWDS_SEARCH(pq_id, kv_key(kv), rv);
+#endif
+  }
   else
     rv = sparc64_spillpq_search(pq_id, kv);
   return rv;
@@ -157,15 +176,34 @@ uint64_t hwpqlib_search( int pq_id, uint64_t kv) {
 
 uint64_t hwpqlib_extract( int pq_id, uint64_t kv) {
   uint64_t rv;
+  int last_key, key;
   hwpqlib_status_t status = check_access(pq_id);
   if ( status == HWPQLIB_STATUS_OK ) {
-    HWDS_EXTRACT(pq_id, kv_key(kv), rv);
-    if ( rv == (uint64_t)-1 ) {
-      HWDS_GET_PAYLOAD(pq_id, rv);
+#if defined(GAB_EXC)
+    key = kv_key(kv);
+    if ( CSIZE > MSIZE ) {
+      HWDS_LAST_PRI(pq_id, last_key);
+    } else {
+      last_key = key;
     }
+    if ( key <= last_key ) {
+      HWDS_EXTRACT(pq_id, key, rv);
+      if ( rv == (uint64_t)-1 ) {
+        HWDS_GET_PAYLOAD(pq_id, rv);
+      }
+    } else {
+      rv = sparc64_spillpq_extract(pq_id, kv);
+    }
+#else
+      HWDS_EXTRACT(pq_id, kv_key(kv), rv);
+      if ( rv == (uint64_t)-1 ) {
+        HWDS_GET_PAYLOAD(pq_id, rv);
+      }
+#endif
   } else {
     rv = sparc64_spillpq_extract(pq_id, kv);
   }
+
   return rv;
 }
 
