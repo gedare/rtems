@@ -36,6 +36,7 @@ static int measure( rtems_task_argument tid, int current_op );
 void initialize(rtems_task_argument tid ) {
   int i;
   // FIXME: separate for each task. generate in script engine
+  /*
   for ( i = 0; i < NUM_TASKS; i++ ) {
     pqbench_policy[i].realtime = false;
     pqbench_policy[i].pinned = false;
@@ -44,6 +45,7 @@ void initialize(rtems_task_argument tid ) {
     pqbench_policy[i].fill_max = 0;
     pqbench_policy[i].spill_max = 0;
   }
+  */
   /* initialize structures */
   pq_initialize(tid, PQ_MAX_SIZE);
 }
