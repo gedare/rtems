@@ -53,7 +53,7 @@ static inline bool is_available( int pq_id ) {
 }
 
 static inline bool is_allowed( int pq_id ) {
-  return spillpq[pq_id].policy.evicted;
+  return !(spillpq[pq_id].policy.evicted);
 }
 
 static inline void evict(int pq_id) {
