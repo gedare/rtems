@@ -103,9 +103,14 @@ static inline int check_access(int pq_id) {
 uint64_t hwpqlib_insert( int pq_id, uint64_t kv ) {
   int amt = 1;
   uint64_t rv = 0;
+  int size;
   hwpqlib_status_t status = check_access(pq_id);
-  if ( status == HWPQLIB_STATUS_OK )
+  if ( status == HWPQLIB_STATUS_OK ) {
+    HWDS_GET_CURRENT_SIZE(pq_id, size);
+    if ( size == MSIZE )
+      spillpq[pq_id].ops->spill(pq_id, amt); // FIXME
     HWDS_ENQUEUE(pq_id, kv_key(kv), kv_value(kv));
+  }
   else
     rv = sparc64_spillpq_insert(pq_id, kv); // FIXME: isr_disable?
   hwpqlib_context.pq_context[pq_id].current_size++;
