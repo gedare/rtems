@@ -174,8 +174,10 @@ int ofw_cpu(uint16_t mid_mask, uintptr_t physmem_start)
 int ofw_get_physmem_start(uintptr_t *start)
 {
 	uint32_t memreg[4];
-	if (ofw_get_property(ofw_memory, "reg", &memreg, sizeof(memreg)) <= 0)
+	if (ofw_get_property(ofw_memory, "reg", &memreg, sizeof(memreg)) <= 0) {
+	  *start = 0;
 		return 0;
+  }
 	
 	*start = (((uint64_t) memreg[0]) << 32) | memreg[1];
 	return 1;

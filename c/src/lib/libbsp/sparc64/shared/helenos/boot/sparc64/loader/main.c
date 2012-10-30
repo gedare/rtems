@@ -282,12 +282,12 @@ void bootstrap(void)
 	
 	if (!ofw_get_physmem_start(&bootinfo.physmem_start)) {
 		printk("Error: unable to get start of physical memory.\n");
-		halt();
+	//	halt();
 	}
 	
 	if (!ofw_memmap(&bootinfo.memmap)) {
 		printk("Error: unable to get memory map, halting.\n");
-		halt();
+	//	halt();
 	}
 	
 	if (bootinfo.memmap.total == 0) {
