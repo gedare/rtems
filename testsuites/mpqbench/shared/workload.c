@@ -47,7 +47,7 @@ void initialize(rtems_task_argument tid ) {
   }
   */
   /* initialize structures */
-  pq_initialize(tid, PQ_MAX_SIZE);
+  pq_initialize(tid, PQ_SIZE[tid]);
 }
 
 void warmup( rtems_task_argument tid ) {
