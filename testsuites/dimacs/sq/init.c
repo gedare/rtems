@@ -29,7 +29,7 @@ rtems_task Init(
 {
   
   printf("Unpacking tar filesystem\nThis may take awhile...\n");
-  if(Untar_FromMemory(0x100000000UL, 4136960) != 0) {
+  if(Untar_FromMemory(0x100000000UL, 5765120) != 0) {
     printf("Can't unpack tar filesystem\n");
     exit(1);
   }
@@ -38,8 +38,8 @@ rtems_task Init(
 
   char *argv[] = {
     "sq.exe",
-    "/USA-road-d.BAY.gr.gz",
-    "/USA-road-d.BAY.ss.gz",
+    "/USA-road-d.COL.gr.gz",
+    "/USA-road-d.COL.ss.gz",
     "ignored.txt"
   };
   main(4,argv);

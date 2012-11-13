@@ -9,7 +9,7 @@
 #include <string.h>
 #include <rtems.h>
 
-#define CHECKSUM
+//#define CHECKSUM
 
 #define MODUL ((long long) 1 << 62)
 

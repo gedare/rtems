@@ -8,6 +8,11 @@
 
 #include <libcpu/spillpq.h>     /* bad */
 #include <libcpu/unitedlistpq.h> /* bad */
+#include <libcpu/splitheappq.h> /* bad */
+#include <libcpu/hwpqlib.h>
+
+#define USE_LIBPQ
+
 
 //------------------------------------------------------------
 // HWPQ::Init()
@@ -29,7 +34,12 @@ void HWPQ::reInit()
 HWPQ::HWPQ(int size)
 {
   // FIXME: queue number, ops
+#if defined(USE_LIBPQ)
+  hwpqlib_initialize(0, 1);
+  hwpqlib_pq_initialize(0, SPILLPQ_POLICY_DEFAULT, &sparc64_splitheappq_ops, size);
+#else
   sparc64_spillpq_initialize(4, SPILLPQ_POLICY_DEFAULT, &sparc64_unitedlistpq_ops, size);
+#endif
   Init();
 }
 
@@ -47,23 +57,34 @@ HWPQ::~HWPQ()
 Node *HWPQ::Enqueue(Node *node)
 {
   node->where = IN_HEAP;
+#if defined(USE_LIBPQ)
+  hwpqlib_insert(0, NODE_TO_KV(node));
+#else
   HWDS_ENQUEUE(4, node->dist, node);
+#endif
   return node; 
 }
 
 Node *HWPQ::Update(Node *node, int dist)
 {
-  uint64_t kv;
+  uint64_t kv, kv2;
   int key;
   kv = NODE_TO_KV(node);
   key = KV_TO_K(kv);
+#if defined(USE_LIBPQ)
+  //kv2 = hwpqlib_extract(4, kv);
+  //assert(kv == kv2);
+  node->dist = dist;
+  hwpqlib_insert(0, NODE_TO_KV(node));
+#else
   HWDS_EXTRACT(4, key, kv); // TODO: why not one op for update prio?
   if ( kv == (uint64_t)-1 ) {
     HWDS_GET_PAYLOAD(4, kv);
-    assert(NODE_TO_KV(node) == kv);
+    //assert(NODE_TO_KV(node) == kv);
   }
   node->dist = dist;
   HWDS_ENQUEUE(4, node->dist, node);
+#endif
   return node;
 }
 
@@ -75,7 +96,17 @@ Node *HWPQ::Update(Node *node, int dist)
 Node *HWPQ::PopMin()
 {
   uint64_t kv;
+  Node *node;
   int key;
+#if defined(USE_LIBPQ)
+  do {
+    kv = hwpqlib_pop( 0, 0UL );
+    node = (Node*)KV_TO_V(kv);
+    key = (int)KV_TO_K(kv);
+  } while ( kv != (uint64_t)-1 && node->dist != key );
+  if ( kv == (uint64_t)-1 )
+    kv = 0UL;
+#else
   HWDS_FIRST( 4, kv );
   if (kv != (uint64_t)-1 ) {
     uint64_t kv2;
@@ -84,6 +115,7 @@ Node *HWPQ::PopMin()
   }
   else
     return NULL;
+#endif
   return (Node*)KV_TO_V(kv); // FIXME: truncates to 32 bits..
 }
 

@@ -56,7 +56,7 @@ rtems_task Init(
  *
  * Upper bound on space: PQ_MAX_SIZE * sizeof(pq_node)
  */
-#define CONFIGURE_MEMORY_OVERHEAD (16384)
+#define CONFIGURE_MEMORY_OVERHEAD (16384*2)
 
 #include <rtems/confdefs.h>
 
