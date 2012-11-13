@@ -13,20 +13,15 @@
 #include "rtems/chain.h"
 #include "rtems/rtems/types.h"
 
-typedef struct {
-  int key;
-  int val;
-} pq_node;
-
 typedef struct _splay_tree_node splay_tree_node;
 struct _splay_tree_node
 {
     splay_tree_node  * leftlink;
     splay_tree_node  * rightlink;
     splay_tree_node  * uplink;
-    int    cnt;
 
     int key;
+    int val;
 };
 
 typedef struct
@@ -34,7 +29,7 @@ typedef struct
     splay_tree_node  * root;    /* root node */
 
     /* Statistics, not strictly necessary, but handy for tuning  */
-
+#if defined(SPLAY_STATS)
     int    lookups;  /* number of splookup()s */
     int    lkpcmps;  /* number of lookup comparisons */
     
@@ -43,20 +38,17 @@ typedef struct
     
     int    splays;
     int    splayloops;
-
+#endif
 } splay_tree;
 
 typedef struct {
   rtems_chain_node    link;
   splay_tree_node     st_node;
-  pq_node             data;
   rtems_id            part_id;
 } node;
 
 // container-of magic
-#define PQ_NODE_TO_NODE(hn) \
-  ((node*)((uintptr_t)hn - ((uintptr_t)(&((node *)0)->data))))
-#define PQ_NODE_TO_KV(n) ((((long)n->key) << (sizeof(long)*4L)) | (long)n->val)
+#define ST_NODE_TO_KV(n) ((((long)n->key) << (sizeof(long)*4L)) | (long)n->val)
 
 #define ST_NODE_TO_NODE(sn) \
   ((node*)((uintptr_t)sn - ((uintptr_t)(&((node *)0)->st_node))))

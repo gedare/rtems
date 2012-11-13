@@ -25,6 +25,7 @@ void free_node(rtems_task_argument tid, node *n) {
 
 static void _Splay_Print( splay_tree *the_tree )
 {
+#if defined(SPLAY_STATS)
   printf("Splay Tree Stats\n\t");
   printf("lookups:\t%d\n", the_tree->lookups);
   printf("lkpcmps:\t%d\n", the_tree->lkpcmps);
@@ -32,6 +33,7 @@ static void _Splay_Print( splay_tree *the_tree )
   printf("enqcmps:\t%d\n", the_tree->enqcmps);
   printf("splays:\t%d\n", the_tree->splays);
   printf("splayloops:\t%d\n", the_tree->splayloops);
+#endif
 }
 /*
  *
@@ -105,7 +107,9 @@ static splay_tree_node * spenq( splay_tree_node *n, splay_tree *q )
 
   int key;
 
+#if defined(SPLAY_STATS)
   q->enqs++;
+#endif
   n->uplink = NULL;
   next = q->root;
   q->root = n;
@@ -114,7 +118,9 @@ static splay_tree_node * spenq( splay_tree_node *n, splay_tree *q )
   {
     n->leftlink = NULL;
     n->rightlink = NULL;
+#if defined(SPLAY_STATS)
     n->cnt++;
+#endif
     return n;
   }
   
@@ -127,7 +133,9 @@ static splay_tree_node * spenq( splay_tree_node *n, splay_tree *q )
      splayed trees resulting from splitting on n->key;
      note that the children will be reversed! */
 
+#if defined(SPLAY_STATS)
   q->enqcmps++;
+#endif
 
   /* figure out which side to start on */
   if ( next->key > key )
@@ -146,7 +154,9 @@ one:  /* assert next->key <= key */
       goto done;  /* job done, entire tree split */
     }
 
+#if defined(SPLAY_STATS)
     q->enqcmps++;
+#endif
     if( temp->key > key )
     {
       left->rightlink = next;
@@ -171,7 +181,9 @@ one:  /* assert next->key <= key */
       goto done;  /* job done, entire tree split */
     }
 
+#if defined(SPLAY_STATS)
     q->enqcmps++;
+#endif
 
   } while( next->key <= key );  /* change sides */
 
@@ -188,7 +200,9 @@ two:  /* assert next->key > key */
       goto done;  /* job done, entire tree split */
     }
 
+#if defined(SPLAY_STATS)
     q->enqcmps++;
+#endif
     if( temp->key <= key )
     {
       right->leftlink = next;
@@ -212,7 +226,9 @@ two:  /* assert next->key > key */
       goto done;  /* job done, entire tree split */
     }
 
+#if defined(SPLAY_STATS)
     q->enqcmps++;
+#endif
 
   } while( next->key > key );  /* change sides */
 
@@ -224,7 +240,9 @@ done:  /* split is done, branches of n need reversal */
   n->leftlink = n->rightlink;
   n->rightlink = temp;
 
+#if defined(SPLAY_STATS)
   n->cnt++;
+#endif
   return( n );
 
 } /* spenq */
@@ -460,18 +478,24 @@ static void splay( splay_tree_node *n, splay_tree *q )
   splay_tree_node * left;  /* the top of left subtree being built */
   splay_tree_node * right;  /* the top of right subtree being built */
 
+#if defined(SPLAY_STATS)
   n->cnt++;  /* bump reference count */
+#endif
 
   left = n->leftlink;
   right = n->rightlink;
   prev = n;
   up = prev->uplink;
 
+#if defined(SPLAY_STATS)
   q->splays++;
+#endif
 
   while( up != NULL )
   {
+#if defined(SPLAY_STATS)
     q->splayloops++;
+#endif
 
     /* walk up the tree towards the root, splaying all to the left of
        n into the left subtree, all to right into the right subtree */
@@ -652,30 +676,27 @@ void splay_initialize(rtems_task_argument tid, int size ) {
   for ( i = 0; i < size; i++ ) {
     rtems_chain_append(&freelist[tid], &the_nodes[i][tid].link);
   }
-
+#if defined(SPLAY_STATS)
   the_tree[tid].lookups = 0;
   the_tree[tid].lkpcmps = 0;
   the_tree[tid].enqs = 0;
   the_tree[tid].enqcmps = 0;
   the_tree[tid].splays = 0;
   the_tree[tid].splayloops = 0;
+#endif
   the_tree[tid].root = NULL;
 }
 
 void splay_insert( rtems_task_argument tid, long kv ) {
   node *n = alloc_node(tid);
-  pq_node *pn = &n->data;
-  pn->key = kv_key(kv);
-  pn->val = kv_value(kv);
-  n->st_node.key = pn->key;
+  n->st_node.key = kv_key(kv);
+  n->st_node.val = kv_value(kv);
   spenq( &n->st_node, &the_tree[tid] );
 }
 
 long splay_min(rtems_task_argument tid ) {
   long kv;
   splay_tree_node *stn;
-  node *n;
-  pq_node *p;
 
   stn = spdeq( &the_tree[tid].root );
 
@@ -689,10 +710,7 @@ long splay_min(rtems_task_argument tid ) {
   the_tree[tid].root = stn;
 
   if ( stn ) {
-    n = ST_NODE_TO_NODE(stn);
-    p = &n->data;
-    assert(p->key == stn->key);
-    kv = PQ_NODE_TO_KV(p);
+    kv = ST_NODE_TO_KV(stn);
     return kv;
   } 
   return (long)-1; // FIXME: error handling
@@ -701,16 +719,13 @@ long splay_min(rtems_task_argument tid ) {
 long splay_pop_min( rtems_task_argument tid) {
   long kv;
   node *n;
-  pq_node *p;
   splay_tree_node *stn;
 
   stn = spdeq( &the_tree[tid].root ); // TODO: use O(1) dequeue
 
   if ( stn ) {
     n = ST_NODE_TO_NODE(stn);
-    p = &n->data;
-    assert(p->key == stn->key);
-    kv = PQ_NODE_TO_KV(p);
+    kv = ST_NODE_TO_KV(stn);
     free_node(tid,n);
   } else {
     kv = (long)-1;
@@ -722,15 +737,11 @@ long splay_search( rtems_task_argument tid, int k) {
   long kv;
   splay_tree_node *stn;
   splay_tree *tree;
-  node *n;
-  pq_node *p;
+
   tree = &the_tree[tid];
   stn = spfind(tree, k);
   if ( stn ) {
-    n = ST_NODE_TO_NODE(stn);
-    p = &n->data;
-    assert(p->key == stn->key);
-    kv = PQ_NODE_TO_KV(p);
+    kv = ST_NODE_TO_KV(stn);
   } else {
     kv = (long)-1;
   }
@@ -743,15 +754,12 @@ long splay_extract( rtems_task_argument tid, int k) {
   splay_tree_node *stn;
   splay_tree *tree;
   node *n;
-  pq_node *p;
 
   tree = &the_tree[tid];
   stn = spdelete(tree, k);
   if ( stn ) {
     n = ST_NODE_TO_NODE(stn);
-    p = &n->data;
-    assert(p->key == stn->key);
-    kv = PQ_NODE_TO_KV(p);
+    kv = ST_NODE_TO_KV(stn);
     free_node(tid, n);
   } else {
     kv = (long)-1;
