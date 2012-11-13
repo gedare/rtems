@@ -66,6 +66,7 @@ AC_CONFIG_FILES([Makefile
 mbptree/Makefile
 mdetskiplist/Makefile
 mhwpqlib/Makefile
+mhwpqlib2/Makefile
 mhwpqsplitheap/Makefile
 mhwpqsplitrbtree/Makefile
 mhwpqsplitskiplist/Makefile

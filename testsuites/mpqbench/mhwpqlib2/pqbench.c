@@ -17,11 +17,19 @@ void pq_initialize( rtems_task_argument tid, int size ) {
   //else
   //  hwpqlib_pq_initialize( HWPQLIB_SPILLPQ_SPLITHEAP, tid, size );
   
-  hwpqlib_pq_initialize(tid, &pqbench_policy[tid], &sparc64_unitedlistpq_ops, size);
+  //hwpqlib_pq_initialize(tid, &pqbench_policy[tid], &sparc64_unitedlistpq_ops, size);
   
   //hwpqlib_pq_initialize( HWPQLIB_SPILLPQ_UNITEDLIST, tid, size );
   //pqbench_policy[tid].spill_from = 1;
   //hwpqlib_pq_initialize(tid, &pqbench_policy[tid], &sparc64_splitrbtree_ops, size);
+
+  // FIXME: how to determine the best threshold?
+  if ( size > 18*hwpqlib_context.hwpq_context.max_size ) {
+    pqbench_policy[tid].evicted = true;
+    hwpqlib_pq_initialize(tid, &pqbench_policy[tid], &sparc64_splitheappq_ops, size);
+  } else {
+    hwpqlib_pq_initialize(tid, &pqbench_policy[tid], &sparc64_unitedlistpq_ops, size);
+  }
 }
 
 void pq_insert( rtems_task_argument tid, long p ) {
