@@ -6,6 +6,11 @@
 #include "unitedlistpq.h"
 #include "splitheappq.h"
 #include "splitrbtree.h"
+#include "splitsplay.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // The kinds of hwpq spill structures that are supported.
 typedef enum {
@@ -48,3 +53,6 @@ uint64_t hwpqlib_pop( int pq_id, uint64_t unused );
 uint64_t hwpqlib_search( int pq_id, uint64_t kv);
 uint64_t hwpqlib_extract( int pq_id, uint64_t kv);
 
+#ifdef __cplusplus
+}
+#endif

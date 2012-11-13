@@ -80,17 +80,18 @@ static inline int check_access(int pq_id) {
   }
   /* When the ds size is overly large just use sw */
   /*
-  if (CSIZE > MSIZE * 4) {
+  if (CSIZE > MSIZE) {
     evict(pq_id);
     return HWPQLIB_STATUS_NOT_ALLOWED;
   }
   */
   /* Unordered accesses are expensive, so penalize them. */
   /*
-  if ( spillpq[pq_id].stats.extracts > 1 ) {
+  if ( spillpq[pq_id].stats.extracts > 0 ) {
     evict(pq_id);
     return HWPQLIB_STATUS_NOT_ALLOWED;
-  }*/
+  }
+  */
   /* Shrink the max size to reduce the cost of context saving */
   /*
   if ( spillpq[pq_id].stats.switches > 20 ) {
