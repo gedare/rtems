@@ -1,0 +1,3 @@
+Perimeter with 12 levels on 1 processors
+# of leaves is 3604252
+perimeter is 12288

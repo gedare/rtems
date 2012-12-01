@@ -1,0 +1,6 @@
+Bisort with 1000 size
+**************************************
+BEGINNING BITONIC SORT ALGORITHM HERE
+**************************************
+Sorting forward...done
+sorting backward...done

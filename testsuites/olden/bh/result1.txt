@@ -1,0 +1,7 @@
+nbody = 512, numnodes = 1
+bodies created 
+Bodies per 0 = 512
+About to perform 1 iters from 0.000000 to 2.000000 by 0.012500
+Step 0
+M 0.000000, CG 0.000000, VP 0.000000, sp 0x0,
+Time = 0.000000 seconds

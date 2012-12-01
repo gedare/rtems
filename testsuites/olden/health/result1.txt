@@ -1,0 +1,21 @@
+
+
+    Colombian Health Care Simulator
+
+Working...
+iteration 0
+iteration 10
+iteration 20
+iteration 30
+iteration 40
+iteration 50
+iteration 60
+iteration 70
+iteration 80
+iteration 90
+Done.
+
+# of people treated:              190.0000 people
+Average length of stay:           36.5632 time units
+Average # of hospitals visited:   1.0526 hospitals
+

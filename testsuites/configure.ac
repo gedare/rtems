@@ -31,6 +31,7 @@ yes | samples )
   AC_CONFIG_SUBDIRS(mibench)
   AC_CONFIG_SUBDIRS(mpqbench)
   AC_CONFIG_SUBDIRS(dimacs)
+  AC_CONFIG_SUBDIRS(olden)
   ;;
 esac
 

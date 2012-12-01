@@ -1,0 +1,10 @@
+Making graph of size 1024
+Make phase 1: Creating hash tables
+Make phase 3: Creating graph
+1047552 edges inserted
+Make returning
+Graph completed
+About to compute mst 
+Compute phase 1
+Compute phase 2
+MST has cost 12121
