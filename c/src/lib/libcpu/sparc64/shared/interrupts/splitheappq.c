@@ -239,6 +239,7 @@ sparc64_splitheappq_fill_node(int qid)
 {
   uint32_t exception;
   uint64_t kv;
+  uint64_t rv = 0;
 
   kv = heap_pop_min(qid);
 
@@ -247,11 +248,11 @@ sparc64_splitheappq_fill_node(int qid)
 
   if (exception) {
     DPRINTK("Spilling (%d,%X) while filling\n");
+    rv = sparc64_splitheappq_spill_node(qid);
     MAGIC(9);
-    return sparc64_splitheappq_spill_node(qid);
   }
 
-  return 0;
+  return rv;
 }
 
 uint64_t sparc64_splitheappq_handle_spill( int qid, uint64_t count )

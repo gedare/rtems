@@ -144,12 +144,12 @@ int sparc64_spillpq_handle_spill(int queue_idx)
   int amt = spillpq[queue_idx].policy.spill_max;
   STAT_INC(queue_idx, spills);
 
-  MAGIC(9);
-
   if ( amt == 0 )
     rv = spillpq[queue_idx].ops->spill(queue_idx, hwpq_context->max_size/2);
   else
     rv = spillpq[queue_idx].ops->spill(queue_idx, amt);
+
+  MAGIC(9);
 
   return rv;
 }
@@ -160,12 +160,12 @@ int sparc64_spillpq_handle_fill(int queue_idx)
   int amt = spillpq[queue_idx].policy.fill_max;
   STAT_INC(queue_idx, fills);
 
-  MAGIC(10);
-
   if ( amt == 0 )
     rv = spillpq[queue_idx].ops->fill(queue_idx, hwpq_context->max_size/2);
   else
     rv = spillpq[queue_idx].ops->fill(queue_idx, amt);
+
+  MAGIC(10);
 
   return rv;
 }

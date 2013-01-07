@@ -242,6 +242,7 @@ sparc64_unitedlistpq_fill_node(
     uint64_t count
 ) {
   uint32_t exception;
+  uint64_t rv = 0;
   pq_node *p;
 
   p = (pq_node*)_Chain_Get_first_unprotected(spill_pq);
@@ -255,10 +256,10 @@ sparc64_unitedlistpq_fill_node(
 
   if (exception) {
     DPRINTK("%d\tSpilling while filling\n", queue_idx);
+    rv = sparc64_unitedlistpq_handle_spill(queue_idx, count);
     MAGIC(9);
-    return sparc64_unitedlistpq_handle_spill(queue_idx, count);
   }
-  return 0;
+  return rv;
 }
 
 /*
