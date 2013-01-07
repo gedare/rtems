@@ -255,6 +255,7 @@ sparc64_unitedlistpq_fill_node(
 
   if (exception) {
     DPRINTK("%d\tSpilling while filling\n", queue_idx);
+    MAGIC(9);
     return sparc64_unitedlistpq_handle_spill(queue_idx, count);
   }
   return 0;

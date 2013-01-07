@@ -9,9 +9,10 @@
 #include <libcpu/spillpq.h>     /* bad */
 #include <libcpu/unitedlistpq.h> /* bad */
 #include <libcpu/splitheappq.h> /* bad */
+#include <libcpu/splitrbtree.h>
 #include <libcpu/hwpqlib.h>
 
-#define USE_LIBPQ
+//#define USE_LIBPQ
 
 
 //------------------------------------------------------------
@@ -39,6 +40,7 @@ HWPQ::HWPQ(int size)
   hwpqlib_pq_initialize(0, SPILLPQ_POLICY_DEFAULT, &sparc64_splitheappq_ops, size);
 #else
   sparc64_spillpq_initialize(4, SPILLPQ_POLICY_DEFAULT, &sparc64_unitedlistpq_ops, size);
+//  sparc64_spillpq_initialize(4, SPILLPQ_POLICY_DEFAULT, &sparc64_splitrbtree_ops, size);
 #endif
   Init();
 }

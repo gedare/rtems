@@ -111,7 +111,7 @@ rtems_task PQ_Workload_Task(rtems_task_argument argument)
   /* reach PQ steady state */
   warmup(argument - 1);
 
-#ifdef DOMEASURE
+#ifdef MEASURE_WCET
   rtems_task_wake_after( 5 );
 #endif
   // FIXME: how to reset stats for warmup phase?

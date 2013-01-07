@@ -185,6 +185,7 @@ sparc64_splitrbtree_fill_node(int qid, int count)
 
   if (exception) {
     DPRINTK("Spilling (%d,%X) while filling\n");
+    MAGIC(9);
     return sparc64_splitrbtree_handle_spill(qid, count);
   }
 

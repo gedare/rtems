@@ -176,7 +176,7 @@ PUBLIC(_CPU_Context_restore_fp)
   .align 4
 PUBLIC(_CPU_Context_switch)
   SYM(_CPU_Context_switch):
-  MAGIC(8)
+  MAGIC(16)
     ! skip g0
       stx     %g1, [%o0 + G1_OFFSET]       ! save the global registers
       stx     %g2, [%o0 + G2_OFFSET]

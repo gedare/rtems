@@ -21,7 +21,7 @@ extern "C" {
 #define kv_key(kv)   (kv>>(sizeof(long)*4L))
 
 typedef enum {
-  f,      /* first */
+  f=2,      /* first */
   i,      /* insert */
   p,      /* pop */
   h,      /* hold */

@@ -60,7 +60,7 @@ void warmup( rtems_task_argument tid ) {
     execute(tid, i);
   }
 
-#ifdef DOMEASURE
+#ifdef MEASURE_WCET
 
   // insert some minimum priority elements (to prime the hwpq) and
   // fill up the hwpq to full capacity for measuring exceptions
@@ -95,7 +95,7 @@ void work( rtems_task_argument tid  ) {
   printf("%d\tWork: %d\n",tid, PQ_WORK_OPS[tid]);
 #endif
 
-#ifdef DOMEASURE
+#ifdef MEASURE_WCET
 #ifdef WARMUP
   if (spillpq[tid].ops) {
     measure(tid, PQ_WARMUP_OPS[tid]);
@@ -121,6 +121,9 @@ static int execute( rtems_task_argument tid, int current_op ) {
 
   switch (ops[tid][current_op]) {
     case f:
+#if defined(MEASURE_ACET)
+      MAGIC(2);
+#endif
       n = pq_first(tid);
 #if defined(GAB_PRINT)
       printf("%d\tPQ first:\t",tid);
@@ -128,6 +131,9 @@ static int execute( rtems_task_argument tid, int current_op ) {
 #endif
       break;
     case i:
+#if defined(MEASURE_ACET)
+      MAGIC(3);
+#endif
       n = pq_node_initialize( &args[tid][current_op] );
       pq_insert( tid, n );
 #if defined(GAB_PRINT)
@@ -137,6 +143,9 @@ static int execute( rtems_task_argument tid, int current_op ) {
 #endif
       break;
     case p:
+#if defined(MEASURE_ACET)
+      MAGIC(4);
+#endif
       n = pq_pop(tid);
 #if defined(GAB_DEBUG)
       if ( kv_key(n) != args[tid][current_op].key ) {
@@ -158,6 +167,9 @@ static int execute( rtems_task_argument tid, int current_op ) {
 #endif
       break;
     case h:
+#if defined(MEASURE_ACET)
+        MAGIC(4);
+#endif
         n = pq_pop(tid);
 #if defined(GAB_DEBUG)
       if ( kv_key(n) != args[tid][current_op].val ) {
@@ -165,14 +177,25 @@ static int execute( rtems_task_argument tid, int current_op ) {
         pq_print_node(n);
       }
 #endif
+
+#if defined(MEASURE_ACET)
+      MAGIC(1);
+#endif
+
       n = pq_add_to_key(n, args[tid][current_op].key);/* add to prio */
 #if defined(GAB_PRINT)
       printf("%d\tPQ hold (args=%d,%d):\t",tid, args[tid][current_op].key, args[tid][current_op].val);
       pq_print_node(n);
 #endif
+#if defined(MEASURE_ACET)
+      MAGIC(3);
+#endif
       pq_insert(tid,n);
       break;
     case s:
+#if defined(MEASURE_ACET)
+      MAGIC(6);
+#endif
       n = pq_search(tid, args[tid][current_op].key); // UNIQUE!
 #if defined(GAB_DEBUG)
       if (kv_value(n) != args[tid][current_op].val) {
@@ -188,6 +211,9 @@ static int execute( rtems_task_argument tid, int current_op ) {
 #endif
       break;
     case x:
+#if defined(MEASURE_ACET)
+      MAGIC(7);
+#endif
       n = pq_extract(tid, args[tid][current_op].key);
 #if defined(GAB_DEBUG)
       if (kv_value(n) != args[tid][current_op].val) {

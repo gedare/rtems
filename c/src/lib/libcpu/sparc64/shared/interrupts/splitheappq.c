@@ -247,6 +247,7 @@ sparc64_splitheappq_fill_node(int qid)
 
   if (exception) {
     DPRINTK("Spilling (%d,%X) while filling\n");
+    MAGIC(9);
     return sparc64_splitheappq_spill_node(qid);
   }
 
