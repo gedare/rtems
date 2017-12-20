@@ -45,6 +45,7 @@ _SUBDIRS += sptimecounter03
 _SUBDIRS += spatomic01
 _SUBDIRS += spintrcritical22
 _SUBDIRS += spsem03
+_SUBDIRS += spsem04
 _SUBDIRS += spresource01
 _SUBDIRS += spmrsp01
 _SUBDIRS += spscheduler01
