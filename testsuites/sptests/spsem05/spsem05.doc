@@ -1,0 +1,19 @@
+This file describes the directives and concepts tested by this test set.
+
+test set name: spsem05
+
+directives:
+
+  - rtems_semaphore_create()
+  - rtems_semaphore_obtain()
+  - rtems_semaphore_release()
+  - rtems_task_self()
+  - rtems_task_set_priority()
+  - rtems_task_create()
+  - rtems_task_start()
+
+concepts:
+
+  - Demonstrate that the priority inheritance protocol works with or without
+    stepping down of priority on semaphore release.
+

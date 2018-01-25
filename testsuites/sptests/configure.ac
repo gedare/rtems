@@ -51,6 +51,7 @@ spglobalcon01/Makefile
 spintrcritical22/Makefile
 spsem03/Makefile
 spsem04/Makefile
+spsem05/Makefile
 spresource01/Makefile
 spmrsp01/Makefile
 spscheduler01/Makefile
