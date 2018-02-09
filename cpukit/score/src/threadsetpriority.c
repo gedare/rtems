@@ -30,13 +30,13 @@ static bool _Thread_Set_priority_filter(
   Priority_Control  new_priority;
   Priority_Control *old_priority_ptr;
 
-  current_priority = the_thread->current_priority;
+  current_priority = the_thread->Priority_node.current_priority;
   new_priority = *new_priority_ptr;
 
   old_priority_ptr = arg;
   *old_priority_ptr = current_priority;
 
-  the_thread->real_priority = new_priority;
+  the_thread->Priority_node.real_priority = new_priority;
 
   return _Thread_Priority_less_than( current_priority, new_priority )
     || !_Thread_Owns_resources( the_thread );

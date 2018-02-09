@@ -89,7 +89,7 @@ static bool _POSIX_Threads_Sporadic_budget_TSR_filter(
   void             *arg
 )
 {
-  the_thread->real_priority = *new_priority;
+  the_thread->Priority_node.real_priority = *new_priority;
 
   /*
    * If holding a resource, then do not change it.
@@ -97,7 +97,8 @@ static bool _POSIX_Threads_Sporadic_budget_TSR_filter(
    * If this would make them less important, then do not change it.
    */
   return !_Thread_Owns_resources( the_thread ) &&
-    _Thread_Priority_less_than( the_thread->current_priority, *new_priority );
+    _Thread_Priority_less_than( the_thread->Priority_node.current_priority,
+            *new_priority );
 }
 
 /*
@@ -141,7 +142,7 @@ static bool _POSIX_Threads_Sporadic_budget_callout_filter(
   void             *arg
 )
 {
-  the_thread->real_priority = *new_priority;
+  the_thread->Priority_node.real_priority = *new_priority;
 
   /*
    * If holding a resource, then do not change it.
@@ -151,7 +152,8 @@ static bool _POSIX_Threads_Sporadic_budget_callout_filter(
    * change it.
    */
   return !_Thread_Owns_resources( the_thread ) &&
-    _Thread_Priority_less_than( *new_priority, the_thread->current_priority );
+    _Thread_Priority_less_than( *new_priority,
+            the_thread->Priority_node.current_priority );
 }
 
 /*
@@ -202,7 +204,7 @@ static bool _POSIX_Threads_Create_extension(
   api->schedpolicy = _POSIX_Threads_Default_attributes.schedpolicy;
   api->schedparam  = _POSIX_Threads_Default_attributes.schedparam;
   api->schedparam.sched_priority =
-     _POSIX_Priority_From_core( created->current_priority );
+     _POSIX_Priority_From_core( created->Priority_node.current_priority );
 
   /*
    *  POSIX 1003.1 1996, 18.2.2.2

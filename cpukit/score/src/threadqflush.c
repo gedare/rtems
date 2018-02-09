@@ -20,6 +20,7 @@
 
 #include <rtems/score/threadqimpl.h>
 #include <rtems/score/objectimpl.h>
+#include <rtems/score/coremutex.h>
 
 void _Thread_queue_Flush(
   Thread_queue_Control       *the_thread_queue,
@@ -33,6 +34,7 @@ void _Thread_queue_Flush(
 {
   ISR_lock_Context  lock_context;
   Thread_Control   *the_thread;
+  CORE_mutex_Control *mutex;
 
   _Thread_queue_Acquire( the_thread_queue, &lock_context );
 
@@ -40,7 +42,12 @@ void _Thread_queue_Flush(
 #if defined(RTEMS_MULTIPROCESSING)
     if ( _Objects_Is_local_id( the_thread->Object.id ) )
 #endif
-      the_thread->Wait.return_code = status;
+    the_thread->Wait.return_code = status;
+
+    if ( the_thread->Priority_node.waiting_to_hold != NULL ) {
+        mutex = _Thread_Dequeue_priority_node( &the_thread->Priority_node );
+        _Thread_Evaluate_priority( mutex->holder );
+    }
 
     _Thread_queue_Extract_critical(
       the_thread_queue,

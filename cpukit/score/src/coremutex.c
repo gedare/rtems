@@ -58,7 +58,8 @@ CORE_mutex_Status _CORE_mutex_Initialize(
        * this thread is the owner of a priority inheritance mutex, then it may
        * get a higher priority later or anytime on SMP configurations.
        */
-      if ( is_priority_ceiling && executing->current_priority < ceiling ) {
+      if ( is_priority_ceiling && executing->Priority_node.current_priority <
+              ceiling ) {
         /*
          * There is no need to undo the previous work since this error aborts
          * the object creation.
@@ -70,7 +71,7 @@ CORE_mutex_Status _CORE_mutex_Initialize(
 #ifdef __RTEMS_STRICT_ORDER_MUTEX__
        _Chain_Prepend_unprotected( &executing->lock_mutex,
                                    &the_mutex->queue.lock_queue );
-       the_mutex->queue.priority_before = executing->current_priority;
+       the_mutex->queue.priority_before = executing->Priority_node.current_priority;
 #endif
 
       executing->resource_count++;

@@ -51,7 +51,8 @@ int pthread_getschedparam(
       if ( param ) {
         *param  = api->schedparam;
         param->sched_priority =
-          _POSIX_Priority_From_core( the_thread->current_priority );
+          _POSIX_Priority_From_core( the_thread->Priority_node.current_priority
+                  );
       }
       _Objects_Put( &the_thread->Object );
       return 0;

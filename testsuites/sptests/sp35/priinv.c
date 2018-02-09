@@ -86,7 +86,7 @@ const char *CallerName(void)
   Thread_Control *executing = _Thread_Get_executing();
 #if defined(TEST_PRINT_TASK_ID)
   sprintf( buffer, "0x%08x -- %d",
-      rtems_task_self(), executing->current_priority );
+      rtems_task_self(), executing->Priority_node.current_priority );
 #else
   volatile union {
     uint32_t u;
@@ -100,7 +100,7 @@ const char *CallerName(void)
   #endif
   sprintf( buffer, "%c%c%c%c -- %" PRIdPriority_Control,
       TempName.c[0], TempName.c[1], TempName.c[2], TempName.c[3],
-      executing->current_priority
+      executing->Priority_node.current_priority
   );
 #endif
   return buffer;
@@ -255,7 +255,7 @@ void AccessLocalHw(void)
 
 #if defined(TEST_PRINT_STATISTICS)
   /* Store information about the current situation */
-  EnterPrio = _Thread_Executing->current_priority;
+  EnterPrio = _Thread_Executing->Priority_node.current_priority;
   EnterCnt  = _Thread_Executing->resource_count;
 #endif
 
@@ -275,7 +275,7 @@ void AccessLocalHw(void)
 
 #if defined(TEST_PRINT_STATISTICS)
   /* Store information about the current situation */
-  AccessPrio = _Thread_Executing->current_priority;
+  AccessPrio = _Thread_Executing->Priority_node.current_priority;
   AccessCnt  = _Thread_Executing->resource_count;
 #endif
 
@@ -284,7 +284,7 @@ void AccessLocalHw(void)
 
 #if defined(TEST_PRINT_STATISTICS)
   /* Store information about the current situation */
-  LeavePrio = _Thread_Executing->current_priority;
+  LeavePrio = _Thread_Executing->Priority_node.current_priority;
   LeaveCnt  = _Thread_Executing->resource_count;
 
   printf(
@@ -321,7 +321,7 @@ void AccessRemoteHw(void)
 
 #if defined(TEST_PRINT_STATISTICS)
   /* Store information about the current situation */
-  EnterPrio = _Thread_Executing->current_priority;
+  EnterPrio = _Thread_Executing->Priority_node.current_priority;
   EnterCnt  = _Thread_Executing->resource_count;
 #endif
 
@@ -340,7 +340,7 @@ void AccessRemoteHw(void)
 
 #if defined(TEST_PRINT_STATISTICS)
   /* Store information about the current situation */
-  AccessPrio = _Thread_Executing->current_priority;
+  AccessPrio = _Thread_Executing->Priority_node.current_priority;
   AccessCnt  = _Thread_Executing->resource_count;
 #endif
 
@@ -349,7 +349,7 @@ void AccessRemoteHw(void)
 
 #if defined(TEST_PRINT_STATISTICS)
   /* Store information about the current situation */
-  LeavePrio = _Thread_Executing->current_priority;
+  LeavePrio = _Thread_Executing->Priority_node.current_priority;
   LeaveCnt  = _Thread_Executing->resource_count;
 
   printf(

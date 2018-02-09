@@ -52,14 +52,14 @@ static bool _Thread_Raise_real_priority_filter(
   Priority_Control new_priority;
   Priority_Control current_priority;
 
-  real_priority = the_thread->real_priority;
+  real_priority = the_thread->Priority_node.real_priority;
   new_priority = *new_priority_ptr;
-  current_priority = the_thread->current_priority;
+  current_priority = the_thread->Priority_node.current_priority;
 
   new_priority = _Thread_Priority_highest( real_priority, new_priority );
   *new_priority_ptr = new_priority;
 
-  the_thread->real_priority = new_priority;
+  the_thread->Priority_node.real_priority = new_priority;
 
   return _Thread_Priority_less_than( current_priority, new_priority );
 }
@@ -331,7 +331,7 @@ void _Thread_Close( Thread_Control *the_thread, Thread_Control *executing )
     _Thread_Request_life_change(
       the_thread,
       executing,
-      executing->current_priority,
+      executing->Priority_node.current_priority,
       THREAD_LIFE_TERMINATING
     );
   }

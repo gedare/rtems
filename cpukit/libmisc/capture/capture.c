@@ -434,8 +434,8 @@ bool rtems_capture_filter( rtems_tcb*            tcb,
      * watch ceiling, and the global watch or task watch is enabled.
      */
     if ((events & RTEMS_CAPTURE_RECORD_EVENTS) ||
-        ((tcb->real_priority >= capture_ceiling) &&
-         (tcb->real_priority <= capture_floor) &&
+        ((tcb->Priority_node.real_priority >= capture_ceiling) &&
+         (tcb->Priority_node.real_priority <= capture_floor) &&
          ((capture_flags_global & RTEMS_CAPTURE_GLOBAL_WATCH) ||
           (control && (control->flags & RTEMS_CAPTURE_WATCH)))))
     {
@@ -468,8 +468,8 @@ rtems_capture_record_open (rtems_tcb*                    tcb,
     capture_in->size    = size;
     capture_in->task_id = tcb->Object.id;
     capture_in->events  = (events |
-                          (tcb->real_priority) |
-                          (tcb->current_priority << 8));
+                          (tcb->Priority_node.real_priority) |
+                          (tcb->Priority_node.current_priority << 8));
 
     if ((events & RTEMS_CAPTURE_RECORD_EVENTS) == 0)
       tcb->Capture.flags |= RTEMS_CAPTURE_TRACED;

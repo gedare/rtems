@@ -44,11 +44,11 @@ Scheduler_Void_or_thread _Scheduler_EDF_Unblock(
    */
   if ( _Scheduler_Is_priority_lower_than(
          scheduler,
-         _Thread_Heir->current_priority,
-         the_thread->current_priority )) {
+         _Thread_Heir->Priority_node.current_priority,
+         the_thread->Priority_node.current_priority )) {
     _Scheduler_Update_heir(
       the_thread,
-      the_thread->current_priority == PRIORITY_PSEUDO_ISR
+      the_thread->Priority_node.current_priority == PRIORITY_PSEUDO_ISR
     );
   }
 

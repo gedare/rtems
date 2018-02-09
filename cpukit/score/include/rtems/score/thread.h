@@ -351,6 +351,25 @@ typedef struct {
   const Thread_queue_Operations *operations;
 }   Thread_Wait_information;
 
+struct CORE_mutex_Control;
+/**
+ * @brief Encapsulates base and inherited priority.
+ */
+typedef struct Thread_Priority_node {
+  Chain_Node                   Node;
+  /** current priority = min(real_priority, min(Inherited_priorities)) */
+  Priority_Control             current_priority;
+  /** base priority irrespective of inheritance/ceiling */
+  Priority_Control             real_priority;
+  /** NULL if not waiting, or the mutex blocked upon
+   * if waiting. If not NULL, then this Priority_node is on the mutex holder's
+   * Priority_node.Inherited_priorities list. */
+  struct CORE_mutex_Control   *waiting_to_hold;
+  /** Priority Queue of thread Priority_nodes blocked by this one, thus
+   * possibly contributing their priority to the current_priority. */
+  Chain_Control                Inherited_priorities;
+} Thread_Priority_node;
+
 /**
  *  The following defines the control block used to manage
  *  each thread proxy.
@@ -364,21 +383,9 @@ typedef struct {
   /** This field is the current execution state of this proxy. */
   States_Control           current_state;
 
-  /**
-   * @brief This field is the current priority state of this thread.
-   *
-   * Writes to this field are only allowed in _Thread_Initialize() or via
-   * _Thread_Change_priority().
-   */
-  Priority_Control         current_priority;
-
-  /**
-   * @brief This field is the base priority of this thread.
-   *
-   * Writes to this field are only allowed in _Thread_Initialize() or via
-   * _Thread_Change_priority().
-   */
-  Priority_Control         real_priority;
+  /** This field encapsulates the base and current (inherited) priority
+  * of this proxy. */
+  Thread_Priority_node     Priority_node;
 
   /**
    * @brief Generation of the current priority value.
@@ -674,21 +681,9 @@ struct Thread_Control {
   /** This field is the current execution state of this thread. */
   States_Control           current_state;
 
-  /**
-   * @brief This field is the current priority state of this thread.
-   *
-   * Writes to this field are only allowed in _Thread_Initialize() or via
-   * _Thread_Change_priority().
-   */
-  Priority_Control         current_priority;
-
-  /**
-   * @brief This field is the base priority of this thread.
-   *
-   * Writes to this field are only allowed in _Thread_Initialize() or via
-   * _Thread_Change_priority().
-   */
-  Priority_Control         real_priority;
+  /** This field encapsulates the base and current (inherited) priority
+  * of this proxy. */
+  Thread_Priority_node     Priority_node;
 
   /**
    * @brief Generation of the current priority value.
@@ -826,6 +821,55 @@ struct Thread_Control {
    */
   void                                 *extensions[ RTEMS_ZERO_LENGTH_ARRAY ];
 };
+
+/**
+ * This routine sets the thread's priority_node->current_priority to the
+ * minimum of the real_priority and the first node of Inherited_priorities,
+ * if any.
+ */
+void _Thread_Evaluate_priority(
+  Thread_Control *the_thread
+);
+
+/**
+ * This routine adds a thread's Priority_node to the mutex holder's
+ * Inherited_priorities list, and sets the waiting_to_hold field to the
+ * mutex.
+ *
+ * Returns true if the enqueued node is at the head of the holder's
+ * Inherited priorities, and therefore the holder's priority may change.
+ */
+bool _Thread_Enqueue_priority_node(
+  Thread_Control *the_thread,
+  struct CORE_mutex_Control *the_mutex
+);
+
+/**
+ * This routine removes a thread's Priority_node from an
+ * Inherited_priorities list, updates the mutex holder's
+ * current_priority if needed, and clears the mutex field.
+ *
+ * Returns the mutex that the thread was waiting on.
+ */
+struct CORE_mutex_Control* _Thread_Dequeue_priority_node(
+  Thread_Priority_node *thread_pn
+);
+
+/**
+ * This routine updates the position of a thread's Priority_node in an
+ * Inherited_priorities list if on one.
+ */
+void _Thread_Requeue_priority_node(
+  Thread_Control *the_thread
+);
+
+/**
+ * This routine removes the inherited priorities from the mutex being
+ * released and updates the holder's priority if necessary.
+ */
+void _Thread_Release_inherited_priority(
+  struct CORE_mutex_Control *the_mutex
+);
 
 #if (CPU_PROVIDES_IDLE_THREAD_BODY == FALSE)
 /**

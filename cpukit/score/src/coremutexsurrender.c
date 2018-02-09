@@ -33,7 +33,7 @@
       &thread->lock_mutex,
       &mutex->queue.lock_queue
     );
-    mutex->queue.priority_before = thread->current_priority;
+    mutex->queue.priority_before = thread->Priority_node.current_priority;
   }
 
   static inline CORE_mutex_Status _CORE_mutex_Pop_priority(
@@ -56,7 +56,7 @@
      */
     _Chain_Get_first_unprotected( &holder->lock_mutex );
 
-    if ( mutex->queue.priority_before != holder->current_priority )
+    if ( mutex->queue.priority_before != holder->Priority_node.current_priority )
       _Thread_Change_priority( holder, mutex->queue.priority_before, true );
 
     return CORE_MUTEX_STATUS_SUCCESSFUL;
@@ -171,6 +171,9 @@ CORE_mutex_Status _CORE_mutex_Surrender(
     }
 
     holder->resource_count--;
+  }
+  if ( _CORE_mutex_Is_inherit_priority( &the_mutex->Attributes ) ) {
+    _Thread_Release_inherited_priority( the_mutex );
   }
   the_mutex->holder = NULL;
 

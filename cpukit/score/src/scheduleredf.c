@@ -29,8 +29,8 @@ RBTree_Compare_result _Scheduler_EDF_Compare(
     RTEMS_CONTAINER_OF( n1, Scheduler_EDF_Node, Node );
   Scheduler_EDF_Node *edf2 =
     RTEMS_CONTAINER_OF( n2, Scheduler_EDF_Node, Node );
-  Priority_Control value1 = edf1->thread->current_priority;
-  Priority_Control value2 = edf2->thread->current_priority;
+  Priority_Control value1 = edf1->thread->Priority_node.current_priority;
+  Priority_Control value2 = edf2->thread->Priority_node.current_priority;
 
   /*
    * This function compares only numbers for the red-black tree,

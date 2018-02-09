@@ -53,7 +53,7 @@ void _Thread_Change_priority(
     uint32_t my_generation;
 
     my_generation = the_thread->priority_generation + 1;
-    the_thread->current_priority = new_priority;
+    the_thread->Priority_node.current_priority = new_priority;
     the_thread->priority_generation = my_generation;
 
     ( *the_thread->Wait.operations->priority_change )(
@@ -61,6 +61,7 @@ void _Thread_Change_priority(
       new_priority,
       the_thread->Wait.queue
     );
+    _Thread_Requeue_priority_node( the_thread );
 
     _Thread_Lock_release( lock, &lock_context );
 
@@ -91,7 +92,7 @@ static bool _Thread_Raise_priority_filter(
 )
 {
   return _Thread_Priority_less_than(
-    the_thread->current_priority,
+    the_thread->Priority_node.current_priority,
     *new_priority
   );
 }
@@ -116,11 +117,11 @@ static bool _Thread_Restore_priority_filter(
   void             *arg
 )
 {
-  *new_priority = the_thread->real_priority;
+  *new_priority = the_thread->Priority_node.real_priority;
 
   the_thread->priority_restore_hint = false;
 
-  return *new_priority != the_thread->current_priority;
+  return *new_priority != the_thread->Priority_node.current_priority;
 }
 
 void _Thread_Restore_priority( Thread_Control *the_thread )

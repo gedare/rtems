@@ -34,8 +34,8 @@ RBTree_Compare_result _Thread_queue_Compare_priority(
 
   left_thread = THREAD_RBTREE_NODE_TO_THREAD( left );
   right_thread = THREAD_RBTREE_NODE_TO_THREAD( right );
-  left_prio = left_thread->current_priority;
-  right_prio = right_thread->current_priority;
+  left_prio = left_thread->Priority_node.current_priority;
+  right_prio = right_thread->Priority_node.current_priority;
 
   /*
    * SuperCore priorities use lower numbers to indicate greater importance.

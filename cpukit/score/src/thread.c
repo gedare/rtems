@@ -29,8 +29,9 @@
 
 THREAD_OFFSET_ASSERT( Object );
 THREAD_OFFSET_ASSERT( current_state );
-THREAD_OFFSET_ASSERT( current_priority );
-THREAD_OFFSET_ASSERT( real_priority );
+/* THREAD_OFFSET_ASSERT( Priority_node.current_priority );
+THREAD_OFFSET_ASSERT( Priority_node.real_priority );
+*/
 THREAD_OFFSET_ASSERT( priority_generation );
 THREAD_OFFSET_ASSERT( priority_restore_hint );
 THREAD_OFFSET_ASSERT( resource_count );
