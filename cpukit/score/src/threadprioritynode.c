@@ -1,7 +1,8 @@
 /*
  * Thread Priority Node
  * 
- * Copyright (C) 2017. Gedare Bloom and Samman Bikram Thapa.
+ * Copyright (C) 2018. Gedare Bloom.
+ * Copyright (C) 2018. Samman Bikram Thapa.
  *
  * The license and distribution terms for this file may be
  * found in the file LICENSE in this distribution or at
@@ -18,6 +19,7 @@
 #include <rtems/score/coremutex.h>
 #include <rtems/score/coremuteximpl.h>
 #include <rtems/score/thread.h>
+#include <rtems/score/threadimpl.h>
 
 /**
  * This routine adds a thread's Priority_node to the mutex holder's
@@ -90,21 +92,9 @@ void _Thread_Evaluate_priority(
       }
     }
     if ( current_priority < min_priority ) {
-      _Thread_Change_priority(
-              the_thread,
-              min_priority,
-              NULL,
-              true,
-              true
-              );
+        _Thread_Restore_priority( the_thread );
     } else if ( current_priority > min_priority ) {
-      _Thread_Change_priority(
-              the_thread,
-              min_priority,
-              NULL,
-              true,
-              false
-              );
+        _Thread_Raise_priority( the_thread, min_priority );
     } else {
       break;
     }
@@ -145,12 +135,21 @@ void _Thread_Requeue_priority_node(
 {
   ISR_Level       level;
   CORE_mutex_Control *mutex;
-  
+  bool mutex_owner_needs_update;
+
   _ISR_Disable( level );
   /* TODO: refactor? */
+  /* We are merely removing the the_thread->Priority_node from 
+   * OwnerThread.Inherited_priorities priority queue
+   * and re-adding it in the queue
+   */
   mutex = _Thread_Dequeue_priority_node( &the_thread->Priority_node );
   if ( mutex != NULL ) {
-    _Thread_Enqueue_priority_node( the_thread, mutex );
+    mutex_owner_needs_update =
+        _Thread_Enqueue_priority_node( the_thread, mutex );
+    if (mutex_owner_needs_update) {
+      _Thread_Evaluate_priority( mutex->holder );
+    }
   }
   _ISR_Enable( level );
 }

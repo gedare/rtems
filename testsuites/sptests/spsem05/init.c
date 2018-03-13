@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017 Gedare Bloom, Samman Bikram Thapa.
+ * Copyright (C) 2018. Gedare Bloom.
+ * Copyright (C) 2018. Samman Bikram Thapa.
  * Copyright (c) 2014, 2016 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH

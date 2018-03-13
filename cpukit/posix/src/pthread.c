@@ -97,8 +97,10 @@ static bool _POSIX_Threads_Sporadic_budget_TSR_filter(
    * If this would make them less important, then do not change it.
    */
   return !_Thread_Owns_resources( the_thread ) &&
-    _Thread_Priority_less_than( the_thread->Priority_node.current_priority,
-            *new_priority );
+    _Thread_Priority_less_than(
+        the_thread->Priority_node.current_priority,
+        *new_priority
+    );
 }
 
 /*
@@ -152,8 +154,10 @@ static bool _POSIX_Threads_Sporadic_budget_callout_filter(
    * change it.
    */
   return !_Thread_Owns_resources( the_thread ) &&
-    _Thread_Priority_less_than( *new_priority,
-            the_thread->Priority_node.current_priority );
+    _Thread_Priority_less_than(
+        *new_priority,
+        the_thread->Priority_node.current_priority
+    );
 }
 
 /*

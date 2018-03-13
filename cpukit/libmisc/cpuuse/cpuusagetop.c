@@ -273,10 +273,16 @@ task_usage(Thread_Control* thread, void* arg)
               CPU_usage_Less_than(&usage, &data->usage[j]))
             continue;
         case RTEMS_TOP_SORT_REAL_PRI:
-          if (thread->Priority_node.real_priority > data->tasks[j]->Priority_node.real_priority)
+          if (
+              thread->Priority_node.real_priority >
+              data->tasks[j]->Priority_node.real_priority
+          )
             continue;
         case RTEMS_TOP_SORT_CURRENT_PRI:
-          if (thread->Priority_node.current_priority > data->tasks[j]->Priority_node.current_priority)
+          if (
+              thread->Priority_node.current_priority >
+              data->tasks[j]->Priority_node.current_priority
+          )
             continue;
         case RTEMS_TOP_SORT_ID:
           if (thread->Object.id < data->tasks[j]->Object.id)

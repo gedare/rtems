@@ -56,7 +56,9 @@
      */
     _Chain_Get_first_unprotected( &holder->lock_mutex );
 
-    if ( mutex->queue.priority_before != holder->Priority_node.current_priority )
+    if (
+        mutex->queue.priority_before != holder->Priority_node.current_priority
+    )
       _Thread_Change_priority( holder, mutex->queue.priority_before, true );
 
     return CORE_MUTEX_STATUS_SUCCESSFUL;

@@ -43,8 +43,12 @@ const char *CallerName(void)
   static char buffer[32];
   Thread_Control *executing = _Thread_Get_executing();
 #if defined(TEST_PRINT_TASK_ID)
-  sprintf( buffer, "0x%08x -- %d",
-      rtems_task_self(), executing->Priority_node.current_priority );
+  sprintf(
+      buffer,
+      "0x%08x -- %d",
+      rtems_task_self(),
+      executing->Priority_node.current_priority
+  );
 #else
   volatile union {
     uint32_t u;

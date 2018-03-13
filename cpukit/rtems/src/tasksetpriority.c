@@ -47,7 +47,7 @@ rtems_status_code rtems_task_set_priority(
         _Thread_Evaluate_priority( the_thread );
       } else {
         *old_priority = _RTEMS_tasks_Priority_from_Core(
-         the_thread->Priority_node.current_priority
+            the_thread->Priority_node.current_priority
         );
       }
       _Objects_Put( &the_thread->Object );

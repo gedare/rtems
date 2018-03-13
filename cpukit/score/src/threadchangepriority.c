@@ -61,6 +61,9 @@ void _Thread_Change_priority(
       new_priority,
       the_thread->Wait.queue
     );
+
+    /* Reorder the inherited priorities of the mutex owner and update
+     * Thread_Priority.current_priority if needed */
     _Thread_Requeue_priority_node( the_thread );
 
     _Thread_Lock_release( lock, &lock_context );

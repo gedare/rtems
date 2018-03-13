@@ -857,7 +857,8 @@ struct CORE_mutex_Control* _Thread_Dequeue_priority_node(
 
 /**
  * This routine updates the position of a thread's Priority_node in an
- * Inherited_priorities list if on one.
+ * Inherited_priorities list if on one and updates the current_priority of the
+ * Owner thread if required
  */
 void _Thread_Requeue_priority_node(
   Thread_Control *the_thread
