@@ -23,11 +23,16 @@
 
 static void _Thread_Do_timeout( Thread_Control *the_thread )
 {
+  CORE_mutex_Control *mutex;
   the_thread->Wait.return_code = the_thread->Wait.timeout_code;
   ( *the_thread->Wait.operations->extract )(
     the_thread->Wait.queue,
     the_thread
   );
+
+  mutex = _Thread_Dequeue_priority_node( &the_thread->Priority_node );
+  _Thread_Evaluate_priority( mutex->holder );
+
   _Thread_Wait_set_queue( the_thread, NULL );
   _Thread_Wait_restore_default_operations( the_thread );
   _Thread_Lock_restore_default( the_thread );
